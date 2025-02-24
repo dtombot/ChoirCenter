@@ -87,6 +87,27 @@ function App() {
     setIsAdmin(false);
   };
 
+  useEffect(() => {
+  const fetchUserAndProfile = async () => {
+    // ... existing code ...
+  };
+  fetchUserAndProfile();
+
+  const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+    // ... existing code ...
+  });
+
+  // Add Inter font
+  const link = document.createElement('link');
+  link.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap';
+  link.rel = 'stylesheet';
+  document.head.appendChild(link);
+
+  return () => {
+    authListener.subscription.unsubscribe();
+  };
+}, []);
+
   return (
     <Router>
       <header style={{ position: 'sticky', top: 0, background: '#2f4f2f', padding: '1rem', boxShadow: '0 2px 5px rgba(0,0,0,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#fff' }}>

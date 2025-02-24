@@ -18,18 +18,25 @@ function App() {
 
   useEffect(() => {
     const fetchUserAndProfile = async () => {
-      const { data: authData } = await supabase.auth.getUser();
+      const { data: authData, error: authError } = await supabase.auth.getUser();
+      if (authError) {
+        console.error('Auth error:', authError);
+        return;
+      }
       const currentUser = authData.user;
       setUser(currentUser);
 
       if (currentUser) {
-        const { data: profileData, error } = await supabase
+        const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('is_admin')
           .eq('id', currentUser.id)
           .single();
-        if (!error && profileData) {
-          setIsAdmin(profileData.is_admin);
+        if (profileError) {
+          console.error('Profile fetch error:', profileError);
+          setIsAdmin(false);
+        } else if (profileData) {
+          setIsAdmin(profileData.is_admin || false);
         }
       }
     };
@@ -45,10 +52,11 @@ function App() {
           .eq('id', currentUser.id)
           .single()
           .then(({ data, error }) => {
-            if (!error && data) {
-              setIsAdmin(data.is_admin);
-            } else {
+            if (error) {
+              console.error('Profile fetch error on auth change:', error);
               setIsAdmin(false);
+            } else if (data) {
+              setIsAdmin(data.is_admin || false);
             }
           });
       } else {

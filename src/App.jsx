@@ -14,7 +14,9 @@ function App() {
   return (
     <Router>
       <header style={{ position: 'sticky', top: 0, background: '#2f4f2f', padding: '1rem', boxShadow: '0 2px 5px rgba(0,0,0,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#fff' }}>
-        <h1>Choir Center</h1>
+        <Link to="/" style={{ color: '#fff', textDecoration: 'none' }}>
+          <h1>Choir Center</h1>
+        </Link>
         <nav>
           <Link to="/signup" style={{ marginLeft: '1rem', textDecoration: 'none', color: '#98fb98' }}>Sign Up</Link>
           <Link to="/admin" style={{ marginLeft: '1rem', textDecoration: 'none', color: '#98fb98' }}>Admin Dashboard</Link>

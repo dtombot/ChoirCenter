@@ -11,7 +11,8 @@ import Contact from './pages/Contact';
 import Privacy from './pages/Privacy';
 import Terms from './pages/Terms';
 import Blog from './pages/Blog';
-import BlogPost from './pages/BlogPost'; // Add this import
+import BlogPost from './pages/BlogPost';
+import Song from './pages/Song';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -76,6 +77,12 @@ function App() {
       }
     });
 
+    // Add Inter font
+    const link = document.createElement('link');
+    link.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap';
+    link.rel = 'stylesheet';
+    document.head.appendChild(link);
+
     return () => {
       authListener.subscription.unsubscribe();
     };
@@ -86,27 +93,6 @@ function App() {
     setUser(null);
     setIsAdmin(false);
   };
-
-  useEffect(() => {
-  const fetchUserAndProfile = async () => {
-    // ... existing code ...
-  };
-  fetchUserAndProfile();
-
-  const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-    // ... existing code ...
-  });
-
-  // Add Inter font
-  const link = document.createElement('link');
-  link.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap';
-  link.rel = 'stylesheet';
-  document.head.appendChild(link);
-
-  return () => {
-    authListener.subscription.unsubscribe();
-  };
-}, []);
 
   return (
     <Router>
@@ -153,7 +139,8 @@ function App() {
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/blog" element={<Blog />} />
-        <Route path="/blog/:id" element={<BlogPost />} /> {/* Add this route */}
+        <Route path="/blog/:id" element={<BlogPost />} />
+        <Route path="/song/:id" element={<Song />} />
       </Routes>
       <footer style={{ background: '#2f4f2f', color: '#fff', padding: '1rem', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', textAlign: 'center' }}>
         <div>

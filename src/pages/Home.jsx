@@ -17,13 +17,13 @@ function Home() {
 
   return (
     <>
-      <section style={{ background: '#007bff', color: 'white', textAlign: 'center', padding: '4rem 1rem' }}>
+      <section style={{ background: '#3cb371', color: 'white', textAlign: 'center', padding: '4rem 1rem' }}>
         <h2 style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>Welcome to Choir Center</h2>
         <p>Find and download choir music resources easily.</p>
         <input type="text" placeholder="Search for songs..." style={{ padding: '0.5rem', width: '50%', maxWidth: '400px', border: 'none', borderRadius: '5px' }} />
         <div style={{ marginTop: '1rem' }}>
-          <button style={{ padding: '0.75rem 1.5rem', margin: '0 0.5rem', border: 'none', borderRadius: '5px', background: '#fff', color: '#007bff' }}>Explore Library</button>
-          <button style={{ padding: '0.75rem 1.5rem', margin: '0 0.5rem', border: 'none', borderRadius: '5px', background: '#fff', color: '#007bff' }}>Blog Posts</button>
+          <button style={{ padding: '0.75rem 1.5rem', margin: '0 0.5rem', border: 'none', borderRadius: '5px', background: '#fff', color: '#2f4f2f' }}>Explore Library</button>
+          <button style={{ padding: '0.75rem 1.5rem', margin: '0 0.5rem', border: 'none', borderRadius: '5px', background: '#fff', color: '#2f4f2f' }}>Blog Posts</button>
         </div>
       </section>
       <div className="container">

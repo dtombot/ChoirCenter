@@ -14,16 +14,46 @@ import Blog from './pages/Blog';
 
 function App() {
   const [user, setUser] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    const fetchUser = async () => {
-      const { data } = await supabase.auth.getUser();
-      setUser(data.user);
+    const fetchUserAndProfile = async () => {
+      const { data: authData } = await supabase.auth.getUser();
+      const currentUser = authData.user;
+      setUser(currentUser);
+
+      if (currentUser) {
+        const { data: profileData, error } = await supabase
+          .from('profiles')
+          .select('is_admin')
+          .eq('id', currentUser.id)
+          .single();
+        if (!error && profileData) {
+          setIsAdmin(profileData.is_admin);
+        }
+      }
     };
-    fetchUser();
+    fetchUserAndProfile();
 
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user || null);
+      const currentUser = session?.user || null;
+      setUser(currentUser);
+      if (currentUser) {
+        supabase
+          .from('profiles')
+          .select('is_admin')
+          .eq('id', currentUser.id)
+          .single()
+          .then(({ data, error }) => {
+            if (!error && data) {
+              setIsAdmin(data.is_admin);
+            } else {
+              setIsAdmin(false);
+            }
+          });
+      } else {
+        setIsAdmin(false);
+      }
     });
 
     return () => {
@@ -33,7 +63,8 @@ function App() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    setUser(null); // Immediately clear user state
+    setUser(null);
+    setIsAdmin(false);
   };
 
   return (
@@ -50,7 +81,7 @@ function App() {
             </>
           ) : (
             <>
-              {user.user_metadata?.is_admin && (
+              {isAdmin && (
                 <Link to="/admin" style={{ marginLeft: '1rem', textDecoration: 'none', color: '#98fb98' }}>Admin Dashboard</Link>
               )}
               <button

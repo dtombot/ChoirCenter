@@ -31,6 +31,11 @@ function App() {
     };
   }, []);
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setUser(null); // Immediately clear user state
+  };
+
   return (
     <Router>
       <header style={{ position: 'sticky', top: 0, background: '#2f4f2f', padding: '1rem', boxShadow: '0 2px 5px rgba(0,0,0,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#fff' }}>
@@ -38,9 +43,23 @@ function App() {
           <h1>Choir Center</h1>
         </Link>
         <nav>
-          <Link to="/signup" style={{ marginLeft: '1rem', textDecoration: 'none', color: '#98fb98' }}>Sign Up</Link>
-          {user && user.user_metadata?.is_admin && (
-            <Link to="/admin" style={{ marginLeft: '1rem', textDecoration: 'none', color: '#98fb98' }}>Admin Dashboard</Link>
+          {!user ? (
+            <>
+              <Link to="/signup" style={{ marginLeft: '1rem', textDecoration: 'none', color: '#98fb98' }}>Sign Up</Link>
+              <Link to="/login" style={{ marginLeft: '1rem', textDecoration: 'none', color: '#98fb98' }}>Login</Link>
+            </>
+          ) : (
+            <>
+              {user.user_metadata?.is_admin && (
+                <Link to="/admin" style={{ marginLeft: '1rem', textDecoration: 'none', color: '#98fb98' }}>Admin Dashboard</Link>
+              )}
+              <button
+                onClick={handleLogout}
+                style={{ marginLeft: '1rem', background: 'none', border: 'none', color: '#98fb98', cursor: 'pointer', fontSize: '1rem' }}
+              >
+                Logout
+              </button>
+            </>
           )}
         </nav>
       </header>

@@ -31,12 +31,14 @@ function App() {
           .from('profiles')
           .select('is_admin')
           .eq('id', currentUser.id)
-          .single();
+          .limit(1)
+          .maybeSingle();
         if (profileError) {
           console.error('Profile fetch error:', profileError);
           setIsAdmin(false);
-        } else if (profileData) {
-          setIsAdmin(profileData.is_admin || false);
+        } else {
+          console.log('Profile data:', profileData);
+          setIsAdmin(profileData?.is_admin || false);
         }
       }
     };
@@ -50,13 +52,15 @@ function App() {
           .from('profiles')
           .select('is_admin')
           .eq('id', currentUser.id)
-          .single()
+          .limit(1)
+          .maybeSingle()
           .then(({ data, error }) => {
             if (error) {
               console.error('Profile fetch error on auth change:', error);
               setIsAdmin(false);
-            } else if (data) {
-              setIsAdmin(data.is_admin || false);
+            } else {
+              console.log('Profile data on auth change:', data);
+              setIsAdmin(data?.is_admin || false);
             }
           });
       } else {

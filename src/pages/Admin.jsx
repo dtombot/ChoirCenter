@@ -62,7 +62,7 @@ function Admin() {
       description: e.target.description.value,
       permalink: e.target.permalink.value || fileName.replace(/\s+/g, '-').toLowerCase(),
       meta_description: e.target.meta_description.value,
-      tags: e.target.tags.value split(','),
+      tags: e.target.tags.value.split(','),
       category: e.target.category.value,
       focus_keyword: e.target.focus_keyword.value,
       file_path: fileName,
@@ -90,7 +90,7 @@ function Admin() {
     }
   };
 
-  if (!isAdmin) return null;
+  if (!isAdmin) return <div>Loading...</div>;
 
   return (
     <div className="container">
@@ -141,7 +141,6 @@ function Admin() {
           <>
             <h3>Analytics</h3>
             <p>Google Analytics integration coming soon. Placeholder for metrics display.</p>
-            {/* Add Google Analytics script and embed later */}
           </>
         )}
         {activeTab === 'users' && (

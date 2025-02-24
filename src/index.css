@@ -5,8 +5,8 @@
   font-family: 'Arial', sans-serif;
 }
 body {
-  background-color: #f4f4f9;
-  color: #333;
+  background-color: #e6f0e6; /* Light green background */
+  color: #2f4f2f; /* Dark green text */
   line-height: 1.6;
 }
 .container {

@@ -4,7 +4,7 @@ import { useParams } from 'react-router-dom';
 
 function BlogPost() {
   const [post, setPost] = useState(null);
-  const { id } = useParams(); // Matches permalink or id from URL
+  const { id } = useParams();
 
   useEffect(() => {
     const fetchPost = async () => {
@@ -14,7 +14,6 @@ function BlogPost() {
         .eq('permalink', id)
         .single();
       if (error) {
-        // If permalink fails, try by id
         const { data: idData } = await supabase
           .from('blog_posts')
           .select('*')
@@ -31,7 +30,7 @@ function BlogPost() {
   if (!post) return <div>Loading...</div>;
 
   return (
-    <div className="container" style={{ fontFamily: 'Circular Std, Arial, sans-serif', padding: '2rem' }}>
+    <div className="container" style={{ padding: '2rem' }}>
       <h1 style={{ fontSize: '2rem', fontWeight: '700', color: '#2f4f2f' }}>{post.title}</h1>
       <p style={{ fontSize: '1rem', color: '#666', margin: '1rem 0' }}>{post.created_at}</p>
       <div style={{ fontSize: '1.1rem', lineHeight: '1.6', color: '#333' }}>{post.content}</div>

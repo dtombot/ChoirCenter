@@ -13,12 +13,27 @@ function Home() {
         .select('*')
         .order('created_at', { ascending: false })
         .limit(10);
+
+      // Fetch file sizes for each song
+      const songsWithSize = await Promise.all(
+        songData.map(async (song) => {
+          const { data: fileData, error } = await supabase.storage
+            .from('songs')
+            .list('', { search: song.file_path.split('/').pop() });
+          if (!error && fileData && fileData.length > 0) {
+            const sizeInKB = (fileData[0].metadata.size / 1024).toFixed(2);
+            return { ...song, fileSize: `${sizeInKB} KB` };
+          }
+          return { ...song, fileSize: 'Unknown' };
+        })
+      );
+
       const { data: postData } = await supabase
         .from('blog_posts')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(10);
-      setSongs(songData || []);
+      setSongs(songsWithSize || []);
       setPosts(postData || []);
     };
     fetchData();
@@ -48,7 +63,21 @@ function Home() {
         .select('*')
         .order('created_at', { ascending: false })
         .limit(10);
-      setSongs(updatedSongs || []);
+
+      const songsWithSize = await Promise.all(
+        updatedSongs.map(async (song) => {
+          const { data: fileData, error } = await supabase.storage
+            .from('songs')
+            .list('', { search: song.file_path.split('/').pop() });
+          if (!error && fileData && fileData.length > 0) {
+            const sizeInKB = (fileData[0].metadata.size / 1024).toFixed(2);
+            return { ...song, fileSize: `${sizeInKB} KB` };
+          }
+          return { ...song, fileSize: 'Unknown' };
+        })
+      );
+
+      setSongs(songsWithSize || []);
     } catch (err) {
       console.error('Download error:', err.message);
     }
@@ -98,6 +127,7 @@ function Home() {
                     <h4 style={{ fontSize: '1rem', fontWeight: '700', color: '#fff', margin: 0 }}>{song.title}</h4>
                     <p style={{ fontSize: '0.875rem', color: '#98fb98', margin: 0 }}>{song.description || 'No description'}</p>
                   </div>
+                  <span style={{ marginRight: '1rem', color: '#98fb98' }}>{song.fileSize}</span>
                   <span style={{ marginRight: '1rem', color: '#98fb98' }}>{song.downloads || 0} downloads</span>
                   <button
                     onClick={(e) => {
@@ -146,10 +176,3 @@ function Home() {
               </div>
             </Link>
           ))}
-        </div>
-      </div>
-    </>
-  );
-}
-
-export default Home;

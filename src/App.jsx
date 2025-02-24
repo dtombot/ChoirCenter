@@ -13,11 +13,11 @@ import Blog from './pages/Blog';
 function App() {
   return (
     <Router>
-      <header style={{ position: 'sticky', top: 0, background: '#fff', padding: '1rem', boxShadow: '0 2px 5px rgba(0,0,0,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <header style={{ position: 'sticky', top: 0, background: '#2f4f2f', padding: '1rem', boxShadow: '0 2px 5px rgba(0,0,0,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#fff' }}>
         <h1>Choir Center</h1>
         <nav>
-          <Link to="/signup" style={{ marginLeft: '1rem', textDecoration: 'none', color: '#007bff' }}>Sign Up</Link>
-          <Link to="/admin" style={{ marginLeft: '1rem', textDecoration: 'none', color: '#007bff' }}>Admin Dashboard</Link>
+          <Link to="/signup" style={{ marginLeft: '1rem', textDecoration: 'none', color: '#98fb98' }}>Sign Up</Link>
+          <Link to="/admin" style={{ marginLeft: '1rem', textDecoration: 'none', color: '#98fb98' }}>Admin Dashboard</Link>
         </nav>
       </header>
       <Routes>
@@ -32,18 +32,18 @@ function App() {
         <Route path="/terms" element={<Terms />} />
         <Route path="/blog" element={<Blog />} />
       </Routes>
-      <footer style={{ background: '#333', color: '#fff', textAlign: 'center', padding: '1rem' }}>
+      <footer style={{ background: '#2f4f2f', color: '#fff', padding: '1rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <p>About Us: Choir Center is a platform for choristers to access music resources.</p>
-        <div>
-          <Link to="/about" style={{ color: '#fff', margin: '0 0.5rem' }}>About Us</Link>
-          <Link to="/contact" style={{ color: '#fff', margin: '0 0.5rem' }}>Contact Us</Link>
-          <Link to="/privacy" style={{ color: '#fff', margin: '0 0.5rem' }}>Privacy</Link>
-          <Link to="/terms" style={{ color: '#fff', margin: '0 0.5rem' }}>Terms of Service</Link>
-          <Link to="/blog" style={{ color: '#fff', margin: '0 0.5rem' }}>Blog Posts</Link>
-          <Link to="/library" style={{ color: '#fff', margin: '0 0.5rem' }}>Explore Library</Link>
-          <a href="#" style={{ color: '#fff', margin: '0 0.5rem' }}>Facebook</a>
-          <a href="#" style={{ color: '#fff', margin: '0 0.5rem' }}>X</a>
-          <a href="#" style={{ color: '#fff', margin: '0 0.5rem' }}>WhatsApp</a>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <Link to="/about" style={{ color: '#98fb98', margin: '0.5rem 0' }}>About Us</Link>
+          <Link to="/contact" style={{ color: '#98fb98', margin: '0.5rem 0' }}>Contact Us</Link>
+          <Link to="/privacy" style={{ color: '#98fb98', margin: '0.5rem 0' }}>Privacy</Link>
+          <Link to="/terms" style={{ color: '#98fb98', margin: '0.5rem 0' }}>Terms of Service</Link>
+          <Link to="/blog" style={{ color: '#98fb98', margin: '0.5rem 0' }}>Blog Posts</Link>
+          <Link to="/library" style={{ color: '#98fb98', margin: '0.5rem 0' }}>Explore Library</Link>
+          <a href="#" style={{ color: '#98fb98', margin: '0.5rem 0' }}>Facebook</a>
+          <a href="#" style={{ color: '#98fb98', margin: '0.5rem 0' }}>X</a>
+          <a href="#" style={{ color: '#98fb98', margin: '0.5rem 0' }}>WhatsApp</a>
         </div>
       </footer>
     </Router>

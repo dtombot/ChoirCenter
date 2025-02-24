@@ -27,9 +27,9 @@ function Admin() {
     const { data: songData, error: songError } = await supabase.from('songs').select('*');
     const { data: postData, error: postError } = await supabase.from('blog_posts').select('*');
     const { data: userData, error: userError } = await supabase.from('profiles').select('*');
-    if (songError) console.error('Song fetch error:', songError);
-    if (postError) console.error('Post fetch error:', postError);
-    if (userError) console.error('User fetch error:', userError);
+    if (songError) console.error('Song fetch error:', songError.message);
+    if (postError) console.error('Post fetch error:', postError.message);
+    if (userError) console.error('User fetch error:', userError.message);
     setSongs(songData || []);
     setPosts(postData || []);
     setUsers(userData || []);
@@ -38,45 +38,58 @@ function Admin() {
   const handleSongUpload = async (e) => {
     e.preventDefault();
     const file = e.target.file.files[0];
-    if (!file) return;
-    const fileName = `${Date.now()}-${file.name}`;
-    const { error: uploadError } = await supabase.storage
-      .from('songs')
-      .upload(fileName, file);
-    if (uploadError) {
-      console.error('Upload error:', uploadError);
+    if (!file) {
+      console.error('No file selected');
       return;
     }
-    const { error: insertError } = await supabase.from('songs').insert({
-      title: e.target.title.value,
-      description: e.target.description.value,
-      permalink: e.target.permalink.value || fileName.replace(/\s+/g, '-').toLowerCase(),
-      meta_description: e.target.meta_description.value,
-      tags: e.target.tags.value.split(','),
-      category: e.target.category.value,
-      focus_keyword: e.target.focus_keyword.value,
-      file_path: fileName,
-    });
-    if (!insertError) {
+    const fileName = `${Date.now()}-${file.name}`;
+    try {
+      const { error: uploadError } = await supabase.storage
+        .from('songs')
+        .upload(fileName, file);
+      if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`);
+
+      const tags = e.target.tags.value ? e.target.tags.value.split(',').map(tag => tag.trim()) : [];
+      const { error: insertError } = await supabase.from('songs').insert({
+        title: e.target.title.value,
+        description: e.target.description.value || null,
+        permalink: e.target.permalink.value || fileName.replace(/\s+/g, '-').toLowerCase(),
+        meta_description: e.target.meta_description.value || null,
+        tags: tags,
+        category: e.target.category.value || null,
+        focus_keyword: e.target.focus_keyword.value || null,
+        file_path: fileName,
+      });
+      if (insertError) throw new Error(`Insert failed: ${insertError.message}`);
+
+      console.log('Song uploaded successfully');
       fetchInitialData();
       e.target.reset();
+    } catch (err) {
+      console.error('Song upload error:', err.message);
     }
   };
 
   const handlePostSubmit = async (e) => {
     e.preventDefault();
-    const { error } = await supabase.from('blog_posts').insert({
-      title: e.target.title.value,
-      content: e.target.content.value,
-      permalink: e.target.permalink.value || e.target.title.value.replace(/\s+/g, '-').toLowerCase(),
-      meta_description: e.target.meta_description.value,
-      tags: e.target.tags.value.split(','),
-      category: e.target.category.value,
-      focus_keyword: e.target.focus_keyword.value,
-    });
-    if (!error) {
+    try {
+      const tags = e.target.tags.value ? e.target.tags.value.split(',').map(tag => tag.trim()) : [];
+      const { error } = await supabase.from('blog_posts').insert({
+        title: e.target.title.value,
+        content: e.target.content.value || null,
+        permalink: e.target.permalink.value || e.target.title.value.replace(/\s+/g, '-').toLowerCase(),
+        meta_description: e.target.meta_description.value || null,
+        tags: tags,
+        category: e.target.category.value || null,
+        focus_keyword: e.target.focus_keyword.value || null,
+      });
+      if (error) throw new Error(`Post insert failed: ${error.message}`);
+
+      console.log('Post added successfully');
       fetchInitialData();
       e.target.reset();
+    } catch (err) {
+      console.error('Post submit error:', err.message);
     }
   };
 

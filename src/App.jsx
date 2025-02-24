@@ -20,6 +20,13 @@ function App() {
           <Link to="/admin" style={{ marginLeft: '1rem', textDecoration: 'none', color: '#98fb98' }}>Admin Dashboard</Link>
         </nav>
       </header>
+      <div className="background-notes">
+        <div className="note" style={{ left: '10%', animationDelay: '0s' }}></div>
+        <div className="note" style={{ left: '30%', animationDelay: '2s' }}></div>
+        <div className="note" style={{ left: '50%', animationDelay: '4s' }}></div>
+        <div className="note" style={{ left: '70%', animationDelay: '6s' }}></div>
+        <div className="note" style={{ left: '90%', animationDelay: '8s' }}></div>
+      </div>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/library" element={<Library />} />

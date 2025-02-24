@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 
 function Admin() {
   const [user, setUser] = useState(null);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [activeTab, setActiveTab] = useState('library');
   const [songs, setSongs] = useState([]);
   const [posts, setPosts] = useState([]);
@@ -12,34 +11,25 @@ function Admin() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchUserAndProfile = async () => {
+    const fetchUser = async () => {
       const { data: authData, error: authError } = await supabase.auth.getUser();
       if (authError || !authData.user) {
         navigate('/login');
         return;
       }
-      const currentUser = authData.user;
-      setUser(currentUser);
-
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('is_admin')
-        .eq('id', currentUser.id)
-        .single();
-      if (profileError || !profileData || !profileData.is_admin) {
-        navigate('/login');
-      } else {
-        setIsAdmin(true);
-        fetchInitialData();
-      }
+      setUser(authData.user);
+      fetchInitialData();
     };
-    fetchUserAndProfile();
+    fetchUser();
   }, [navigate]);
 
   const fetchInitialData = async () => {
-    const { data: songData } = await supabase.from('songs').select('*');
-    const { data: postData } = await supabase.from('blog_posts').select('*');
-    const { data: userData } = await supabase.from('profiles').select('*');
+    const { data: songData, error: songError } = await supabase.from('songs').select('*');
+    const { data: postData, error: postError } = await supabase.from('blog_posts').select('*');
+    const { data: userData, error: userError } = await supabase.from('profiles').select('*');
+    if (songError) console.error('Song fetch error:', songError);
+    if (postError) console.error('Post fetch error:', postError);
+    if (userError) console.error('User fetch error:', userError);
     setSongs(songData || []);
     setPosts(postData || []);
     setUsers(userData || []);
@@ -90,7 +80,7 @@ function Admin() {
     }
   };
 
-  if (!isAdmin) return <div>Loading...</div>;
+  if (!user) return <div>Loading...</div>;
 
   return (
     <div className="container">

@@ -11,6 +11,7 @@ import Contact from './pages/Contact';
 import Privacy from './pages/Privacy';
 import Terms from './pages/Terms';
 import Blog from './pages/Blog';
+import BlogPost from './pages/BlogPost'; // Add this import
 
 function App() {
   const [user, setUser] = useState(null);
@@ -27,18 +28,24 @@ function App() {
       setUser(currentUser);
 
       if (currentUser) {
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('is_admin')
-          .eq('id', currentUser.id)
-          .limit(1)
-          .maybeSingle();
-        if (profileError) {
-          console.error('Profile fetch error:', profileError);
+        try {
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('is_admin')
+            .eq('id', currentUser.id)
+            .limit(1)
+            .maybeSingle();
+          console.log('Profile fetch attempt for ID:', currentUser.id);
+          if (profileError) {
+            console.error('Profile fetch error:', profileError.message, profileError.details);
+            setIsAdmin(false);
+          } else {
+            console.log('Profile data:', profileData);
+            setIsAdmin(profileData?.is_admin || false);
+          }
+        } catch (err) {
+          console.error('Unexpected profile fetch error:', err);
           setIsAdmin(false);
-        } else {
-          console.log('Profile data:', profileData);
-          setIsAdmin(profileData?.is_admin || false);
         }
       }
     };
@@ -55,8 +62,9 @@ function App() {
           .limit(1)
           .maybeSingle()
           .then(({ data, error }) => {
+            console.log('Auth change profile fetch attempt for ID:', currentUser.id);
             if (error) {
-              console.error('Profile fetch error on auth change:', error);
+              console.error('Profile fetch error on auth change:', error.message, error.details);
               setIsAdmin(false);
             } else {
               console.log('Profile data on auth change:', data);
@@ -124,6 +132,7 @@ function App() {
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/blog" element={<Blog />} />
+        <Route path="/blog/:id" element={<BlogPost />} /> {/* Add this route */}
       </Routes>
       <footer style={{ background: '#2f4f2f', color: '#fff', padding: '1rem', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', textAlign: 'center' }}>
         <div>

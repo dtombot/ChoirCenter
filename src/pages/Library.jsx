@@ -73,20 +73,20 @@ function Library() {
   );
 
   return (
-    <div className="container" style={{ padding: '24px' }}>
-      <h2 style={{ fontSize: '32px', fontWeight: '700', color: '#2f4f2f', marginBottom: '16px' }}>Library</h2>
-      <div style={{ background: '#f5f5f5', padding: '16px', borderRadius: '8px', display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center', marginBottom: '24px' }}>
+    <div className="container">
+      <h2 className="section-title">Library</h2>
+      <div className="filter-bar">
         <input
           type="text"
           placeholder="Search library..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          style={{ padding: '10px 16px', width: '100%', maxWidth: '300px', border: '1px solid #ccc', borderRadius: '25px', fontSize: '14px', outline: 'none', boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.1)' }}
+          className="filter-input"
         />
         <select
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value)}
-          style={{ padding: '10px 16px', borderRadius: '25px', border: '1px solid #ccc', background: '#fff', fontSize: '14px', cursor: 'pointer' }}
+          className="filter-select"
         >
           <option value="created_at">Sort by Date</option>
           <option value="downloads">Sort by Downloads</option>
@@ -95,87 +95,50 @@ function Library() {
         <select
           value={sortOrder}
           onChange={(e) => setSortOrder(e.target.value)}
-          style={{ padding: '10px 16px', borderRadius: '25px', border: '1px solid #ccc', background: '#fff', fontSize: '14px', cursor: 'pointer' }}
+          className="filter-select"
         >
           <option value="desc">Descending</option>
           <option value="asc">Ascending</option>
         </select>
       </div>
-      {error && <p style={{ color: '#e63946', marginBottom: '1rem' }}>{error}</p>}
+      {error && <p className="error-message">{error}</p>}
       {songs.length === 0 && !error ? (
         <p>No songs available.</p>
       ) : (
-        <div style={{ background: '#1a3c34', borderRadius: '8px', overflow: 'hidden' }}>
-          <div style={{ display: 'grid', gap: '4px' }}>
+        <div className="song-list-container">
+          <div className="song-list">
             {filteredSongs.map((song, index) => (
-              <Link
-                to={`/song/${song.permalink || song.id}`}
-                key={song.id}
-                style={{ textDecoration: 'none', color: 'inherit' }}
-              >
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    padding: '8px 16px',
-                    background: index % 2 === 0 ? '#2f4f2f' : '#1a3c34',
-                    color: '#fff',
-                    transition: 'background 0.2s ease',
-                    cursor: 'pointer',
-                    minHeight: '56px',
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = '#3cb371')}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = index % 2 === 0 ? '#2f4f2f' : '#1a3c34')}
-                >
-                  <span style={{ width: '40px', textAlign: 'right', marginRight: '16px', color: '#98fb98', fontSize: '14px', fontWeight: '400' }}>{index + 1}</span>
-                  <div style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    <h4 style={{ fontSize: '16px', fontWeight: '700', color: '#fff', margin: 0, lineHeight: '20px' }}>{song.title}</h4>
-                    <p style={{ fontSize: '14px', color: '#98fb98', margin: 0, lineHeight: '18px' }}>{song.description || 'No description'}</p>
-                  </div>
-                  <span style={{ marginRight: '16px', color: '#98fb98', fontSize: '14px', fontWeight: '400' }}>{song.fileSize}</span>
-                  <span style={{ marginRight: '16px', color: '#98fb98', fontSize: '14px', fontWeight: '400' }}>{song.downloads || 0}</span>
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleDownload(song.id, song.google_drive_file_id);
-                    }}
-                    style={{
-                      padding: '6px 16px',
-                      background: '#98fb98',
-                      color: '#2f4f2f',
-                      border: 'none',
-                      borderRadius: '24px',
-                      cursor: 'pointer',
-                      fontSize: '14px',
-                      fontWeight: '700',
-                      lineHeight: '20px',
-                      minWidth: '80px',
-                      textAlign: 'center',
-                    }}
-                  >
-                    Download
-                  </button>
+              <Link to={`/song/${song.permalink || song.id}`} key={song.id} className="song-item">
+                <span className="song-number">{index + 1}</span>
+                <div className="song-info">
+                  <h4 className="song-title">{song.title}</h4>
+                  <p className="song-description">{song.description || 'No description'}</p>
                 </div>
+                <span className="song-size">{song.fileSize}</span>
+                <span className="song-downloads">{song.downloads || 0}</span>
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleDownload(song.id, song.google_drive_file_id);
+                  }}
+                  className="download-button"
+                >
+                  Download
+                </button>
               </Link>
             ))}
           </div>
         </div>
       )}
 
-      {/* Download Limit Modal */}
       {downloadPrompt && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
-          <div style={{ background: '#fff', padding: '2rem', borderRadius: '12px', maxWidth: '400px', textAlign: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.2)' }}>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: '700', color: '#2f4f2f', marginBottom: '1rem' }}>Download Limit Reached</h3>
-            <p style={{ fontSize: '1rem', color: '#333', marginBottom: '1.5rem' }}>
-              {downloadPrompt} <Link to="/login" style={{ color: '#3cb371', textDecoration: 'underline' }}>Log in here</Link>.
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h3 className="modal-title">Download Limit Reached</h3>
+            <p className="modal-text">
+              {downloadPrompt} <Link to="/login" className="modal-link">Log in here</Link>.
             </p>
-            <button
-              onClick={() => setDownloadPrompt(null)}
-              style={{ padding: '0.75rem 1.5rem', background: '#6b7280', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }}
-            >
-              Close
-            </button>
+            <button onClick={() => setDownloadPrompt(null)} className="cancel-button">Close</button>
           </div>
         </div>
       )}

@@ -7,6 +7,7 @@ function Library() {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('created_at');
   const [sortOrder, setSortOrder] = useState('desc');
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchSongs = async () => {
@@ -14,13 +15,16 @@ function Library() {
         .from('songs')
         .select('*')
         .order(sortBy, { ascending: sortOrder === 'asc' });
-      if (songError) console.error('Song fetch error:', songError.message);
-
-      const songsWithSize = songData.map(song => ({
-        ...song,
-        fileSize: 'Unknown',
-      }));
-      setSongs(songsWithSize || []);
+      if (songError) {
+        console.error('Song fetch error:', songError.message);
+        setError('Failed to load songs.');
+      } else {
+        const songsWithSize = songData.map(song => ({
+          ...song,
+          fileSize: 'Unknown',
+        }));
+        setSongs(songsWithSize || []);
+      }
     };
     fetchSongs();
   }, [sortBy, sortOrder]);
@@ -46,6 +50,7 @@ function Library() {
       setSongs(updatedSongs.map(song => ({ ...song, fileSize: 'Unknown' })) || []);
     } catch (err) {
       console.error('Download error:', err.message);
+      setError('Failed to update download count.');
     }
   };
 
@@ -83,61 +88,66 @@ function Library() {
           <option value="asc">Ascending</option>
         </select>
       </div>
-      <div style={{ background: '#1a3c34', borderRadius: '8px', overflow: 'hidden' }}>
-        <div style={{ display: 'grid', gap: '4px' }}>
-          {filteredSongs.map((song, index) => (
-            <Link
-              to={`/song/${song.permalink || song.id}`}
-              key={song.id}
-              style={{ textDecoration: 'none', color: 'inherit' }}
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  padding: '8px 16px',
-                  background: index % 2 === 0 ? '#2f4f2f' : '#1a3c34',
-                  color: '#fff',
-                  transition: 'background 0.2s ease',
-                  cursor: 'pointer',
-                  minHeight: '56px',
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = '#3cb371')}
-                onMouseLeave={(e) => (e.currentTarget.style.background = index % 2 === 0 ? '#2f4f2f' : '#1a3c34')}
+      {error && <p style={{ color: '#e63946', marginBottom: '1rem' }}>{error}</p>}
+      {songs.length === 0 && !error ? (
+        <p>No songs available.</p>
+      ) : (
+        <div style={{ background: '#1a3c34', borderRadius: '8px', overflow: 'hidden' }}>
+          <div style={{ display: 'grid', gap: '4px' }}>
+            {filteredSongs.map((song, index) => (
+              <Link
+                to={`/song/${song.permalink || song.id}`}
+                key={song.id}
+                style={{ textDecoration: 'none', color: 'inherit' }}
               >
-                <span style={{ width: '40px', textAlign: 'right', marginRight: '16px', color: '#98fb98', fontSize: '14px', fontWeight: '400' }}>{index + 1}</span>
-                <div style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  <h4 style={{ fontSize: '16px', fontWeight: '700', color: '#fff', margin: 0, lineHeight: '20px' }}>{song.title}</h4>
-                  <p style={{ fontSize: '14px', color: '#98fb98', margin: 0, lineHeight: '18px' }}>{song.description || 'No description'}</p>
-                </div>
-                <span style={{ marginRight: '16px', color: '#98fb98', fontSize: '14px', fontWeight: '400' }}>{song.fileSize}</span>
-                <span style={{ marginRight: '16px', color: '#98fb98', fontSize: '14px', fontWeight: '400' }}>{song.downloads || 0}</span>
-                <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleDownload(song.id, song.google_drive_file_id);
-                  }}
+                <div
                   style={{
-                    padding: '6px 16px',
-                    background: '#98fb98',
-                    color: '#2f4f2f',
-                    border: 'none',
-                    borderRadius: '24px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '8px 16px',
+                    background: index % 2 === 0 ? '#2f4f2f' : '#1a3c34',
+                    color: '#fff',
+                    transition: 'background 0.2s ease',
                     cursor: 'pointer',
-                    fontSize: '14px',
-                    fontWeight: '700',
-                    lineHeight: '20px',
-                    minWidth: '80px',
-                    textAlign: 'center',
+                    minHeight: '56px',
                   }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = '#3cb371')}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = index % 2 === 0 ? '#2f4f2f' : '#1a3c34')}
                 >
-                  Download
-                </button>
-              </div>
-            </Link>
-          ))}
+                  <span style={{ width: '40px', textAlign: 'right', marginRight: '16px', color: '#98fb98', fontSize: '14px', fontWeight: '400' }}>{index + 1}</span>
+                  <div style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <h4 style={{ fontSize: '16px', fontWeight: '700', color: '#fff', margin: 0, lineHeight: '20px' }}>{song.title}</h4>
+                    <p style={{ fontSize: '14px', color: '#98fb98', margin: 0, lineHeight: '18px' }}>{song.description || 'No description'}</p>
+                  </div>
+                  <span style={{ marginRight: '16px', color: '#98fb98', fontSize: '14px', fontWeight: '400' }}>{song.fileSize}</span>
+                  <span style={{ marginRight: '16px', color: '#98fb98', fontSize: '14px', fontWeight: '400' }}>{song.downloads || 0}</span>
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleDownload(song.id, song.google_drive_file_id);
+                    }}
+                    style={{
+                      padding: '6px 16px',
+                      background: '#98fb98',
+                      color: '#2f4f2f',
+                      border: 'none',
+                      borderRadius: '24px',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      fontWeight: '700',
+                      lineHeight: '20px',
+                      minWidth: '80px',
+                      textAlign: 'center',
+                    }}
+                  >
+                    Download
+                  </button>
+                </div>
+              </Link>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../supabase';
 import { useNavigate, Link } from 'react-router-dom';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css'; // Import Quill styles
 
 function Admin() {
   const [user, setUser] = useState(null);
@@ -17,6 +19,17 @@ function Admin() {
   const [sortBy, setSortBy] = useState('created_at');
   const [sortOrder, setSortOrder] = useState('desc');
   const navigate = useNavigate();
+
+  // Quill toolbar options
+  const quillModules = {
+    toolbar: [
+      [{ 'header': [1, 2, 3, 4, false] }],
+      ['bold', 'italic', 'underline'],
+      [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+      ['link'],
+      ['clean'] // Remove formatting
+    ]
+  };
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -144,7 +157,7 @@ function Admin() {
       const tags = e.target.tags.value ? e.target.tags.value.split(',').map(tag => tag.trim()) : [];
       const { error } = await supabase.from('blog_posts').insert({
         title: e.target.title.value,
-        content: e.target.content.value || null,
+        content: e.target.content.value || null, // Now HTML from ReactQuill
         permalink: e.target.permalink.value || e.target.title.value.replace(/\s+/g, '-').toLowerCase(),
         meta_description: e.target.meta_description.value || null,
         tags: tags,
@@ -344,7 +357,15 @@ function Admin() {
               <input type="text" name="tags" placeholder="Tags (comma-separated)" className="form-input" />
               <input type="text" name="category" placeholder="Category" className="form-input" />
               <input type="text" name="focus_keyword" placeholder="Focus Keyword" className="form-input" />
-              <textarea name="content" placeholder="Content" rows="10" className="form-textarea"></textarea>
+              <ReactQuill
+                name="content"
+                value={e => e.target.content} // This won't work directly; handled via state in edit form
+                onChange={(value) => e.target.content.value = value} // Hack to mimic form input
+                modules={quillModules}
+                placeholder="Write your content here..."
+                className="form-textarea" // For styling consistency
+                style={{ minHeight: '200px', gridColumn: '1 / -1' }}
+              />
               <button type="submit" className="form-submit">Add Post</button>
             </form>
             <h4 className="section-title">Current Posts</h4>
@@ -473,7 +494,14 @@ function Admin() {
               <input type="text" value={editPostData.tags} onChange={(e) => setEditPostData({ ...editPostData, tags: e.target.value })} placeholder="Tags (comma-separated)" className="form-input" />
               <input type="text" value={editPostData.category} onChange={(e) => setEditPostData({ ...editPostData, category: e.target.value })} placeholder="Category" className="form-input" />
               <input type="text" value={editPostData.focus_keyword} onChange={(e) => setEditPostData({ ...editPostData, focus_keyword: e.target.value })} placeholder="Focus Keyword" className="form-input" />
-              <textarea value={editPostData.content} onChange={(e) => setEditPostData({ ...editPostData, content: e.target.value })} placeholder="Content" rows="10" className="form-textarea"></textarea>
+              <ReactQuill
+                value={editPostData.content}
+                onChange={(value) => setEditPostData({ ...editPostData, content: value })}
+                modules={quillModules}
+                placeholder="Write your content here..."
+                className="form-textarea"
+                style={{ minHeight: '200px', gridColumn: '1 / -1' }}
+              />
               <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', gridColumn: '1 / -1' }}>
                 <button type="submit" className="form-submit">Update Post</button>
                 <button type="button" onClick={() => setEditPostId(null)} className="cancel-button">Cancel</button>

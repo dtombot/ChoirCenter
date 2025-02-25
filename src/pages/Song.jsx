@@ -28,11 +28,13 @@ function Song() {
   }, [id]);
 
   const handleDownload = async () => {
+    if (!song) return;
     try {
       const url = `https://drive.google.com/uc?export=download&id=${song.google_drive_file_id}`;
       const link = document.createElement('a');
       link.href = url;
-      link.download = `choircenter.com-${song.id}.pdf`;
+      const safeTitle = song.title.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
+      link.download = `choircenter.com-${safeTitle}-${song.id}.pdf`;
       link.click();
 
       const { error: updateError } = await supabase

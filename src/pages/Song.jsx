@@ -13,15 +13,27 @@ function Song() {
         .select('*')
         .eq('permalink', id)
         .single();
+      let songData = data;
       if (error) {
         const { data: idData } = await supabase
           .from('songs')
           .select('*')
           .eq('id', id)
           .single();
-        setSong(idData || null);
+        songData = idData || null;
+      }
+      if (songData) {
+        const { data: fileData, error: fileError } = await supabase.storage
+          .from('songs')
+          .list('', { search: songData.file_path.split('/').pop() });
+        if (!fileError && fileData && fileData.length > 0) {
+          const sizeInKB = (fileData[0].metadata.size / 1024).toFixed(2);
+          setSong({ ...songData, fileSize: `${sizeInKB} KB` });
+        } else {
+          setSong({ ...songData, fileSize: 'Unknown' });
+        }
       } else {
-        setSong(data);
+        setSong(null);
       }
     };
     fetchSong();
@@ -58,6 +70,7 @@ function Song() {
     <div className="container" style={{ padding: '2rem' }}>
       <h1 style={{ fontSize: '2rem', fontWeight: '700', color: '#2f4f2f' }}>{song.title}</h1>
       <p style={{ fontSize: '1rem', color: '#666', margin: '1rem 0' }}>{song.description || 'No description'}</p>
+      <p style={{ fontSize: '1rem', color: '#666', margin: '0.5rem 0' }}>File Size: {song.fileSize}</p>
       <button
         onClick={handleDownload}
         style={{ padding: '0.75rem 1.5rem', background: '#98fb98', color: '#2f4f2f', border: 'none', borderRadius: '20px', cursor: 'pointer', fontWeight: '700' }}

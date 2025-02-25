@@ -30,12 +30,13 @@ function Home() {
     fetchData();
   }, []);
 
-  const handleDownload = async (songId, fileId) => {
+  const handleDownload = async (songId, fileId, songTitle) => {
     try {
       const url = `https://drive.google.com/uc?export=download&id=${fileId}`;
       const link = document.createElement('a');
       link.href = url;
-      link.download = `choircenter.com-${songId}.pdf`;
+      const safeTitle = songTitle.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase(); // Sanitize title for filename
+      link.download = `choircenter.com-${safeTitle}-${songId}.pdf`;
       link.click();
 
       const { error: updateError } = await supabase
@@ -105,7 +106,7 @@ function Home() {
                   <button
                     onClick={(e) => {
                       e.preventDefault();
-                      handleDownload(song.id, song.google_drive_file_id);
+                      handleDownload(song.id, song.google_drive_file_id, song.title);
                     }}
                     style={{
                       padding: '0.5rem 1rem',

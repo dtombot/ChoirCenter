@@ -8,6 +8,15 @@ function Home() {
   const [searchTerm, setSearchTerm] = useState('');
   const [error, setError] = useState(null);
   const [downloadPrompt, setDownloadPrompt] = useState(null);
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  const slides = [
+    'https://images.unsplash.com/photo-1506748686214-e9df14d4d9d0',
+    'https://images.unsplash.com/photo-1511671788563-3028fb3da85b',
+    'https://images.unsplash.com/photo-1470225620780-d4df7d9e4d93',
+    'https://images.unsplash.com/photo-1519125323398-675f398f6978',
+    'https://images.unsplash.com/photo-1501389446297-06c0e9288e8e'
+  ];
 
   useEffect(() => {
     const fetchData = async () => {
@@ -40,6 +49,13 @@ function Home() {
       }
     };
     fetchData();
+
+    // Slideshow timer
+    const slideInterval = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % slides.length);
+    }, 4000); // Change every 4 seconds
+
+    return () => clearInterval(slideInterval);
   }, []);
 
   const handleDownload = async (songId, fileId) => {
@@ -88,6 +104,15 @@ function Home() {
   return (
     <>
       <section className="hero-section">
+        <div className="hero-slideshow">
+          {slides.map((slide, index) => (
+            <div
+              key={index}
+              className={`hero-slide ${index === currentSlide ? 'active' : ''}`}
+              style={{ backgroundImage: `url(${slide})` }}
+            />
+          ))}
+        </div>
         <div className="hero-content">
           <h2 className="hero-title">Welcome to Choir Center</h2>
           <p className="hero-text">Find and download choir music resources easily.</p>

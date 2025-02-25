@@ -28,7 +28,7 @@ function Library() {
     };
 
     const loadGoogleDrive = () => {
-      const clientId = 'YOUR_CLIENT_ID.apps.googleusercontent.com'; // Replace with your Client ID
+      const clientId = '221534643075-rhne5oov51v9ia5eefaa7nhktncihuif.apps.googleusercontent.com'; // Replace with your Client ID
       const scope = 'https://www.googleapis.com/auth/drive.file';
       const script = document.createElement('script');
       script.src = 'https://apis.google.com/js/api.js';

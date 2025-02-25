@@ -6,41 +6,11 @@ function Home() {
   const [songs, setSongs] = useState([]);
   const [posts, setPosts] = useState([]);
   const [accessToken, setAccessToken] = useState(null);
+  const [authInstance, setAuthInstance] = useState(null);
 
   useEffect(() => {
-    const fetchData = async () => {
-      const { data: songData } = await supabase
-        .from('songs')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(10);
-
-      if (accessToken) {
-        const songsWithSize = await Promise.all(
-          songData.map(async (song) => {
-            const response = await fetch(`https://www.googleapis.com/drive/v3/files/${song.google_drive_file_id}?fields=size`, {
-              headers: { Authorization: `Bearer ${accessToken}` },
-            });
-            const fileData = await response.json();
-            const sizeInKB = fileData.size ? (fileData.size / 1024).toFixed(2) : 'Unknown';
-            return { ...song, fileSize: `${sizeInKB} KB` };
-          })
-        );
-        setSongs(songsWithSize || []);
-      } else {
-        setSongs(songData || []);
-      }
-
-      const { data: postData } = await supabase
-        .from('blog_posts')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(10);
-      setPosts(postData || []);
-    };
-
     const loadGoogleDrive = () => {
-      const clientId = '221534643075-rhne5oov51v9ia5eefaa7nhktncihuif.apps.googleusercontent.com'; // Replace with your Client ID
+      const clientId = '221534643075-rhne5oov51v9ia5eefaa7nhktncihuif.apps.googleusercontent.com';
       const scope = 'https://www.googleapis.com/auth/drive.file';
       const script = document.createElement('script');
       script.src = 'https://apis.google.com/js/api.js';
@@ -50,15 +20,16 @@ function Home() {
             client_id: clientId,
             scope: scope,
           }).then(() => {
-            const authInstance = window.gapi.auth2.getAuthInstance();
-            if (!authInstance.isSignedIn.get()) {
-              authInstance.signIn().then((googleUser) => {
-                setAccessToken(googleUser.getAuthResponse().access_token);
-                fetchData();
-              }).catch(err => console.error('Google Sign-In failed:', err));
+            const instance = window.gapi.auth2.getAuthInstance();
+            setAuthInstance(instance);
+            if (instance.isSignedIn.get()) {
+              setAccessToken(instance.currentUser.get().getAuthResponse().access_token);
+              fetchData(instance.currentUser.get().getAuthResponse().access_token);
             } else {
-              setAccessToken(authInstance.currentUser.get().getAuthResponse().access_token);
-              fetchData();
+              instance.signIn().then((googleUser) => {
+                setAccessToken(googleUser.getAuthResponse().access_token);
+                fetchData(googleUser.getAuthResponse().access_token);
+              }).catch(err => console.error('Initial Google Sign-In failed:', err));
             }
           }).catch(err => console.error('Google Auth init failed:', err));
         });
@@ -68,16 +39,67 @@ function Home() {
     };
 
     loadGoogleDrive();
-  }, [accessToken]);
+  }, []);
+
+  const fetchData = async (token) => {
+    const { data: songData } = await supabase
+      .from('songs')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(10);
+
+    if (token) {
+      const songsWithSize = await Promise.all(
+        songData.map(async (song) => {
+          try {
+            const response = await fetch(`https://www.googleapis.com/drive/v3/files/${song.google_drive_file_id}?fields=size`, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            const fileData = await response.json();
+            const sizeInKB = fileData.size ? (fileData.size / 1024).toFixed(2) : 'Unknown';
+            return { ...song, fileSize: `${sizeInKB} KB` };
+          } catch (err) {
+            console.error('Error fetching file size:', err);
+            return { ...song, fileSize: 'Unknown' };
+          }
+        })
+      );
+      setSongs(songsWithSize || []);
+    } else {
+      setSongs(songData || []);
+    }
+
+    const { data: postData } = await supabase
+      .from('blog_posts')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(10);
+    setPosts(postData || []);
+  };
 
   const handleDownload = async (songId, fileId) => {
-    if (!accessToken) {
-      console.error('Not authenticated with Google Drive');
+    if (!accessToken || !authInstance) {
+      console.log('Not authenticated with Google Drive, prompting sign-in...');
+      if (authInstance) {
+        try {
+          const googleUser = await authInstance.signIn();
+          const token = googleUser.getAuthResponse().access_token;
+          setAccessToken(token);
+          await fetchData(token);
+          proceedWithDownload(songId, fileId, token);
+        } catch (err) {
+          console.error('Sign-in for download failed:', err);
+        }
+      }
       return;
     }
+    proceedWithDownload(songId, fileId, accessToken);
+  };
+
+  const proceedWithDownload = async (songId, fileId, token) => {
     try {
       const response = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
+        headers: { Authorization: `Bearer ${token}` },
       });
       if (!response.ok) throw new Error('Download failed');
 
@@ -104,7 +126,7 @@ function Home() {
       const songsWithSize = await Promise.all(
         updatedSongs.map(async (song) => {
           const response = await fetch(`https://www.googleapis.com/drive/v3/files/${song.google_drive_file_id}?fields=size`, {
-            headers: { Authorization: `Bearer ${accessToken}` },
+            headers: { Authorization: `Bearer ${token}` },
           });
           const fileData = await response.json();
           const sizeInKB = fileData.size ? (fileData.size / 1024).toFixed(2) : 'Unknown';

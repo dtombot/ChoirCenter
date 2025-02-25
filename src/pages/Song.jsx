@@ -23,7 +23,7 @@ function Song() {
           .single();
         songData = idData || null;
       }
-      if (songData) {
+      if (songData && accessToken) {
         const response = await fetch(`https://www.googleapis.com/drive/v3/files/${songData.google_drive_file_id}?fields=size`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
@@ -31,7 +31,7 @@ function Song() {
         const sizeInKB = fileData.size ? (fileData.size / 1024).toFixed(2) : 'Unknown';
         setSong({ ...songData, fileSize: `${sizeInKB} KB` });
       } else {
-        setSong(null);
+        setSong(songData);
       }
     };
 
@@ -51,14 +51,15 @@ function Song() {
               authInstance.signIn().then((googleUser) => {
                 setAccessToken(googleUser.getAuthResponse().access_token);
                 fetchSong();
-              });
+              }).catch(err => console.error('Google Sign-In failed:', err));
             } else {
               setAccessToken(authInstance.currentUser.get().getAuthResponse().access_token);
               fetchSong();
             }
-          });
+          }).catch(err => console.error('Google Auth init failed:', err));
         });
       };
+      script.onerror = () => console.error('Failed to load Google API script');
       document.body.appendChild(script);
     };
 
@@ -66,6 +67,10 @@ function Song() {
   }, [id, accessToken]);
 
   const handleDownload = async () => {
+    if (!accessToken) {
+      console.error('Not authenticated with Google Drive');
+      return;
+    }
     try {
       const response = await fetch(`https://www.googleapis.com/drive/v3/files/${song.google_drive_file_id}?alt=media`, {
         headers: { Authorization: `Bearer ${accessToken}` },
@@ -98,7 +103,7 @@ function Song() {
     <div className="container" style={{ padding: '2rem' }}>
       <h1 style={{ fontSize: '2rem', fontWeight: '700', color: '#2f4f2f' }}>{song.title}</h1>
       <p style={{ fontSize: '1rem', color: '#666', margin: '1rem 0' }}>{song.description || 'No description'}</p>
-      <p style={{ fontSize: '1rem', color: '#666', margin: '0.5rem 0' }}>File Size: {song.fileSize}</p>
+      <p style={{ fontSize: '1rem', color: '#666', margin: '0.5rem 0' }}>File Size: {song.fileSize || 'Loading...'}</p>
       <button
         onClick={handleDownload}
         style={{ padding: '0.75rem 1.5rem', background: '#98fb98', color: '#2f4f2f', border: 'none', borderRadius: '20px', cursor: 'pointer', fontWeight: '700' }}

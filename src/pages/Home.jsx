@@ -16,7 +16,7 @@ function Home() {
 
       const songsWithSize = songData.map(song => ({
         ...song,
-        fileSize: 'Unknown', // Size not fetched without API; can be added manually if known
+        fileSize: 'Unknown',
       }));
       setSongs(songsWithSize || []);
 

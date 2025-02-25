@@ -7,38 +7,45 @@ function Home() {
   const [posts, setPosts] = useState([]);
   const [accessToken, setAccessToken] = useState(null);
   const [authInstance, setAuthInstance] = useState(null);
+  const [authError, setAuthError] = useState(null);
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
 
   useEffect(() => {
-    const loadGoogleDrive = () => {
+    const loadGoogleIdentityServices = () => {
+      console.log('Starting Google Identity Services authentication...');
       const clientId = '221534643075-rhne5oov51v9ia5eefaa7nhktncihuif.apps.googleusercontent.com';
-      const scope = 'https://www.googleapis.com/auth/drive.file';
       const script = document.createElement('script');
-      script.src = 'https://apis.google.com/js/api.js';
+      script.src = 'https://accounts.google.com/gsi/client';
+      script.async = true;
       script.onload = () => {
-        window.gapi.load('auth2', () => {
-          window.gapi.auth2.init({
-            client_id: clientId,
-            scope: scope,
-          }).then(() => {
-            const instance = window.gapi.auth2.getAuthInstance();
-            setAuthInstance(instance);
-            if (instance.isSignedIn.get()) {
-              setAccessToken(instance.currentUser.get().getAuthResponse().access_token);
-              fetchData(instance.currentUser.get().getAuthResponse().access_token);
+        console.log('Google Identity Services script loaded.');
+        const tokenClient = window.google.accounts.oauth2.initTokenClient({
+          client_id: clientId,
+          scope: 'https://www.googleapis.com/auth/drive.file',
+          callback: (response) => {
+            if (response.error) {
+              console.error('Token request failed:', response.error, response.error_description);
+              setAuthError(`Authentication failed: ${response.error_description || response.error}`);
             } else {
-              instance.signIn().then((googleUser) => {
-                setAccessToken(googleUser.getAuthResponse().access_token);
-                fetchData(googleUser.getAuthResponse().access_token);
-              }).catch(err => console.error('Initial Google Sign-In failed:', err));
+              console.log('Token received:', response.access_token);
+              setAccessToken(response.access_token);
+              fetchData(response.access_token);
             }
-          }).catch(err => console.error('Google Auth init failed:', err));
+            setIsAuthenticating(false);
+          },
         });
+        setAuthInstance(tokenClient);
+        console.log('Requesting initial token...');
+        tokenClient.requestAccessToken({ prompt: 'consent' });
       };
-      script.onerror = () => console.error('Failed to load Google API script');
+      script.onerror = () => {
+        console.error('Failed to load Google Identity Services script');
+        setAuthError('Unable to load Google Identity Services API.');
+      };
       document.body.appendChild(script);
     };
 
-    loadGoogleDrive();
+    loadGoogleIdentityServices();
   }, []);
 
   const fetchData = async (token) => {
@@ -81,15 +88,10 @@ function Home() {
     if (!accessToken || !authInstance) {
       console.log('Not authenticated with Google Drive, prompting sign-in...');
       if (authInstance) {
-        try {
-          const googleUser = await authInstance.signIn();
-          const token = googleUser.getAuthResponse().access_token;
-          setAccessToken(token);
-          await fetchData(token);
-          proceedWithDownload(songId, fileId, token);
-        } catch (err) {
-          console.error('Sign-in for download failed:', err);
-        }
+        setIsAuthenticating(true);
+        authInstance.requestAccessToken({ prompt: 'consent' });
+      } else {
+        setAuthError('Google Drive authentication not initialized. Please refresh the page.');
       }
       return;
     }
@@ -101,7 +103,7 @@ function Home() {
       const response = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!response.ok) throw new Error('Download failed');
+      if (!response.ok) throw new Error(`Download failed: ${response.statusText}`);
 
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
@@ -125,18 +127,23 @@ function Home() {
 
       const songsWithSize = await Promise.all(
         updatedSongs.map(async (song) => {
-          const response = await fetch(`https://www.googleapis.com/drive/v3/files/${song.google_drive_file_id}?fields=size`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          const fileData = await response.json();
-          const sizeInKB = fileData.size ? (fileData.size / 1024).toFixed(2) : 'Unknown';
-          return { ...song, fileSize: `${sizeInKB} KB` };
+          try {
+            const response = await fetch(`https://www.googleapis.com/drive/v3/files/${song.google_drive_file_id}?fields=size`, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            const fileData = await response.json();
+            const sizeInKB = fileData.size ? (fileData.size / 1024).toFixed(2) : 'Unknown';
+            return { ...song, fileSize: `${sizeInKB} KB` };
+          } catch (err) {
+            return { ...song, fileSize: 'Unknown' };
+          }
         })
       );
 
       setSongs(songsWithSize || []);
     } catch (err) {
       console.error('Download error:', err.message);
+      setAuthError('Failed to download file from Google Drive.');
     }
   };
 
@@ -156,6 +163,16 @@ function Home() {
         </div>
       </section>
       <div className="container" style={{ padding: '2rem' }}>
+        {authError && <p style={{ color: 'red', marginBottom: '1rem' }}>{authError}</p>}
+        {!accessToken && authInstance && (
+          <button
+            onClick={() => authInstance.requestAccessToken({ prompt: 'consent' })}
+            disabled={isAuthenticating}
+            style={{ padding: '0.5rem 1rem', background: '#3cb371', color: '#fff', border: 'none', borderRadius: '5px', cursor: 'pointer', marginBottom: '1rem' }}
+          >
+            {isAuthenticating ? 'Authenticating...' : 'Sign in to Google Drive'}
+          </button>
+        )}
         <h3 style={{ fontSize: '1.8rem', marginBottom: '1rem', color: '#2f4f2f', fontWeight: '700' }}>Recently Added Songs</h3>
         <div style={{ background: '#1a3c34', padding: '1rem', borderRadius: '8px' }}>
           <div style={{ display: 'grid', gap: '0.5rem' }}>

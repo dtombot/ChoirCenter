@@ -88,27 +88,29 @@ function Home() {
   return (
     <>
       <section className="hero-section">
-        <h2 className="hero-title">Welcome to Choir Center</h2>
-        <p className="hero-text">Find and download choir music resources easily.</p>
-        <input
-          type="text"
-          placeholder="Search for songs..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="search-input"
-        />
-        <div className="button-group">
-          <Link to="/library">
-            <button className="action-button">Explore Library</button>
-          </Link>
-          <Link to="/blog">
-            <button className="action-button">Blog Posts</button>
-          </Link>
+        <div className="hero-content">
+          <h2 className="hero-title">Welcome to Choir Center</h2>
+          <p className="hero-text">Find and download choir music resources easily.</p>
+          <input
+            type="text"
+            placeholder="Search for songs..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="search-input"
+          />
+          <div className="button-group">
+            <Link to="/library">
+              <button className="action-button">Explore Library</button>
+            </Link>
+            <Link to="/blog">
+              <button className="action-button">Blog Posts</button>
+            </Link>
+          </div>
         </div>
       </section>
       <div className="container">
         {error && <p className="error-message">{error}</p>}
-        <h3 className="section-title">Recently Added Songs</h3>
+        <h3 className="section-title">Latest Additions</h3>
         {songs.length === 0 && !error ? (
           <p>No songs available.</p>
         ) : (
@@ -137,7 +139,7 @@ function Home() {
             </div>
           </div>
         )}
-        <h3 className="section-title">Recent Blog Posts</h3>
+        <h3 className="section-title">Latest Insights</h3>
         {posts.length === 0 && !error ? (
           <p>No posts available.</p>
         ) : (

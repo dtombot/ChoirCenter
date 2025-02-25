@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 
 function Library() {
   const [songs, setSongs] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     const fetchSongs = async () => {
@@ -21,13 +22,12 @@ function Library() {
     fetchSongs();
   }, []);
 
-  const handleDownload = async (songId, fileId, songTitle) => {
+  const handleDownload = async (songId, fileId) => {
     try {
       const url = `https://drive.google.com/uc?export=download&id=${fileId}`;
       const link = document.createElement('a');
       link.href = url;
-      const safeTitle = songTitle.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
-      link.download = `choircenter.com-${safeTitle}-${songId}.pdf`;
+      link.download = `choircenter.com-${songId}.pdf`;
       link.click();
 
       const { error: updateError } = await supabase
@@ -47,12 +47,25 @@ function Library() {
     }
   };
 
+  // Filter songs based on search term
+  const filteredSongs = songs.filter(song =>
+    song.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (song.description && song.description.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
+
   return (
     <div className="container" style={{ padding: '24px' }}>
       <h2 style={{ fontSize: '32px', fontWeight: '700', color: '#2f4f2f', marginBottom: '24px' }}>Library</h2>
+      <input
+        type="text"
+        placeholder="Search library..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        style={{ padding: '0.5rem', width: '100%', maxWidth: '400px', border: 'none', borderRadius: '5px', marginBottom: '24px' }}
+      />
       <div style={{ background: '#1a3c34', borderRadius: '8px', overflow: 'hidden' }}>
         <div style={{ display: 'grid', gap: '4px' }}>
-          {songs.map((song, index) => (
+          {filteredSongs.map((song, index) => (
             <Link
               to={`/song/${song.permalink || song.id}`}
               key={song.id}
@@ -74,15 +87,15 @@ function Library() {
               >
                 <span style={{ width: '40px', textAlign: 'right', marginRight: '16px', color: '#98fb98', fontSize: '14px', fontWeight: '400' }}>{index + 1}</span>
                 <div style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  <h4 style={{ fontSize: '16px', fontWeight: '700', color: '#fff', margin: 0, lineHeight: '20px' }}>{song.title}</h4>
-                  <p style={{ fontSize: '14px', color: '#98fb98', margin: 0, lineHeight: '18px' }}>{song.description || 'No description'}</p>
+                  <h4 style={{ fontSize: '16px', fontWeight: '700', color: '#fff', margin: '0', lineHeight: '20px' }}>{song.title}</h4>
+                  <p style={{ fontSize: '14px', color: '#98fb98', margin: '0', lineHeight: '18px' }}>{song.description || 'No description'}</p>
                 </div>
                 <span style={{ marginRight: '16px', color: '#98fb98', fontSize: '14px', fontWeight: '400' }}>{song.fileSize}</span>
                 <span style={{ marginRight: '16px', color: '#98fb98', fontSize: '14px', fontWeight: '400' }}>{song.downloads || 0}</span>
                 <button
                   onClick={(e) => {
                     e.preventDefault();
-                    handleDownload(song.id, song.google_drive_file_id, song.title);
+                    handleDownload(song.id, song.google_drive_file_id);
                   }}
                   style={{
                     padding: '6px 16px',

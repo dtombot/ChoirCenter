@@ -9,6 +9,7 @@ function Admin() {
   const [posts, setPosts] = useState([]);
   const [users, setUsers] = useState([]);
   const [accessToken, setAccessToken] = useState(null);
+  const [authInstance, setAuthInstance] = useState(null);
   const [authError, setAuthError] = useState(null);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const navigate = useNavigate();
@@ -32,6 +33,7 @@ function Admin() {
     const clientId = '221534643075-rhne5oov51v9ia5eefaa7nhktncihuif.apps.googleusercontent.com';
     const script = document.createElement('script');
     script.src = 'https://accounts.google.com/gsi/client';
+    script.async = true;
     script.onload = () => {
       console.log('Google Identity Services script loaded.');
       const tokenClient = window.google.accounts.oauth2.initTokenClient({
@@ -59,8 +61,6 @@ function Admin() {
     };
     document.body.appendChild(script);
   };
-
-  const [authInstance, setAuthInstance] = useState(null);
 
   const handleSignIn = () => {
     if (!authInstance) {

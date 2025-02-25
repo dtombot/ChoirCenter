@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../supabase';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 
 function Song() {
   const [song, setSong] = useState(null);
   const { id } = useParams();
+  const [downloadPrompt, setDownloadPrompt] = useState(null);
 
   useEffect(() => {
     const fetchSong = async () => {
@@ -29,7 +30,20 @@ function Song() {
 
   const handleDownload = async () => {
     if (!song) return;
+
     try {
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      const isAuthenticated = userData?.user && !userError;
+
+      if (!isAuthenticated) {
+        const downloadCount = parseInt(localStorage.getItem('downloadCount') || '0', 10);
+        if (downloadCount >= 5) {
+          setDownloadPrompt('You’ve reached the limit of 5 downloads. Please log in to download more.');
+          return;
+        }
+        localStorage.setItem('downloadCount', downloadCount + 1);
+      }
+
       const url = `https://drive.google.com/uc?export=download&id=${song.google_drive_file_id}`;
       const link = document.createElement('a');
       link.href = url;
@@ -56,12 +70,18 @@ function Song() {
       <h1 style={{ fontSize: '2rem', fontWeight: '700', color: '#2f4f2f' }}>{song.title}</h1>
       <p style={{ fontSize: '1rem', color: '#666', margin: '1rem 0' }}>{song.description || 'No description'}</p>
       <p style={{ fontSize: '1rem', color: '#666', margin: '0.5rem 0' }}>File Size: {song.fileSize}</p>
-      <button
-        onClick={handleDownload}
-        style={{ padding: '0.75rem 1.5rem', background: '#98fb98', color: '#2f4f2f', border: 'none', borderRadius: '20px', cursor: 'pointer', fontWeight: '700' }}
-      >
-        Download ({song.downloads || 0})
-      </button>
+      {downloadPrompt ? (
+        <p style={{ color: '#e63946', margin: '1rem 0' }}>
+          {downloadPrompt} <Link to="/login" style={{ color: '#3cb371' }}>Log in here</Link>.
+        </p>
+      ) : (
+        <button
+          onClick={handleDownload}
+          style={{ padding: '0.75rem 1.5rem', background: '#98fb98', color: '#2f4f2f', border: 'none', borderRadius: '20px', cursor: 'pointer', fontWeight: '700' }}
+        >
+          Download ({song.downloads || 0})
+        </button>
+      )}
       {song.google_drive_thumbnail_id && (
         <div style={{ margin: '1rem 0' }}>
           <h3 style={{ fontSize: '1.5rem', fontWeight: '700', color: '#2f4f2f' }}>Preview</h3>

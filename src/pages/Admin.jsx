@@ -8,6 +8,7 @@ function Admin() {
   const [songs, setSongs] = useState([]);
   const [posts, setPosts] = useState([]);
   const [users, setUsers] = useState([]);
+  const [accessToken, setAccessToken] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -19,9 +20,35 @@ function Admin() {
       }
       setUser(authData.user);
       fetchInitialData();
+      loadGoogleDrive();
     };
     fetchUser();
   }, [navigate]);
+
+  const loadGoogleDrive = () => {
+    const clientId = 'YOUR_CLIENT_ID.apps.googleusercontent.com'; // Replace with your Client ID
+    const scope = 'https://www.googleapis.com/auth/drive.file';
+    const script = document.createElement('script');
+    script.src = 'https://apis.google.com/js/api.js';
+    script.onload = () => {
+      window.gapi.load('auth2', () => {
+        window.gapi.auth2.init({
+          client_id: clientId,
+          scope: scope,
+        }).then(() => {
+          const authInstance = window.gapi.auth2.getAuthInstance();
+          if (!authInstance.isSignedIn.get()) {
+            authInstance.signIn().then((googleUser) => {
+              setAccessToken(googleUser.getAuthResponse().access_token);
+            });
+          } else {
+            setAccessToken(authInstance.currentUser.get().getAuthResponse().access_token);
+          }
+        });
+      });
+    };
+    document.body.appendChild(script);
+  };
 
   const fetchInitialData = async () => {
     const { data: songData, error: songError } = await supabase.from('songs').select('*');
@@ -37,7 +64,10 @@ function Admin() {
 
   const handleSongUpload = async (e) => {
     e.preventDefault();
-    console.log('Starting song upload');
+    if (!accessToken) {
+      console.error('Not authenticated with Google Drive');
+      return;
+    }
     const file = e.target.file.files[0];
     const thumbnailFile = e.target.thumbnail.files[0];
     if (!file) {
@@ -46,25 +76,46 @@ function Admin() {
     }
     const fileName = `${Date.now()}-choircenter.com-${file.name}`;
     const thumbnailName = thumbnailFile ? `${Date.now()}-thumbnail-${thumbnailFile.name}` : null;
-    try {
-      console.log('Uploading file:', fileName);
-      const { error: uploadError } = await supabase.storage
-        .from('songs')
-        .upload(fileName, file);
-      if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`);
 
+    try {
+      // Upload song to Google Drive
+      const songFormData = new FormData();
+      songFormData.append('metadata', new Blob([JSON.stringify({
+        name: fileName,
+        mimeType: 'application/pdf',
+      })], { type: 'application/json' }));
+      songFormData.append('file', file);
+
+      const songResponse = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${accessToken}` },
+        body: songFormData,
+      });
+      const songData = await songResponse.json();
+      if (!songResponse.ok) throw new Error(`Song upload failed: ${songData.error.message}`);
+
+      // Upload thumbnail to Google Drive (if provided)
+      let thumbnailId = null;
       if (thumbnailFile) {
-        const { error: thumbError } = await supabase.storage
-          .from('songs')
-          .upload(thumbnailName, thumbnailFile);
-        if (thumbError) throw new Error(`Thumbnail upload failed: ${thumbError.message}`);
+        const thumbFormData = new FormData();
+        thumbFormData.append('metadata', new Blob([JSON.stringify({
+          name: thumbnailName,
+          mimeType: 'image/jpeg',
+        })], { type: 'application/json' }));
+        thumbFormData.append('file', thumbnailFile);
+
+        const thumbResponse = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${accessToken}` },
+          body: thumbFormData,
+        });
+        const thumbData = await thumbResponse.json();
+        if (!thumbResponse.ok) throw new Error(`Thumbnail upload failed: ${thumbData.error.message}`);
+        thumbnailId = thumbData.id;
       }
 
+      // Insert metadata into Supabase
       const tags = e.target.tags.value ? e.target.tags.value.split(',').map(tag => tag.trim()) : [];
-      console.log('Inserting song with data:', {
-        title: e.target.title.value,
-        tags: tags,
-      });
       const { error: insertError } = await supabase.from('songs').insert({
         title: e.target.title.value,
         description: e.target.description.value || null,
@@ -73,9 +124,9 @@ function Admin() {
         tags: tags,
         category: e.target.category.value || null,
         focus_keyword: e.target.focus_keyword.value || null,
-        file_path: fileName,
+        google_drive_file_id: songData.id,
+        google_drive_thumbnail_id: thumbnailId,
         lyrics: e.target.lyrics.value || null,
-        thumbnail: thumbnailName,
       });
       if (insertError) throw new Error(`Insert failed: ${insertError.message}`);
 
@@ -92,10 +143,7 @@ function Admin() {
     console.log('Starting post submit');
     try {
       const tags = e.target.tags.value ? e.target.tags.value.split(',').map(tag => tag.trim()) : [];
-      console.log('Inserting post with data:', {
-        title: e.target.title.value,
-        tags: tags,
-      });
+      console.log('Inserting post with data:', { title: e.target.title.value, tags });
       const { error } = await supabase.from('blog_posts').insert({
         title: e.target.title.value,
         content: e.target.content.value || null,

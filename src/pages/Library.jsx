@@ -10,10 +10,11 @@ function Library() {
 
   useEffect(() => {
     const fetchSongs = async () => {
-      const { data: songData } = await supabase
+      const { data: songData, error: songError } = await supabase
         .from('songs')
         .select('*')
         .order(sortBy, { ascending: sortOrder === 'asc' });
+      if (songError) console.error('Song fetch error:', songError.message);
 
       const songsWithSize = songData.map(song => ({
         ...song,
@@ -34,7 +35,7 @@ function Library() {
 
       const { error: updateError } = await supabase
         .from('songs')
-        .update({ downloads: songs.find(s => s.id === songId).downloads + 1 })
+        .update({ downloads: (songs.find(s => s.id === songId)?.downloads || 0) + 1 })
         .eq('id', songId);
       if (updateError) throw updateError;
 
@@ -42,7 +43,6 @@ function Library() {
         .from('songs')
         .select('*')
         .order(sortBy, { ascending: sortOrder === 'asc' });
-
       setSongs(updatedSongs.map(song => ({ ...song, fileSize: 'Unknown' })) || []);
     } catch (err) {
       console.error('Download error:', err.message);

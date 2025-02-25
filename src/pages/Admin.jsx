@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../supabase';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 function Admin() {
   const [user, setUser] = useState(null);
@@ -249,114 +249,83 @@ function Admin() {
   const totalDownloads = songs.reduce((sum, song) => sum + (song.downloads || 0), 0);
   const totalUsers = users.length;
 
-  if (!user) return <div>Loading...</div>;
+  if (!user) return <div className="container">Loading...</div>;
 
   return (
-    <div className="container" style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-        <h2 style={{ fontSize: '2rem', fontWeight: '700', color: '#2f4f2f' }}>Admin Dashboard</h2>
-        <button
-          onClick={handleLogout}
-          style={{
-            padding: '0.5rem 1rem',
-            background: '#e63946',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            fontWeight: '600',
-            transition: 'background 0.3s ease',
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = '#d32f2f')}
-          onMouseLeave={(e) => (e.currentTarget.style.background = '#e63946')}
-        >
-          Logout
-        </button>
+    <div className="container">
+      <div className="admin-header">
+        <h2 className="admin-title">Admin Dashboard</h2>
+        <button onClick={handleLogout} className="logout-button">Logout</button>
       </div>
-      {error && <p style={{ color: '#e63946', marginBottom: '1rem', fontSize: '1rem' }}>{error}</p>}
-      <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
+      {error && <p className="error-message">{error}</p>}
+      <div className="tab-bar">
         {['library', 'blog', 'analytics', 'users'].map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            style={{
-              padding: '0.75rem 1.5rem',
-              background: activeTab === tab ? '#3cb371' : '#fff',
-              color: activeTab === tab ? '#fff' : '#2f4f2f',
-              border: '1px solid #3cb371',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontWeight: '600',
-              transition: 'all 0.3s ease',
-            }}
-            onMouseEnter={(e) => {
-              if (activeTab !== tab) e.currentTarget.style.background = '#e6f4ea';
-            }}
-            onMouseLeave={(e) => {
-              if (activeTab !== tab) e.currentTarget.style.background = '#fff';
-            }}
+            className={`tab-button ${activeTab === tab ? 'active' : ''}`}
           >
             {tab.charAt(0).toUpperCase() + tab.slice(1)}
           </button>
         ))}
       </div>
-      <div style={{ background: '#fff', padding: '2rem', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+      <div className="admin-content">
         {activeTab === 'library' && (
           <>
-            <h3 style={{ fontSize: '1.5rem', fontWeight: '700', color: '#2f4f2f', marginBottom: '1.5rem' }}>Library Management</h3>
-            <form onSubmit={handleSongSelect} style={{ display: 'grid', gap: '1rem', marginBottom: '2rem' }}>
-              <input type="text" name="title" placeholder="Song Title" required style={{ padding: '0.75rem', border: '1px solid #ccc', borderRadius: '8px', fontSize: '1rem' }} />
-              <input type="text" name="permalink" placeholder="Permalink" style={{ padding: '0.75rem', border: '1px solid #ccc', borderRadius: '8px', fontSize: '1rem' }} />
-              <input type="text" name="meta_description" placeholder="Meta Description" style={{ padding: '0.75rem', border: '1px solid #ccc', borderRadius: '8px', fontSize: '1rem' }} />
-              <input type="text" name="tags" placeholder="Tags (comma-separated)" style={{ padding: '0.75rem', border: '1px solid #ccc', borderRadius: '8px', fontSize: '1rem' }} />
-              <input type="text" name="category" placeholder="Category" style={{ padding: '0.75rem', border: '1px solid #ccc', borderRadius: '8px', fontSize: '1rem' }} />
-              <input type="text" name="focus_keyword" placeholder="Focus Keyword" style={{ padding: '0.75rem', border: '1px solid #ccc', borderRadius: '8px', fontSize: '1rem' }} />
-              <textarea name="lyrics" placeholder="Song Lyrics" style={{ padding: '0.75rem', border: '1px solid #ccc', borderRadius: '8px', fontSize: '1rem', minHeight: '120px' }}></textarea>
-              <input type="text" name="file_id" placeholder="Google Drive Song File ID" required style={{ padding: '0.75rem', border: '1px solid #ccc', borderRadius: '8px', fontSize: '1rem' }} />
-              <button type="submit" style={{ padding: '0.75rem 1.5rem', background: '#3cb371', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }}>Add Song</button>
+            <h3 className="section-title">Library Management</h3>
+            <form onSubmit={handleSongSelect} className="form-grid">
+              <input type="text" name="title" placeholder="Song Title" required className="form-input" />
+              <input type="text" name="permalink" placeholder="Permalink" className="form-input" />
+              <input type="text" name="meta_description" placeholder="Meta Description" className="form-input" />
+              <input type="text" name="tags" placeholder="Tags (comma-separated)" className="form-input" />
+              <input type="text" name="category" placeholder="Category" className="form-input" />
+              <input type="text" name="focus_keyword" placeholder="Focus Keyword" className="form-input" />
+              <textarea name="lyrics" placeholder="Song Lyrics" className="form-textarea"></textarea>
+              <input type="text" name="file_id" placeholder="Google Drive Song File ID" required className="form-input" />
+              <button type="submit" className="form-submit">Add Song</button>
             </form>
 
-            <div style={{ background: '#f5f5f5', padding: '16px', borderRadius: '8px', display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center', marginBottom: '24px' }}>
+            <div className="filter-bar">
               <input
                 type="text"
                 placeholder="Search songs..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                style={{ padding: '10px 16px', width: '100%', maxWidth: '300px', border: '1px solid #ccc', borderRadius: '25px', fontSize: '14px', outline: 'none', boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.1)' }}
+                className="filter-input"
               />
-              <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} style={{ padding: '10px 16px', borderRadius: '25px', border: '1px solid #ccc', background: '#fff', fontSize: '14px', cursor: 'pointer' }}>
+              <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="filter-select">
                 <option value="created_at">Sort by Date</option>
                 <option value="downloads">Sort by Downloads</option>
                 <option value="title">Sort by Title</option>
               </select>
-              <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} style={{ padding: '10px 16px', borderRadius: '25px', border: '1px solid #ccc', background: '#fff', fontSize: '14px', cursor: 'pointer' }}>
+              <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} className="filter-select">
                 <option value="desc">Descending</option>
                 <option value="asc">Ascending</option>
               </select>
             </div>
 
-            <h4 style={{ fontSize: '1.25rem', fontWeight: '700', color: '#2f4f2f', marginBottom: '1rem' }}>Current Songs</h4>
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <h4 className="section-title">Current Songs</h4>
+            <div className="table-container">
+              <table className="admin-table">
                 <thead>
                   <tr>
-                    <th style={{ border: '1px solid #ddd', padding: '1rem', fontWeight: '700', color: '#2f4f2f', background: '#f9fafb' }}>#</th>
-                    <th style={{ border: '1px solid #ddd', padding: '1rem', fontWeight: '700', color: '#2f4f2f', background: '#f9fafb' }}>Title</th>
-                    <th style={{ border: '1px solid #ddd', padding: '1rem', fontWeight: '700', color: '#2f4f2f', background: '#f9fafb' }}>Category</th>
-                    <th style={{ border: '1px solid #ddd', padding: '1rem', fontWeight: '700', color: '#2f4f2f', background: '#f9fafb' }}>Downloads</th>
-                    <th style={{ border: '1px solid #ddd', padding: '1rem', fontWeight: '700', color: '#2f4f2f', background: '#f9fafb' }}>Actions</th>
+                    <th>#</th>
+                    <th>Title</th>
+                    <th>Category</th>
+                    <th>Downloads</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredSongs.map((song, index) => (
                     <tr key={song.id}>
-                      <td style={{ border: '1px solid #ddd', padding: '1rem', color: '#333', textAlign: 'center' }}>{index + 1}</td>
-                      <td style={{ border: '1px solid #ddd', padding: '1rem', color: '#333' }}>{song.title}</td>
-                      <td style={{ border: '1px solid #ddd', padding: '1rem', color: '#333' }}>{song.category || 'N/A'}</td>
-                      <td style={{ border: '1px solid #ddd', padding: '1rem', color: '#333', textAlign: 'center' }}>{song.downloads || 0}</td>
-                      <td style={{ border: '1px solid #ddd', padding: '1rem', textAlign: 'center' }}>
-                        <button onClick={() => handleEditSong(song)} style={{ padding: '0.5rem 1rem', background: '#3cb371', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', marginRight: '0.5rem' }}>Edit</button>
-                        <button onClick={() => handleDeleteSong(song.id)} style={{ padding: '0.5rem 1rem', background: '#e63946', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Delete</button>
+                      <td>{index + 1}</td>
+                      <td>{song.title}</td>
+                      <td>{song.category || 'N/A'}</td>
+                      <td>{song.downloads || 0}</td>
+                      <td>
+                        <button onClick={() => handleEditSong(song)} className="edit-button">Edit</button>
+                        <button onClick={() => handleDeleteSong(song.id)} className="delete-button">Delete</button>
                       </td>
                     </tr>
                   ))}
@@ -367,37 +336,37 @@ function Admin() {
         )}
         {activeTab === 'blog' && (
           <>
-            <h3 style={{ fontSize: '1.5rem', fontWeight: '700', color: '#2f4f2f', marginBottom: '1.5rem' }}>Blog Posts</h3>
-            <form onSubmit={handlePostSubmit} style={{ display: 'grid', gap: '1rem', marginBottom: '2rem' }}>
-              <input type="text" name="title" placeholder="Post Title" required style={{ padding: '0.75rem', border: '1px solid #ccc', borderRadius: '8px', fontSize: '1rem' }} />
-              <textarea name="content" placeholder="Content" rows="10" style={{ padding: '0.75rem', border: '1px solid #ccc', borderRadius: '8px', fontSize: '1rem' }}></textarea>
-              <input type="text" name="permalink" placeholder="Permalink" style={{ padding: '0.75rem', border: '1px solid #ccc', borderRadius: '8px', fontSize: '1rem' }} />
-              <input type="text" name="meta_description" placeholder="Meta Description" style={{ padding: '0.75rem', border: '1px solid #ccc', borderRadius: '8px', fontSize: '1rem' }} />
-              <input type="text" name="tags" placeholder="Tags (comma-separated)" style={{ padding: '0.75rem', border: '1px solid #ccc', borderRadius: '8px', fontSize: '1rem' }} />
-              <input type="text" name="category" placeholder="Category" style={{ padding: '0.75rem', border: '1px solid #ccc', borderRadius: '8px', fontSize: '1rem' }} />
-              <input type="text" name="focus_keyword" placeholder="Focus Keyword" style={{ padding: '0.75rem', border: '1px solid #ccc', borderRadius: '8px', fontSize: '1rem' }} />
-              <button type="submit" style={{ padding: '0.75rem', background: '#3cb371', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }}>Add Post</button>
+            <h3 className="section-title">Blog Posts</h3>
+            <form onSubmit={handlePostSubmit} className="form-grid">
+              <input type="text" name="title" placeholder="Post Title" required className="form-input" />
+              <input type="text" name="permalink" placeholder="Permalink" className="form-input" />
+              <input type="text" name="meta_description" placeholder="Meta Description" className="form-input" />
+              <input type="text" name="tags" placeholder="Tags (comma-separated)" className="form-input" />
+              <input type="text" name="category" placeholder="Category" className="form-input" />
+              <input type="text" name="focus_keyword" placeholder="Focus Keyword" className="form-input" />
+              <textarea name="content" placeholder="Content" rows="10" className="form-textarea"></textarea>
+              <button type="submit" className="form-submit">Add Post</button>
             </form>
-            <h4 style={{ fontSize: '1.25rem', fontWeight: '700', color: '#2f4f2f', marginBottom: '1rem' }}>Current Posts</h4>
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <h4 className="section-title">Current Posts</h4>
+            <div className="table-container">
+              <table className="admin-table">
                 <thead>
                   <tr>
-                    <th style={{ border: '1px solid #ddd', padding: '1rem', fontWeight: '700', color: '#2f4f2f', background: '#f9fafb' }}>#</th>
-                    <th style={{ border: '1px solid #ddd', padding: '1rem', fontWeight: '700', color: '#2f4f2f', background: '#f9fafb' }}>Title</th>
-                    <th style={{ border: '1px solid #ddd', padding: '1rem', fontWeight: '700', color: '#2f4f2f', background: '#f9fafb' }}>Category</th>
-                    <th style={{ border: '1px solid #ddd', padding: '1rem', fontWeight: '700', color: '#2f4f2f', background: '#f9fafb' }}>Actions</th>
+                    <th>#</th>
+                    <th>Title</th>
+                    <th>Category</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {posts.map((post, index) => (
                     <tr key={post.id}>
-                      <td style={{ border: '1px solid #ddd', padding: '1rem', color: '#333', textAlign: 'center' }}>{index + 1}</td>
-                      <td style={{ border: '1px solid #ddd', padding: '1rem', color: '#333' }}>{post.title}</td>
-                      <td style={{ border: '1px solid #ddd', padding: '1rem', color: '#333' }}>{post.category || 'N/A'}</td>
-                      <td style={{ border: '1px solid #ddd', padding: '1rem', textAlign: 'center' }}>
-                        <button onClick={() => handleEditPost(post)} style={{ padding: '0.5rem 1rem', background: '#3cb371', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', marginRight: '0.5rem' }}>Edit</button>
-                        <button onClick={() => handleDeletePost(post.id)} style={{ padding: '0.5rem 1rem', background: '#e63946', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Delete</button>
+                      <td>{index + 1}</td>
+                      <td>{post.title}</td>
+                      <td>{post.category || 'N/A'}</td>
+                      <td>
+                        <button onClick={() => handleEditPost(post)} className="edit-button">Edit</button>
+                        <button onClick={() => handleDeletePost(post.id)} className="delete-button">Delete</button>
                       </td>
                     </tr>
                   ))}
@@ -408,66 +377,56 @@ function Admin() {
         )}
         {activeTab === 'analytics' && (
           <>
-            <h3 style={{ fontSize: '1.5rem', fontWeight: '700', color: '#2f4f2f', marginBottom: '1.5rem' }}>Analytics</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-              <div style={{ padding: '1rem', background: '#f9fafb', borderRadius: '8px', textAlign: 'center' }}>
-                <h4 style={{ fontSize: '1.25rem', fontWeight: '700', color: '#2f4f2f', marginBottom: '0.5rem' }}>Total Songs</h4>
-                <p style={{ fontSize: '1.5rem', color: '#333' }}>{songs.length}</p>
+            <h3 className="section-title">Analytics</h3>
+            <div className="analytics-grid">
+              <div className="analytics-item">
+                <h4 className="analytics-title">Total Songs</h4>
+                <p className="analytics-value">{songs.length}</p>
               </div>
-              <div style={{ padding: '1rem', background: '#f9fafb', borderRadius: '8px', textAlign: 'center' }}>
-                <h4 style={{ fontSize: '1.25rem', fontWeight: '700', color: '#2f4f2f', marginBottom: '0.5rem' }}>Total Downloads</h4>
-                <p style={{ fontSize: '1.5rem', color: '#333' }}>{totalDownloads}</p>
+              <div className="analytics-item">
+                <h4 className="analytics-title">Total Downloads</h4>
+                <p className="analytics-value">{totalDownloads}</p>
               </div>
-              <div style={{ padding: '1rem', background: '#f9fafb', borderRadius: '8px', textAlign: 'center' }}>
-                <h4 style={{ fontSize: '1.25rem', fontWeight: '700', color: '#2f4f2f', marginBottom: '0.5rem' }}>Total Users</h4>
-                <p style={{ fontSize: '1.5rem', color: '#333' }}>{totalUsers}</p>
+              <div className="analytics-item">
+                <h4 className="analytics-title">Total Users</h4>
+                <p className="analytics-value">{totalUsers}</p>
               </div>
-              <div style={{ padding: '1rem', background: '#f9fafb', borderRadius: '8px', textAlign: 'center' }}>
-                <h4 style={{ fontSize: '1.25rem', fontWeight: '700', color: '#2f4f2f', marginBottom: '0.5rem' }}>Total Posts</h4>
-                <p style={{ fontSize: '1.5rem', color: '#333' }}>{posts.length}</p>
+              <div className="analytics-item">
+                <h4 className="analytics-title">Total Posts</h4>
+                <p className="analytics-value">{posts.length}</p>
               </div>
             </div>
           </>
         )}
         {activeTab === 'users' && (
           <>
-            <h3 style={{ fontSize: '1.5rem', fontWeight: '700', color: '#2f4f2f', marginBottom: '1.5rem' }}>Manage Users</h3>
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <h3 className="section-title">Manage Users</h3>
+            <div className="table-container">
+              <table className="admin-table">
                 <thead>
                   <tr>
-                    <th style={{ border: '1px solid #ddd', padding: '1rem', fontWeight: '700', color: '#2f4f2f', background: '#f9fafb' }}>Full Name</th>
-                    <th style={{ border: '1px solid #ddd', padding: '1rem', fontWeight: '700', color: '#2f4f2f', background: '#f9fafb' }}>Email</th>
-                    <th style={{ border: '1px solid #ddd', padding: '1rem', fontWeight: '700', color: '#2f4f2f', background: '#f9fafb' }}>Choir</th>
-                    <th style={{ border: '1px solid #ddd', padding: '1rem', fontWeight: '700', color: '#2f4f2f', background: '#f9fafb' }}>Church</th>
-                    <th style={{ border: '1px solid #ddd', padding: '1rem', fontWeight: '700', color: '#2f4f2f', background: '#f9fafb' }}>Country</th>
-                    <th style={{ border: '1px solid #ddd', padding: '1rem', fontWeight: '700', color: '#2f4f2f', background: '#f9fafb' }}>State</th>
-                    <th style={{ border: '1px solid #ddd', padding: '1rem', fontWeight: '700', color: '#2f4f2f', background: '#f9fafb' }}>Admin</th>
+                    <th>Full Name</th>
+                    <th>Email</th>
+                    <th>Choir</th>
+                    <th>Church</th>
+                    <th>Country</th>
+                    <th>State</th>
+                    <th>Admin</th>
                   </tr>
                 </thead>
                 <tbody>
                   {users.map(user => (
                     <tr key={user.id}>
-                      <td style={{ border: '1px solid #ddd', padding: '1rem', color: '#333' }}>{user.full_name}</td>
-                      <td style={{ border: '1px solid #ddd', padding: '1rem', color: '#333' }}>{user.email}</td>
-                      <td style={{ border: '1px solid #ddd', padding: '1rem', color: '#333' }}>{user.choir_name}</td>
-                      <td style={{ border: '1px solid #ddd', padding: '1rem', color: '#333' }}>{user.church_name}</td>
-                      <td style={{ border: '1px solid #ddd', padding: '1rem', color: '#333' }}>{user.country}</td>
-                      <td style={{ border: '1px solid #ddd', padding: '1rem', color: '#333' }}>{user.state}</td>
-                      <td style={{ border: '1px solid #ddd', padding: '1rem', color: '#333', textAlign: 'center' }}>
+                      <td>{user.full_name}</td>
+                      <td>{user.email}</td>
+                      <td>{user.choir_name}</td>
+                      <td>{user.church_name}</td>
+                      <td>{user.country}</td>
+                      <td>{user.state}</td>
+                      <td>
                         <button
                           onClick={() => handleToggleAdmin(user.id, user.is_admin)}
-                          style={{
-                            padding: '0.5rem 1rem',
-                            background: user.is_admin ? '#e63946' : '#3cb371',
-                            color: '#fff',
-                            border: 'none',
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                            transition: 'background 0.3s ease',
-                          }}
-                          onMouseEnter={(e) => (e.currentTarget.style.background = user.is_admin ? '#d32f2f' : '#2f9e5e')}
-                          onMouseLeave={(e) => (e.currentTarget.style.background = user.is_admin ? '#e63946' : '#3cb371')}
+                          className={`toggle-button ${user.is_admin ? 'admin' : ''}`}
                         >
                           {user.is_admin ? 'Remove Admin' : 'Make Admin'}
                         </button>
@@ -481,45 +440,43 @@ function Admin() {
         )}
       </div>
 
-      {/* Song Edit Modal */}
       {editSongId && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
-          <div style={{ background: '#fff', padding: '2rem', borderRadius: '12px', width: '100%', maxWidth: '500px', maxHeight: '80vh', overflowY: 'auto', boxShadow: '0 4px 12px rgba(0,0,0,0.2)' }}>
-            <h4 style={{ fontSize: '1.25rem', fontWeight: '700', color: '#2f4f2f', marginBottom: '1rem' }}>Edit Song</h4>
-            <form onSubmit={handleUpdateSong} style={{ display: 'grid', gap: '1rem' }}>
-              <input type="text" value={editFormData.title} onChange={(e) => setEditFormData({ ...editFormData, title: e.target.value })} placeholder="Song Title" required style={{ padding: '0.75rem', border: '1px solid #ccc', borderRadius: '8px', fontSize: '1rem' }} />
-              <input type="text" value={editFormData.permalink} onChange={(e) => setEditFormData({ ...editFormData, permalink: e.target.value })} placeholder="Permalink" style={{ padding: '0.75rem', border: '1px solid #ccc', borderRadius: '8px', fontSize: '1rem' }} />
-              <input type="text" value={editFormData.meta_description} onChange={(e) => setEditFormData({ ...editFormData, meta_description: e.target.value })} placeholder="Meta Description" style={{ padding: '0.75rem', border: '1px solid #ccc', borderRadius: '8px', fontSize: '1rem' }} />
-              <input type="text" value={editFormData.tags} onChange={(e) => setEditFormData({ ...editFormData, tags: e.target.value })} placeholder="Tags (comma-separated)" style={{ padding: '0.75rem', border: '1px solid #ccc', borderRadius: '8px', fontSize: '1rem' }} />
-              <input type="text" value={editFormData.category} onChange={(e) => setEditFormData({ ...editFormData, category: e.target.value })} placeholder="Category" style={{ padding: '0.75rem', border: '1px solid #ccc', borderRadius: '8px', fontSize: '1rem' }} />
-              <input type="text" value={editFormData.focus_keyword} onChange={(e) => setEditFormData({ ...editFormData, focus_keyword: e.target.value })} placeholder="Focus Keyword" style={{ padding: '0.75rem', border: '1px solid #ccc', borderRadius: '8px', fontSize: '1rem' }} />
-              <textarea value={editFormData.lyrics} onChange={(e) => setEditFormData({ ...editFormData, lyrics: e.target.value })} placeholder="Song Lyrics" style={{ padding: '0.75rem', border: '1px solid #ccc', borderRadius: '8px', fontSize: '1rem', minHeight: '120px' }}></textarea>
-              <input type="text" value={editFormData.file_id} onChange={(e) => setEditFormData({ ...editFormData, file_id: e.target.value })} placeholder="Google Drive Song File ID" required style={{ padding: '0.75rem', border: '1px solid #ccc', borderRadius: '8px', fontSize: '1rem' }} />
-              <div style={{ display: 'flex', gap: '1rem' }}>
-                <button type="submit" style={{ padding: '0.75rem 1.5rem', background: '#3cb371', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }}>Update Song</button>
-                <button type="button" onClick={() => setEditSongId(null)} style={{ padding: '0.75rem 1.5rem', background: '#6b7280', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }}>Cancel</button>
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h3 className="modal-title">Edit Song</h3>
+            <form onSubmit={handleUpdateSong} className="form-grid">
+              <input type="text" value={editFormData.title} onChange={(e) => setEditFormData({ ...editFormData, title: e.target.value })} placeholder="Song Title" required className="form-input" />
+              <input type="text" value={editFormData.permalink} onChange={(e) => setEditFormData({ ...editFormData, permalink: e.target.value })} placeholder="Permalink" className="form-input" />
+              <input type="text" value={editFormData.meta_description} onChange={(e) => setEditFormData({ ...editFormData, meta_description: e.target.value })} placeholder="Meta Description" className="form-input" />
+              <input type="text" value={editFormData.tags} onChange={(e) => setEditFormData({ ...editFormData, tags: e.target.value })} placeholder="Tags (comma-separated)" className="form-input" />
+              <input type="text" value={editFormData.category} onChange={(e) => setEditFormData({ ...editFormData, category: e.target.value })} placeholder="Category" className="form-input" />
+              <input type="text" value={editFormData.focus_keyword} onChange={(e) => setEditFormData({ ...editFormData, focus_keyword: e.target.value })} placeholder="Focus Keyword" className="form-input" />
+              <textarea value={editFormData.lyrics} onChange={(e) => setEditFormData({ ...editFormData, lyrics: e.target.value })} placeholder="Song Lyrics" className="form-textarea"></textarea>
+              <input type="text" value={editFormData.file_id} onChange={(e) => setEditFormData({ ...editFormData, file_id: e.target.value })} placeholder="Google Drive Song File ID" required className="form-input" />
+              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', gridColumn: '1 / -1' }}>
+                <button type="submit" className="form-submit">Update Song</button>
+                <button type="button" onClick={() => setEditSongId(null)} className="cancel-button">Cancel</button>
               </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* Post Edit Modal */}
       {editPostId && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
-          <div style={{ background: '#fff', padding: '2rem', borderRadius: '12px', width: '100%', maxWidth: '500px', maxHeight: '80vh', overflowY: 'auto', boxShadow: '0 4px 12px rgba(0,0,0,0.2)' }}>
-            <h4 style={{ fontSize: '1.25rem', fontWeight: '700', color: '#2f4f2f', marginBottom: '1rem' }}>Edit Post</h4>
-            <form onSubmit={handleUpdatePost} style={{ display: 'grid', gap: '1rem' }}>
-              <input type="text" value={editPostData.title} onChange={(e) => setEditPostData({ ...editPostData, title: e.target.value })} placeholder="Post Title" required style={{ padding: '0.75rem', border: '1px solid #ccc', borderRadius: '8px', fontSize: '1rem' }} />
-              <textarea value={editPostData.content} onChange={(e) => setEditPostData({ ...editPostData, content: e.target.value })} placeholder="Content" rows="10" style={{ padding: '0.75rem', border: '1px solid #ccc', borderRadius: '8px', fontSize: '1rem' }}></textarea>
-              <input type="text" value={editPostData.permalink} onChange={(e) => setEditPostData({ ...editPostData, permalink: e.target.value })} placeholder="Permalink" style={{ padding: '0.75rem', border: '1px solid #ccc', borderRadius: '8px', fontSize: '1rem' }} />
-              <input type="text" value={editPostData.meta_description} onChange={(e) => setEditPostData({ ...editPostData, meta_description: e.target.value })} placeholder="Meta Description" style={{ padding: '0.75rem', border: '1px solid #ccc', borderRadius: '8px', fontSize: '1rem' }} />
-              <input type="text" value={editPostData.tags} onChange={(e) => setEditPostData({ ...editPostData, tags: e.target.value })} placeholder="Tags (comma-separated)" style={{ padding: '0.75rem', border: '1px solid #ccc', borderRadius: '8px', fontSize: '1rem' }} />
-              <input type="text" value={editPostData.category} onChange={(e) => setEditPostData({ ...editPostData, category: e.target.value })} placeholder="Category" style={{ padding: '0.75rem', border: '1px solid #ccc', borderRadius: '8px', fontSize: '1rem' }} />
-              <input type="text" value={editPostData.focus_keyword} onChange={(e) => setEditPostData({ ...editPostData, focus_keyword: e.target.value })} placeholder="Focus Keyword" style={{ padding: '0.75rem', border: '1px solid #ccc', borderRadius: '8px', fontSize: '1rem' }} />
-              <div style={{ display: 'flex', gap: '1rem' }}>
-                <button type="submit" style={{ padding: '0.75rem 1.5rem', background: '#3cb371', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }}>Update Post</button>
-                <button type="button" onClick={() => setEditPostId(null)} style={{ padding: '0.75rem 1.5rem', background: '#6b7280', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }}>Cancel</button>
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h3 className="modal-title">Edit Post</h3>
+            <form onSubmit={handleUpdatePost} className="form-grid">
+              <input type="text" value={editPostData.title} onChange={(e) => setEditPostData({ ...editPostData, title: e.target.value })} placeholder="Post Title" required className="form-input" />
+              <input type="text" value={editPostData.permalink} onChange={(e) => setEditPostData({ ...editPostData, permalink: e.target.value })} placeholder="Permalink" className="form-input" />
+              <input type="text" value={editPostData.meta_description} onChange={(e) => setEditPostData({ ...editPostData, meta_description: e.target.value })} placeholder="Meta Description" className="form-input" />
+              <input type="text" value={editPostData.tags} onChange={(e) => setEditPostData({ ...editPostData, tags: e.target.value })} placeholder="Tags (comma-separated)" className="form-input" />
+              <input type="text" value={editPostData.category} onChange={(e) => setEditPostData({ ...editPostData, category: e.target.value })} placeholder="Category" className="form-input" />
+              <input type="text" value={editPostData.focus_keyword} onChange={(e) => setEditPostData({ ...editPostData, focus_keyword: e.target.value })} placeholder="Focus Keyword" className="form-input" />
+              <textarea value={editPostData.content} onChange={(e) => setEditPostData({ ...editPostData, content: e.target.value })} placeholder="Content" rows="10" className="form-textarea"></textarea>
+              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', gridColumn: '1 / -1' }}>
+                <button type="submit" className="form-submit">Update Post</button>
+                <button type="button" onClick={() => setEditPostId(null)} className="cancel-button">Cancel</button>
               </div>
             </form>
           </div>

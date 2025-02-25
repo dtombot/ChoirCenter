@@ -8,6 +8,7 @@ function Library() {
   const [sortBy, setSortBy] = useState('created_at');
   const [sortOrder, setSortOrder] = useState('desc');
   const [error, setError] = useState(null);
+  const [downloadPrompt, setDownloadPrompt] = useState(null);
 
   useEffect(() => {
     const fetchSongs = async () => {
@@ -31,6 +32,18 @@ function Library() {
 
   const handleDownload = async (songId, fileId) => {
     try {
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      const isAuthenticated = userData?.user && !userError;
+
+      if (!isAuthenticated) {
+        const downloadCount = parseInt(localStorage.getItem('downloadCount') || '0', 10);
+        if (downloadCount >= 5) {
+          setDownloadPrompt('You’ve reached the limit of 5 downloads. Please log in to download more.');
+          return;
+        }
+        localStorage.setItem('downloadCount', downloadCount + 1);
+      }
+
       const url = `https://drive.google.com/uc?export=download&id=${fileId}`;
       const link = document.createElement('a');
       link.href = url;
@@ -89,6 +102,11 @@ function Library() {
         </select>
       </div>
       {error && <p style={{ color: '#e63946', marginBottom: '1rem' }}>{error}</p>}
+      {downloadPrompt && (
+        <p style={{ color: '#e63946', marginBottom: '1rem' }}>
+          {downloadPrompt} <Link to="/login" style={{ color: '#3cb371' }}>Log in here</Link>.
+        </p>
+      )}
       {songs.length === 0 && !error ? (
         <p>No songs available.</p>
       ) : (

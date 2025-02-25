@@ -27,21 +27,21 @@ function BlogPost() {
     fetchPost();
   }, [id]);
 
-  if (!post) return <div>Loading...</div>;
+  if (!post) return <div className="container">Loading...</div>;
 
   return (
-    <div className="container" style={{ padding: '2rem' }}>
-      <h1 style={{ fontSize: '2rem', fontWeight: '700', color: '#2f4f2f' }}>{post.title}</h1>
-      <p style={{ fontSize: '1rem', color: '#666', margin: '1rem 0' }}>{post.created_at}</p>
-      <div style={{ fontSize: '1.1rem', lineHeight: '1.6', color: '#333' }}>{post.content}</div>
+    <div className="container">
+      <h1 className="content-title">{post.title}</h1>
+      <p className="content-text">{post.created_at}</p>
+      <div className="content-body">{post.content}</div>
       {post.tags && (
-        <div style={{ marginTop: '1rem' }}>
-          <strong>Tags:</strong> {post.tags.join(', ')}
+        <div className="content-section">
+          <strong className="content-strong">Tags:</strong> <span className="content-span">{post.tags.join(', ')}</span>
         </div>
       )}
       {post.category && (
-        <div>
-          <strong>Category:</strong> {post.category}
+        <div className="content-section">
+          <strong className="content-strong">Category:</strong> <span className="content-span">{post.category}</span>
         </div>
       )}
     </div>

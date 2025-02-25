@@ -57,7 +57,6 @@ function Home() {
     }
   };
 
-  // Filter songs based on search term
   const filteredSongs = songs.filter(song =>
     song.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (song.description && song.description.toLowerCase().includes(searchTerm.toLowerCase()))

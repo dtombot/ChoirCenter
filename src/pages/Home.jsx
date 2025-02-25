@@ -9,11 +9,12 @@ function Home() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const { data: songData } = await supabase
+      const { data: songData, error: songError } = await supabase
         .from('songs')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(10);
+      if (songError) console.error('Song fetch error:', songError.message);
 
       const songsWithSize = songData.map(song => ({
         ...song,
@@ -21,11 +22,12 @@ function Home() {
       }));
       setSongs(songsWithSize || []);
 
-      const { data: postData } = await supabase
+      const { data: postData, error: postError } = await supabase
         .from('blog_posts')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(10);
+      if (postError) console.error('Post fetch error:', postError.message);
       setPosts(postData || []);
     };
     fetchData();
@@ -41,7 +43,7 @@ function Home() {
 
       const { error: updateError } = await supabase
         .from('songs')
-        .update({ downloads: songs.find(s => s.id === songId).downloads + 1 })
+        .update({ downloads: (songs.find(s => s.id === songId)?.downloads || 0) + 1 })
         .eq('id', songId);
       if (updateError) throw updateError;
 
@@ -50,7 +52,6 @@ function Home() {
         .select('*')
         .order('created_at', { ascending: false })
         .limit(10);
-
       setSongs(updatedSongs.map(song => ({ ...song, fileSize: 'Unknown' })) || []);
     } catch (err) {
       console.error('Download error:', err.message);

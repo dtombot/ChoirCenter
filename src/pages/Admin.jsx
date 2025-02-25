@@ -9,8 +9,8 @@ function Admin() {
   const [posts, setPosts] = useState([]);
   const [users, setUsers] = useState([]);
   const [accessToken, setAccessToken] = useState(null);
-  const [authInstance, setAuthInstance] = useState(null);
   const [authError, setAuthError] = useState(null);
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -22,48 +22,54 @@ function Admin() {
       }
       setUser(authData.user);
       fetchInitialData();
-      loadGoogleDrive();
+      loadGoogleIdentityServices();
     };
     fetchUser();
   }, [navigate]);
 
-  const loadGoogleDrive = () => {
+  const loadGoogleIdentityServices = () => {
+    console.log('Starting Google Identity Services authentication...');
     const clientId = '221534643075-rhne5oov51v9ia5eefaa7nhktncihuif.apps.googleusercontent.com';
-    const scope = 'https://www.googleapis.com/auth/drive.file';
     const script = document.createElement('script');
-    script.src = 'https://apis.google.com/js/api.js';
+    script.src = 'https://accounts.google.com/gsi/client';
     script.onload = () => {
-      window.gapi.load('auth2', () => {
-        window.gapi.auth2.init({
-          client_id: clientId,
-          scope: scope,
-          prompt: 'select_account', // Force account selection
-        }).then(() => {
-          const instance = window.gapi.auth2.getAuthInstance();
-          setAuthInstance(instance);
-          if (instance.isSignedIn.get()) {
-            const token = instance.currentUser.get().getAuthResponse().access_token;
-            setAccessToken(token);
+      console.log('Google Identity Services script loaded.');
+      const tokenClient = window.google.accounts.oauth2.initTokenClient({
+        client_id: clientId,
+        scope: 'https://www.googleapis.com/auth/drive.file',
+        callback: (response) => {
+          if (response.error) {
+            console.error('Token request failed:', response.error, response.error_description);
+            setAuthError(`Authentication failed: ${response.error_description || response.error}`);
           } else {
-            instance.signIn().then((googleUser) => {
-              const token = googleUser.getAuthResponse().access_token;
-              setAccessToken(token);
-            }).catch(err => {
-              console.error('Initial Google Sign-In failed:', err);
-              setAuthError('Failed to authenticate with Google Drive. Please try again.');
-            });
+            console.log('Token received:', response.access_token);
+            setAccessToken(response.access_token);
+            setAuthError(null);
           }
-        }).catch(err => {
-          console.error('Google Auth init failed:', err);
-          setAuthError('Google Drive authentication initialization failed.');
-        });
+          setIsAuthenticating(false);
+        },
       });
+      setAuthInstance(tokenClient);
+      console.log('Requesting initial token...');
+      tokenClient.requestAccessToken({ prompt: 'consent' });
     };
     script.onerror = () => {
-      console.error('Failed to load Google API script');
-      setAuthError('Unable to load Google Drive API.');
+      console.error('Failed to load Google Identity Services script');
+      setAuthError('Unable to load Google Identity Services API.');
     };
     document.body.appendChild(script);
+  };
+
+  const [authInstance, setAuthInstance] = useState(null);
+
+  const handleSignIn = () => {
+    if (!authInstance) {
+      setAuthError('Google Drive authentication not initialized. Please refresh the page.');
+      return;
+    }
+    setIsAuthenticating(true);
+    console.log('Manually requesting token...');
+    authInstance.requestAccessToken({ prompt: 'consent' });
   };
 
   const fetchInitialData = async () => {
@@ -80,23 +86,13 @@ function Admin() {
 
   const handleSongUpload = async (e) => {
     e.preventDefault();
-    if (!accessToken || !authInstance) {
-      console.log('Not authenticated with Google Drive, prompting sign-in...');
-      if (authInstance) {
-        try {
-          const googleUser = await authInstance.signIn({ prompt: 'select_account' });
-          const token = googleUser.getAuthResponse().access_token;
-          setAccessToken(token);
-          await proceedWithUpload(e, token);
-        } catch (err) {
-          console.error('Sign-in for upload failed:', err);
-          setAuthError('Google Drive sign-in failed. Please try again.');
-        }
-      } else {
-        setAuthError('Google Drive authentication not initialized. Please refresh the page.');
-      }
+    console.log('Upload song button clicked.');
+    if (!accessToken) {
+      console.log('No access token, prompting sign-in...');
+      setAuthError('Please authenticate with Google Drive to upload songs.');
       return;
     }
+    console.log('Proceeding with upload, token:', accessToken);
     proceedWithUpload(e, accessToken);
   };
 
@@ -119,6 +115,7 @@ function Admin() {
       })], { type: 'application/json' }));
       songFormData.append('file', file);
 
+      console.log('Uploading song to Google Drive...');
       const songResponse = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
@@ -126,6 +123,7 @@ function Admin() {
       });
       const songData = await songResponse.json();
       if (!songResponse.ok) throw new Error(`Song upload failed: ${songData.error?.message || 'Unknown error'}`);
+      console.log('Song uploaded successfully, file ID:', songData.id);
 
       let thumbnailId = null;
       if (thumbnailFile) {
@@ -136,6 +134,7 @@ function Admin() {
         })], { type: 'application/json' }));
         thumbFormData.append('file', thumbnailFile);
 
+        console.log('Uploading thumbnail to Google Drive...');
         const thumbResponse = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}` },
@@ -144,9 +143,11 @@ function Admin() {
         const thumbData = await thumbResponse.json();
         if (!thumbResponse.ok) throw new Error(`Thumbnail upload failed: ${thumbData.error?.message || 'Unknown error'}`);
         thumbnailId = thumbData.id;
+        console.log('Thumbnail uploaded successfully, file ID:', thumbnailId);
       }
 
       const tags = e.target.tags.value ? e.target.tags.value.split(',').map(tag => tag.trim()) : [];
+      console.log('Inserting song metadata into Supabase...');
       const { error: insertError } = await supabase.from('songs').insert({
         title: e.target.title.value,
         description: e.target.description.value || null,
@@ -161,8 +162,8 @@ function Admin() {
       });
       if (insertError) throw new Error(`Insert failed: ${insertError.message}`);
 
-      console.log('Song uploaded successfully');
-      setAuthError(null); // Clear any previous errors
+      console.log('Song metadata inserted successfully.');
+      setAuthError(null);
       fetchInitialData();
       e.target.reset();
     } catch (err) {
@@ -202,6 +203,15 @@ function Admin() {
     <div className="container" style={{ padding: '2rem' }}>
       <h2 style={{ fontSize: '2rem', fontWeight: '700', color: '#2f4f2f' }}>Admin Dashboard</h2>
       {authError && <p style={{ color: 'red', marginBottom: '1rem' }}>{authError}</p>}
+      {!accessToken && (
+        <button
+          onClick={handleSignIn}
+          disabled={isAuthenticating}
+          style={{ padding: '0.5rem 1rem', background: '#3cb371', color: '#fff', border: 'none', borderRadius: '5px', cursor: 'pointer', marginBottom: '1rem' }}
+        >
+          {isAuthenticating ? 'Authenticating...' : 'Sign in to Google Drive'}
+        </button>
+      )}
       <div style={{ display: 'flex', gap: '1rem', margin: '1rem 0' }}>
         <button onClick={() => setActiveTab('library')} style={{ padding: '0.5rem 1rem', background: '#3cb371', color: '#fff', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>Library</button>
         <button onClick={() => setActiveTab('blog')} style={{ padding: '0.5rem 1rem', background: '#3cb371', color: '#fff', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>Blog Posts</button>

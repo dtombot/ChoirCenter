@@ -44,9 +44,10 @@ function Admin() {
           } else {
             setAccessToken(authInstance.currentUser.get().getAuthResponse().access_token);
           }
-        });
+        }).catch(err => console.error('Google Auth init failed:', err));
       });
     };
+    script.onerror = () => console.error('Failed to load Google API script');
     document.body.appendChild(script);
   };
 
@@ -78,7 +79,6 @@ function Admin() {
     const thumbnailName = thumbnailFile ? `${Date.now()}-thumbnail-${thumbnailFile.name}` : null;
 
     try {
-      // Upload song to Google Drive
       const songFormData = new FormData();
       songFormData.append('metadata', new Blob([JSON.stringify({
         name: fileName,
@@ -94,7 +94,6 @@ function Admin() {
       const songData = await songResponse.json();
       if (!songResponse.ok) throw new Error(`Song upload failed: ${songData.error.message}`);
 
-      // Upload thumbnail to Google Drive (if provided)
       let thumbnailId = null;
       if (thumbnailFile) {
         const thumbFormData = new FormData();
@@ -114,7 +113,6 @@ function Admin() {
         thumbnailId = thumbData.id;
       }
 
-      // Insert metadata into Supabase
       const tags = e.target.tags.value ? e.target.tags.value.split(',').map(tag => tag.trim()) : [];
       const { error: insertError } = await supabase.from('songs').insert({
         title: e.target.title.value,
@@ -140,10 +138,8 @@ function Admin() {
 
   const handlePostSubmit = async (e) => {
     e.preventDefault();
-    console.log('Starting post submit');
     try {
       const tags = e.target.tags.value ? e.target.tags.value.split(',').map(tag => tag.trim()) : [];
-      console.log('Inserting post with data:', { title: e.target.title.value, tags });
       const { error } = await supabase.from('blog_posts').insert({
         title: e.target.title.value,
         content: e.target.content.value || null,
@@ -153,7 +149,7 @@ function Admin() {
         category: e.target.category.value || null,
         focus_keyword: e.target.focus_keyword.value || null,
       });
-      if (error) throw new Error(`Post insert failed: ${error.message}`);
+      if (error) throw error;
 
       console.log('Post added successfully');
       fetchInitialData();

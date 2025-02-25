@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../supabase';
 import { useNavigate, Link } from 'react-router-dom';
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css'; // Import Quill styles
+
+const ReactQuill = window.ReactQuill; // Use global from CDN
 
 function Admin() {
   const [user, setUser] = useState(null);

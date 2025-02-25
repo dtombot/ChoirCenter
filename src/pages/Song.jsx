@@ -70,18 +70,12 @@ function Song() {
       <h1 style={{ fontSize: '2rem', fontWeight: '700', color: '#2f4f2f' }}>{song.title}</h1>
       <p style={{ fontSize: '1rem', color: '#666', margin: '1rem 0' }}>{song.description || 'No description'}</p>
       <p style={{ fontSize: '1rem', color: '#666', margin: '0.5rem 0' }}>File Size: {song.fileSize}</p>
-      {downloadPrompt ? (
-        <p style={{ color: '#e63946', margin: '1rem 0' }}>
-          {downloadPrompt} <Link to="/login" style={{ color: '#3cb371' }}>Log in here</Link>.
-        </p>
-      ) : (
-        <button
-          onClick={handleDownload}
-          style={{ padding: '0.75rem 1.5rem', background: '#98fb98', color: '#2f4f2f', border: 'none', borderRadius: '20px', cursor: 'pointer', fontWeight: '700' }}
-        >
-          Download ({song.downloads || 0})
-        </button>
-      )}
+      <button
+        onClick={handleDownload}
+        style={{ padding: '0.75rem 1.5rem', background: '#98fb98', color: '#2f4f2f', border: 'none', borderRadius: '20px', cursor: 'pointer', fontWeight: '700' }}
+      >
+        Download ({song.downloads || 0})
+      </button>
       {song.google_drive_thumbnail_id && (
         <div style={{ margin: '1rem 0' }}>
           <h3 style={{ fontSize: '1.5rem', fontWeight: '700', color: '#2f4f2f' }}>Preview</h3>
@@ -96,6 +90,24 @@ function Song() {
         <div style={{ margin: '1rem 0' }}>
           <h3 style={{ fontSize: '1.5rem', fontWeight: '700', color: '#2f4f2f' }}>Lyrics</h3>
           <pre style={{ fontSize: '1.1rem', lineHeight: '1.6', color: '#333', whiteSpace: 'pre-wrap' }}>{song.lyrics}</pre>
+        </div>
+      )}
+
+      {/* Download Limit Modal */}
+      {downloadPrompt && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
+          <div style={{ background: '#fff', padding: '2rem', borderRadius: '12px', maxWidth: '400px', textAlign: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.2)' }}>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: '700', color: '#2f4f2f', marginBottom: '1rem' }}>Download Limit Reached</h3>
+            <p style={{ fontSize: '1rem', color: '#333', marginBottom: '1.5rem' }}>
+              {downloadPrompt} <Link to="/login" style={{ color: '#3cb371', textDecoration: 'underline' }}>Log in here</Link>.
+            </p>
+            <button
+              onClick={() => setDownloadPrompt(null)}
+              style={{ padding: '0.75rem 1.5rem', background: '#6b7280', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }}
+            >
+              Close
+            </button>
+          </div>
         </div>
       )}
     </div>

@@ -9,6 +9,8 @@ function Admin() {
   const [posts, setPosts] = useState([]);
   const [users, setUsers] = useState([]);
   const [accessToken, setAccessToken] = useState(null);
+  const [authInstance, setAuthInstance] = useState(null);
+  const [authError, setAuthError] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -26,7 +28,7 @@ function Admin() {
   }, [navigate]);
 
   const loadGoogleDrive = () => {
-    const clientId = '221534643075-rhne5oov51v9ia5eefaa7nhktncihuif.apps.googleusercontent.com'; // Replace with your Client ID
+    const clientId = '221534643075-rhne5oov51v9ia5eefaa7nhktncihuif.apps.googleusercontent.com';
     const scope = 'https://www.googleapis.com/auth/drive.file';
     const script = document.createElement('script');
     script.src = 'https://apis.google.com/js/api.js';
@@ -35,19 +37,32 @@ function Admin() {
         window.gapi.auth2.init({
           client_id: clientId,
           scope: scope,
+          prompt: 'select_account', // Force account selection
         }).then(() => {
-          const authInstance = window.gapi.auth2.getAuthInstance();
-          if (!authInstance.isSignedIn.get()) {
-            authInstance.signIn().then((googleUser) => {
-              setAccessToken(googleUser.getAuthResponse().access_token);
-            });
+          const instance = window.gapi.auth2.getAuthInstance();
+          setAuthInstance(instance);
+          if (instance.isSignedIn.get()) {
+            const token = instance.currentUser.get().getAuthResponse().access_token;
+            setAccessToken(token);
           } else {
-            setAccessToken(authInstance.currentUser.get().getAuthResponse().access_token);
+            instance.signIn().then((googleUser) => {
+              const token = googleUser.getAuthResponse().access_token;
+              setAccessToken(token);
+            }).catch(err => {
+              console.error('Initial Google Sign-In failed:', err);
+              setAuthError('Failed to authenticate with Google Drive. Please try again.');
+            });
           }
-        }).catch(err => console.error('Google Auth init failed:', err));
+        }).catch(err => {
+          console.error('Google Auth init failed:', err);
+          setAuthError('Google Drive authentication initialization failed.');
+        });
       });
     };
-    script.onerror = () => console.error('Failed to load Google API script');
+    script.onerror = () => {
+      console.error('Failed to load Google API script');
+      setAuthError('Unable to load Google Drive API.');
+    };
     document.body.appendChild(script);
   };
 
@@ -65,14 +80,32 @@ function Admin() {
 
   const handleSongUpload = async (e) => {
     e.preventDefault();
-    if (!accessToken) {
-      console.error('Not authenticated with Google Drive');
+    if (!accessToken || !authInstance) {
+      console.log('Not authenticated with Google Drive, prompting sign-in...');
+      if (authInstance) {
+        try {
+          const googleUser = await authInstance.signIn({ prompt: 'select_account' });
+          const token = googleUser.getAuthResponse().access_token;
+          setAccessToken(token);
+          await proceedWithUpload(e, token);
+        } catch (err) {
+          console.error('Sign-in for upload failed:', err);
+          setAuthError('Google Drive sign-in failed. Please try again.');
+        }
+      } else {
+        setAuthError('Google Drive authentication not initialized. Please refresh the page.');
+      }
       return;
     }
+    proceedWithUpload(e, accessToken);
+  };
+
+  const proceedWithUpload = async (e, token) => {
     const file = e.target.file.files[0];
     const thumbnailFile = e.target.thumbnail.files[0];
     if (!file) {
       console.error('No file selected');
+      setAuthError('Please select a song file to upload.');
       return;
     }
     const fileName = `${Date.now()}-choircenter.com-${file.name}`;
@@ -88,11 +121,11 @@ function Admin() {
 
       const songResponse = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
         method: 'POST',
-        headers: { Authorization: `Bearer ${accessToken}` },
+        headers: { Authorization: `Bearer ${token}` },
         body: songFormData,
       });
       const songData = await songResponse.json();
-      if (!songResponse.ok) throw new Error(`Song upload failed: ${songData.error.message}`);
+      if (!songResponse.ok) throw new Error(`Song upload failed: ${songData.error?.message || 'Unknown error'}`);
 
       let thumbnailId = null;
       if (thumbnailFile) {
@@ -105,11 +138,11 @@ function Admin() {
 
         const thumbResponse = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
           method: 'POST',
-          headers: { Authorization: `Bearer ${accessToken}` },
+          headers: { Authorization: `Bearer ${token}` },
           body: thumbFormData,
         });
         const thumbData = await thumbResponse.json();
-        if (!thumbResponse.ok) throw new Error(`Thumbnail upload failed: ${thumbData.error.message}`);
+        if (!thumbResponse.ok) throw new Error(`Thumbnail upload failed: ${thumbData.error?.message || 'Unknown error'}`);
         thumbnailId = thumbData.id;
       }
 
@@ -129,10 +162,12 @@ function Admin() {
       if (insertError) throw new Error(`Insert failed: ${insertError.message}`);
 
       console.log('Song uploaded successfully');
+      setAuthError(null); // Clear any previous errors
       fetchInitialData();
       e.target.reset();
     } catch (err) {
       console.error('Song upload error:', err.message);
+      setAuthError(`Upload failed: ${err.message}`);
     }
   };
 
@@ -152,10 +187,12 @@ function Admin() {
       if (error) throw error;
 
       console.log('Post added successfully');
+      setAuthError(null);
       fetchInitialData();
       e.target.reset();
     } catch (err) {
       console.error('Post submit error:', err.message);
+      setAuthError(`Post submission failed: ${err.message}`);
     }
   };
 
@@ -164,6 +201,7 @@ function Admin() {
   return (
     <div className="container" style={{ padding: '2rem' }}>
       <h2 style={{ fontSize: '2rem', fontWeight: '700', color: '#2f4f2f' }}>Admin Dashboard</h2>
+      {authError && <p style={{ color: 'red', marginBottom: '1rem' }}>{authError}</p>}
       <div style={{ display: 'flex', gap: '1rem', margin: '1rem 0' }}>
         <button onClick={() => setActiveTab('library')} style={{ padding: '0.5rem 1rem', background: '#3cb371', color: '#fff', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>Library</button>
         <button onClick={() => setActiveTab('blog')} style={{ padding: '0.5rem 1rem', background: '#3cb371', color: '#fff', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>Blog Posts</button>

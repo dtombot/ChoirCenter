@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 function Home() {
   const [songs, setSongs] = useState([]);
   const [posts, setPosts] = useState([]);
+  const [accessToken, setAccessToken] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -14,17 +15,14 @@ function Home() {
         .order('created_at', { ascending: false })
         .limit(10);
 
-      // Fetch file sizes for each song
       const songsWithSize = await Promise.all(
         songData.map(async (song) => {
-          const { data: fileData, error } = await supabase.storage
-            .from('songs')
-            .list('', { search: song.file_path.split('/').pop() });
-          if (!error && fileData && fileData.length > 0) {
-            const sizeInKB = (fileData[0].metadata.size / 1024).toFixed(2);
-            return { ...song, fileSize: `${sizeInKB} KB` };
-          }
-          return { ...song, fileSize: 'Unknown' };
+          const response = await fetch(`https://www.googleapis.com/drive/v3/files/${song.google_drive_file_id}?fields=size`, {
+            headers: { Authorization: `Bearer ${accessToken}` },
+          });
+          const fileData = await response.json();
+          const sizeInKB = fileData.size ? (fileData.size / 1024).toFixed(2) : 'Unknown';
+          return { ...song, fileSize: `${sizeInKB} KB` };
         })
       );
 
@@ -36,19 +34,49 @@ function Home() {
       setSongs(songsWithSize || []);
       setPosts(postData || []);
     };
-    fetchData();
-  }, []);
 
-  const handleDownload = async (songId, filePath) => {
+    const loadGoogleDrive = () => {
+      const clientId = 'YOUR_CLIENT_ID.apps.googleusercontent.com'; // Replace with your Client ID
+      const scope = 'https://www.googleapis.com/auth/drive.file';
+      const script = document.createElement('script');
+      script.src = 'https://apis.google.com/js/api.js';
+      script.onload = () => {
+        window.gapi.load('auth2', () => {
+          window.gapi.auth2.init({
+            client_id: clientId,
+            scope: scope,
+          }).then(() => {
+            const authInstance = window.gapi.auth2.getAuthInstance();
+            if (!authInstance.isSignedIn.get()) {
+              authInstance.signIn().then((googleUser) => {
+                setAccessToken(googleUser.getAuthResponse().access_token);
+                fetchData();
+              });
+            } else {
+              setAccessToken(authInstance.currentUser.get().getAuthResponse().access_token);
+              fetchData();
+            }
+          });
+        });
+      };
+      document.body.appendChild(script);
+    };
+
+    loadGoogleDrive();
+  }, [accessToken]);
+
+  const handleDownload = async (songId, fileId) => {
     try {
-      const { data, error } = await supabase.storage.from('songs').download(filePath);
-      if (error) throw error;
+      const response = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (!response.ok) throw new Error('Download failed');
 
-      const url = URL.createObjectURL(data);
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      const originalName = filePath.split('/').pop();
-      link.download = `choircenter.com-${originalName}`;
+      link.download = `choircenter.com-${songId}.pdf`; // Simplified naming
       link.click();
       URL.revokeObjectURL(url);
 
@@ -66,14 +94,12 @@ function Home() {
 
       const songsWithSize = await Promise.all(
         updatedSongs.map(async (song) => {
-          const { data: fileData, error } = await supabase.storage
-            .from('songs')
-            .list('', { search: song.file_path.split('/').pop() });
-          if (!error && fileData && fileData.length > 0) {
-            const sizeInKB = (fileData[0].metadata.size / 1024).toFixed(2);
-            return { ...song, fileSize: `${sizeInKB} KB` };
-          }
-          return { ...song, fileSize: 'Unknown' };
+          const response = await fetch(`https://www.googleapis.com/drive/v3/files/${song.google_drive_file_id}?fields=size`, {
+            headers: { Authorization: `Bearer ${accessToken}` },
+          });
+          const fileData = await response.json();
+          const sizeInKB = fileData.size ? (fileData.size / 1024).toFixed(2) : 'Unknown';
+          return { ...song, fileSize: `${sizeInKB} KB` };
         })
       );
 
@@ -132,7 +158,7 @@ function Home() {
                   <button
                     onClick={(e) => {
                       e.preventDefault();
-                      handleDownload(song.id, song.file_path);
+                      handleDownload(song.id, song.google_drive_file_id);
                     }}
                     style={{
                       padding: '0.5rem 1rem',
@@ -176,3 +202,10 @@ function Home() {
               </div>
             </Link>
           ))}
+        </div>
+      </div>
+    </>
+  );
+}
+
+export default Home;

@@ -15,23 +15,27 @@ function Home() {
         .order('created_at', { ascending: false })
         .limit(10);
 
-      const songsWithSize = await Promise.all(
-        songData.map(async (song) => {
-          const response = await fetch(`https://www.googleapis.com/drive/v3/files/${song.google_drive_file_id}?fields=size`, {
-            headers: { Authorization: `Bearer ${accessToken}` },
-          });
-          const fileData = await response.json();
-          const sizeInKB = fileData.size ? (fileData.size / 1024).toFixed(2) : 'Unknown';
-          return { ...song, fileSize: `${sizeInKB} KB` };
-        })
-      );
+      if (accessToken) {
+        const songsWithSize = await Promise.all(
+          songData.map(async (song) => {
+            const response = await fetch(`https://www.googleapis.com/drive/v3/files/${song.google_drive_file_id}?fields=size`, {
+              headers: { Authorization: `Bearer ${accessToken}` },
+            });
+            const fileData = await response.json();
+            const sizeInKB = fileData.size ? (fileData.size / 1024).toFixed(2) : 'Unknown';
+            return { ...song, fileSize: `${sizeInKB} KB` };
+          })
+        );
+        setSongs(songsWithSize || []);
+      } else {
+        setSongs(songData || []);
+      }
 
       const { data: postData } = await supabase
         .from('blog_posts')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(10);
-      setSongs(songsWithSize || []);
       setPosts(postData || []);
     };
 
@@ -51,14 +55,15 @@ function Home() {
               authInstance.signIn().then((googleUser) => {
                 setAccessToken(googleUser.getAuthResponse().access_token);
                 fetchData();
-              });
+              }).catch(err => console.error('Google Sign-In failed:', err));
             } else {
               setAccessToken(authInstance.currentUser.get().getAuthResponse().access_token);
               fetchData();
             }
-          });
+          }).catch(err => console.error('Google Auth init failed:', err));
         });
       };
+      script.onerror = () => console.error('Failed to load Google API script');
       document.body.appendChild(script);
     };
 
@@ -66,6 +71,10 @@ function Home() {
   }, [accessToken]);
 
   const handleDownload = async (songId, fileId) => {
+    if (!accessToken) {
+      console.error('Not authenticated with Google Drive');
+      return;
+    }
     try {
       const response = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
         headers: { Authorization: `Bearer ${accessToken}` },
@@ -76,7 +85,7 @@ function Home() {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `choircenter.com-${songId}.pdf`; // Simplified naming
+      link.download = `choircenter.com-${songId}.pdf`;
       link.click();
       URL.revokeObjectURL(url);
 
@@ -153,7 +162,7 @@ function Home() {
                     <h4 style={{ fontSize: '1rem', fontWeight: '700', color: '#fff', margin: 0 }}>{song.title}</h4>
                     <p style={{ fontSize: '0.875rem', color: '#98fb98', margin: 0 }}>{song.description || 'No description'}</p>
                   </div>
-                  <span style={{ marginRight: '1rem', color: '#98fb98' }}>{song.fileSize}</span>
+                  <span style={{ marginRight: '1rem', color: '#98fb98' }}>{song.fileSize || 'Loading...'}</span>
                   <span style={{ marginRight: '1rem', color: '#98fb98' }}>{song.downloads || 0} downloads</span>
                   <button
                     onClick={(e) => {

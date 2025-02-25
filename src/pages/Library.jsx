@@ -75,8 +75,8 @@ function Library() {
 
   return (
     <div className="container" style={{ padding: '2rem' }}>
-      <h2 style={{ fontSize: '2rem', fontWeight: '700', color: '#2f4f2f' }}>Library</h2>
-      <div style={{ background: '#1a3c34', padding: '1rem', borderRadius: '8px', marginTop: '1rem' }}>
+      <h2 style={{ fontSize: '2rem', fontWeight: '700', color: '#2f4f2f', marginBottom: '1rem' }}>Library</h2>
+      <div style={{ background: '#1a3c34', padding: '1rem', borderRadius: '8px' }}>
         <div style={{ display: 'grid', gap: '0.5rem' }}>
           {songs.map((song, index) => (
             <Link
@@ -89,47 +89,4 @@ function Library() {
                   display: 'flex',
                   alignItems: 'center',
                   padding: '0.75rem',
-                  background: index % 2 === 0 ? '#2f4f2f' : '#1a3c34',
-                  color: '#fff',
-                  borderRadius: '4px',
-                  transition: 'background 0.2s',
-                  cursor: 'pointer',
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = '#3cb371')}
-                onMouseLeave={(e) => (e.currentTarget.style.background = index % 2 === 0 ? '#2f4f2f' : '#1a3c34')}
-              >
-                <span style={{ width: '2rem', textAlign: 'right', marginRight: '1rem', color: '#98fb98' }}>{index + 1}</span>
-                <div style={{ flex: 1 }}>
-                  <h4 style={{ fontSize: '1rem', fontWeight: '700', color: '#fff', margin: 0 }}>{song.title}</h4>
-                  <p style={{ fontSize: '0.875rem', color: '#98fb98', margin: 0 }}>{song.description || 'No description'}</p>
-                </div>
-                <span style={{ marginRight: '1rem', color: '#98fb98' }}>{song.fileSize}</span>
-                <span style={{ marginRight: '1rem', color: '#98fb98' }}>{song.downloads || 0} downloads</span>
-                <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleDownload(song.id, song.file_path);
-                  }}
-                  style={{
-                    padding: '0.5rem 1rem',
-                    background: '#98fb98',
-                    color: '#2f4f2f',
-                    border: 'none',
-                    borderRadius: '20px',
-                    cursor: 'pointer',
-                    fontSize: '0.875rem',
-                    fontWeight: '700',
-                  }}
-                >
-                  Download
-                </button>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export default Library;
+                  background: index % 2 === 0 ? '#2f4f2f' : '#1a3c34

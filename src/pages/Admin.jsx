@@ -11,6 +11,9 @@ function Admin() {
   const [error, setError] = useState(null);
   const [editSongId, setEditSongId] = useState(null);
   const [editFormData, setEditFormData] = useState({ title: '', permalink: '', tags: '', category: '', focus_keyword: '', file_id: '', lyrics: '' });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState('created_at'); // 'created_at', 'downloads', 'title'
+  const [sortOrder, setSortOrder] = useState('desc'); // 'asc', 'desc'
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -27,7 +30,10 @@ function Admin() {
   }, [navigate]);
 
   const fetchInitialData = async () => {
-    const { data: songData, error: songError } = await supabase.from('songs').select('*');
+    const { data: songData, error: songError } = await supabase
+      .from('songs')
+      .select('*')
+      .order(sortBy, { ascending: sortOrder === 'asc' });
     const { data: postData, error: postError } = await supabase.from('blog_posts').select('*');
     const { data: userData, error: userError } = await supabase.from('profiles').select('*');
     if (songError) console.error('Song fetch error:', songError.message);
@@ -160,11 +166,41 @@ function Admin() {
     }
   };
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate('/login');
+  };
+
+  // Filter songs based on search term
+  const filteredSongs = songs.filter(song =>
+    song.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (song.category && song.category.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
+
   if (!user) return <div>Loading...</div>;
 
   return (
     <div className="container" style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
-      <h2 style={{ fontSize: '2rem', fontWeight: '700', color: '#2f4f2f', marginBottom: '1.5rem' }}>Admin Dashboard</h2>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+        <h2 style={{ fontSize: '2rem', fontWeight: '700', color: '#2f4f2f' }}>Admin Dashboard</h2>
+        <button
+          onClick={handleLogout}
+          style={{
+            padding: '0.5rem 1rem',
+            background: '#e63946',
+            color: '#fff',
+            border: 'none',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            fontWeight: '600',
+            transition: 'background 0.3s ease',
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.background = '#d32f2f')}
+          onMouseLeave={(e) => (e.currentTarget.style.background = '#e63946')}
+        >
+          Logout
+        </button>
+      </div>
       {error && <p style={{ color: '#e63946', marginBottom: '1rem', fontSize: '1rem' }}>{error}</p>}
       <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
         {['library', 'blog', 'analytics', 'users'].map(tab => (
@@ -330,59 +366,125 @@ function Admin() {
                 Add Song
               </button>
             </form>
+
+            {/* Search and Filter Section */}
+            <div style={{ 
+              background: '#f5f5f5', 
+              padding: '16px', 
+              borderRadius: '8px', 
+              display: 'flex', 
+              flexWrap: 'wrap', 
+              gap: '16px', 
+              alignItems: 'center', 
+              marginBottom: '24px' 
+            }}>
+              <input
+                type="text"
+                placeholder="Search songs..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                style={{ 
+                  padding: '10px 16px', 
+                  width: '100%', 
+                  maxWidth: '300px', 
+                  border: '1px solid #ccc', 
+                  borderRadius: '25px', 
+                  fontSize: '14px', 
+                  outline: 'none', 
+                  boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.1)' 
+                }}
+              />
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                style={{ 
+                  padding: '10px 16px', 
+                  borderRadius: '25px', 
+                  border: '1px solid #ccc', 
+                  background: '#fff', 
+                  fontSize: '14px', 
+                  cursor: 'pointer' 
+                }}
+              >
+                <option value="created_at">Sort by Date</option>
+                <option value="downloads">Sort by Downloads</option>
+                <option value="title">Sort by Title</option>
+              </select>
+              <select
+                value={sortOrder}
+                onChange={(e) => setSortOrder(e.target.value)}
+                style={{ 
+                  padding: '10px 16px', 
+                  borderRadius: '25px', 
+                  border: '1px solid #ccc', 
+                  background: '#fff', 
+                  fontSize: '14px', 
+                  cursor: 'pointer' 
+                }}
+              >
+                <option value="desc">Descending</option>
+                <option value="asc">Ascending</option>
+              </select>
+            </div>
+
             <h4 style={{ fontSize: '1.25rem', fontWeight: '700', color: '#2f4f2f', marginBottom: '1rem' }}>Current Songs</h4>
-            <div style={{ display: 'grid', gap: '1rem' }}>
-              {songs.map((song, index) => (
-                <div
-                  key={song.id}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    padding: '1rem',
-                    background: '#f9fafb',
-                    borderRadius: '8px',
-                    transition: 'background 0.3s ease',
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = '#e6f4ea')}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = '#f9fafb')}
-                >
-                  <span style={{ width: '2rem', textAlign: 'right', marginRight: '1rem', color: '#2f4f2f', fontWeight: '600' }}>{index + 1}.</span>
-                  <span style={{ flex: 1, fontSize: '1rem', color: '#2f4f2f' }}>{song.title}</span>
-                  <button
-                    onClick={() => handleEditSong(song)}
-                    style={{
-                      padding: '0.5rem 1rem',
-                      background: '#3cb371',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: '6px',
-                      cursor: 'pointer',
-                      marginRight: '0.5rem',
-                      transition: 'background 0.3s ease',
-                    }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = '#2f9e5e')}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = '#3cb371')}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDeleteSong(song.id)}
-                    style={{
-                      padding: '0.5rem 1rem',
-                      background: '#e63946',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: '6px',
-                      cursor: 'pointer',
-                      transition: 'background 0.3s ease',
-                    }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = '#d32f2f')}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = '#e63946')}
-                  >
-                    Delete
-                  </button>
-                </div>
-              ))}
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr>
+                    <th style={{ border: '1px solid #ddd', padding: '1rem', fontWeight: '700', color: '#2f4f2f', background: '#f9fafb' }}>#</th>
+                    <th style={{ border: '1px solid #ddd', padding: '1rem', fontWeight: '700', color: '#2f4f2f', background: '#f9fafb' }}>Title</th>
+                    <th style={{ border: '1px solid #ddd', padding: '1rem', fontWeight: '700', color: '#2f4f2f', background: '#f9fafb' }}>Category</th>
+                    <th style={{ border: '1px solid #ddd', padding: '1rem', fontWeight: '700', color: '#2f4f2f', background: '#f9fafb' }}>Downloads</th>
+                    <th style={{ border: '1px solid #ddd', padding: '1rem', fontWeight: '700', color: '#2f4f2f', background: '#f9fafb' }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredSongs.map((song, index) => (
+                    <tr key={song.id}>
+                      <td style={{ border: '1px solid #ddd', padding: '1rem', color: '#333', textAlign: 'center' }}>{index + 1}</td>
+                      <td style={{ border: '1px solid #ddd', padding: '1rem', color: '#333' }}>{song.title}</td>
+                      <td style={{ border: '1px solid #ddd', padding: '1rem', color: '#333' }}>{song.category || 'N/A'}</td>
+                      <td style={{ border: '1px solid #ddd', padding: '1rem', color: '#333', textAlign: 'center' }}>{song.downloads || 0}</td>
+                      <td style={{ border: '1px solid #ddd', padding: '1rem', textAlign: 'center' }}>
+                        <button
+                          onClick={() => handleEditSong(song)}
+                          style={{
+                            padding: '0.5rem 1rem',
+                            background: '#3cb371',
+                            color: '#fff',
+                            border: 'none',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            marginRight: '0.5rem',
+                            transition: 'background 0.3s ease',
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.background = '#2f9e5e')}
+                          onMouseLeave={(e) => (e.currentTarget.style.background = '#3cb371')}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeleteSong(song.id)}
+                          style={{
+                            padding: '0.5rem 1rem',
+                            background: '#e63946',
+                            color: '#fff',
+                            border: 'none',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            transition: 'background 0.3s ease',
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.background = '#d32f2f')}
+                          onMouseLeave={(e) => (e.currentTarget.style.background = '#e63946')}
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
             {editSongId && (
               <div style={{ marginTop: '2rem', padding: '1.5rem', background: '#f1f5f9', borderRadius: '12px' }}>

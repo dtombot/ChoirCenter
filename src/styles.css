@@ -47,6 +47,11 @@ body {
   text-decoration: none;
   color: #98fb98;
   font-size: 1rem;
+  transition: color 0.3s ease;
+}
+
+.nav-link:hover {
+  color: #fff;
 }
 
 .nav-button {
@@ -55,6 +60,11 @@ body {
   color: #98fb98;
   cursor: pointer;
   font-size: 1rem;
+  transition: color 0.3s ease;
+}
+
+.nav-button:hover {
+  color: #fff;
 }
 
 /* Background Notes */
@@ -108,6 +118,11 @@ body {
   color: #98fb98;
   text-decoration: none;
   font-size: 0.9rem;
+  transition: color 0.3s ease;
+}
+
+.footer-link:hover {
+  color: #fff;
 }
 
 .footer-social {
@@ -119,14 +134,42 @@ body {
 .social-icon {
   width: 24px;
   fill: #98fb98;
+  transition: transform 0.3s ease;
+}
+
+.social-icon:hover {
+  transform: scale(1.2);
 }
 
 /* Home */
 .hero-section {
-  background: #3cb371;
+  position: relative;
   color: white;
   text-align: center;
   padding: 4rem 1rem;
+  background: #3cb371;
+  background-size: cover;
+  background-position: center;
+  animation: slideBackground 20s infinite;
+  overflow: hidden;
+}
+
+@keyframes slideBackground {
+  0% { background-image: url('https://images.unsplash.com/photo-1506748686214-e9df14d4d9d0'); }
+  20% { background-image: url('https://images.unsplash.com/photo-1511671788563-3028fb3da85b'); }
+  40% { background-image: url('https://images.unsplash.com/photo-1470225620780-d4df7d9e4d93'); }
+  60% { background-image: url('https://images.unsplash.com/photo-1519125323398-675f398f6978'); }
+  80% { background-image: url('https://images.unsplash.com/photo-1501389446297-06c0e9288e8e'); }
+  100% { background-image: url('https://images.unsplash.com/photo-1506748686214-e9df14d4d9d0'); }
+}
+
+.hero-content {
+  animation: fadeIn 1s ease-in;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .hero-title {
@@ -166,6 +209,12 @@ body {
   color: #2f4f2f;
   font-size: 1rem;
   cursor: pointer;
+  transition: transform 0.3s ease, background 0.3s ease;
+}
+
+.action-button:hover {
+  transform: scale(1.05);
+  background: #e6f4ea;
 }
 
 .error-message {
@@ -201,7 +250,8 @@ body {
   background: #2f4f2f;
   color: #fff;
   border-radius: 4px;
-  transition: background 0.2s;
+  text-decoration: none;
+  transition: transform 0.3s ease, background 0.2s ease;
   cursor: pointer;
   flex-wrap: wrap;
 }
@@ -212,6 +262,7 @@ body {
 
 .song-item:hover {
   background: #3cb371;
+  transform: scale(1.02);
 }
 
 .song-number {
@@ -259,6 +310,11 @@ body {
   cursor: pointer;
   font-size: 0.875rem;
   font-weight: 700;
+  transition: transform 0.3s ease;
+}
+
+.download-button:hover {
+  transform: scale(1.1);
 }
 
 .blog-list {
@@ -272,12 +328,15 @@ body {
   padding: 1rem;
   border-radius: 5px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  text-decoration: none;
+  color: inherit;
   cursor: pointer;
-  transition: box-shadow 0.2s;
+  transition: transform 0.3s ease, box-shadow 0.2s ease;
 }
 
 .blog-item:hover {
   box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  transform: scale(1.02);
 }
 
 .blog-title {

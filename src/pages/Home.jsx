@@ -11,11 +11,11 @@ function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
 
   const slides = [
-    'https://images.pexels.com/photos/257904/pexels-photo-257904.jpeg?w=1600',
-    'https://images.pexels.com/photos/167636/pexels-photo-167636.jpeg?w=1600',
-    'https://images.pexels.com/photos/2113566/pexels-photo-2113566.jpeg?w=1600',
-    'https://images.pexels.com/photos/2901215/pexels-photo-2901215.jpeg?w=1600',
-    'https://images.pexels.com/photos/2906607/pexels-photo-2906607.jpeg?w=1600'
+    '/images/choir1.jpg',
+    '/images/choir2.jpg',
+    '/images/choir3.jpg',
+    '/images/choir4.jpg',
+    '/images/choir5.jpg'
   ];
 
   useEffect(() => {

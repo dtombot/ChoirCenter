@@ -11,11 +11,11 @@ function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
 
   const slides = [
-    'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1600',
-    'https://images.unsplash.com/photo-1503097333080-d878e145e220?w=1600',
-    'https://images.unsplash.com/photo-1511671788563-3028fb3da85b?w=1600',
-    'https://images.unsplash.com/photo-1470225620780-d4df7d9e4d93?w=1600',
-    'https://images.unsplash.com/photo-1713450793849-ec8f31cc0b8b?w=1600'
+    'https://images.pexels.com/photos/257904/pexels-photo-257904.jpeg?w=1600',
+    'https://images.pexels.com/photos/167636/pexels-photo-167636.jpeg?w=1600',
+    'https://images.pexels.com/photos/2113566/pexels-photo-2113566.jpeg?w=1600',
+    'https://images.pexels.com/photos/2901215/pexels-photo-2901215.jpeg?w=1600',
+    'https://images.pexels.com/photos/2906607/pexels-photo-2906607.jpeg?w=1600'
   ];
 
   useEffect(() => {

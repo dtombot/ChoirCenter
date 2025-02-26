@@ -105,16 +105,19 @@ function Home() {
       <section className="blog-list-container">
         <h2 className="section-title">Latest Insights</h2>
         <div className="blog-list">
-          {posts.map(post => (
-            <Link
-              key={post.id}
-              to={`/blog/${post.permalink || 'missing-permalink'}`}
-              className="blog-item"
-              onClick={() => console.log('Navigating to:', `/blog/${post.permalink}`)}
-            >
-              <h3 className="blog-title">{post.title}</h3>
-            </Link>
-          ))}
+          {posts.map(post => {
+            const validPermalink = post.permalink && post.permalink !== 'undefined' && post.permalink !== '' ? post.permalink : `post-${post.id}`;
+            return (
+              <Link
+                key={post.id}
+                to={`/blog/${validPermalink}`}
+                className="blog-item"
+                onClick={() => console.log('Navigating to:', `/blog/${validPermalink}`)}
+              >
+                <h3 className="blog-title">{post.title}</h3>
+              </Link>
+            );
+          })}
         </div>
       </section>
     </div>

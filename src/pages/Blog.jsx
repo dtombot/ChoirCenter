@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../supabase';
 import { Link } from 'react-router-dom';
-import './styles.css';
+import '../styles.css';
 
 function Blog() {
   const [posts, setPosts] = useState([]);

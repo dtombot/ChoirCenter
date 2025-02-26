@@ -20,11 +20,7 @@ function Library() {
         console.error('Song fetch error:', songError.message);
         setError('Failed to load songs.');
       } else {
-        const songsWithSize = songData.map(song => ({
-          ...song,
-          fileSize: 'Unknown',
-        }));
-        setSongs(songsWithSize || []);
+        setSongs(songData || []);
       }
     };
     fetchSongs();
@@ -60,7 +56,7 @@ function Library() {
         .from('songs')
         .select('*')
         .order(sortBy, { ascending: sortOrder === 'asc' });
-      setSongs(updatedSongs.map(song => ({ ...song, fileSize: 'Unknown' })) || []);
+      setSongs(updatedSongs || []);
     } catch (err) {
       console.error('Download error:', err.message);
       setError('Failed to update download count.');
@@ -130,7 +126,6 @@ function Library() {
                   <h4 className="song-title">{song.title}</h4>
                   <p className="song-composer">{song.composer || 'Unknown Composer'}</p>
                 </div>
-                <span className="song-size">{song.fileSize}</span>
                 <div className="download-container">
                   <span className="song-downloads">Downloaded {song.downloads || 0} times</span>
                 </div>

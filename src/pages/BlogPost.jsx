@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../supabase';
 import { useParams, useNavigate } from 'react-router-dom';
-import './styles.css'; // Ensure styles are applied
+import '../styles.css';
 
 function BlogPost() {
   const [post, setPost] = useState(null);

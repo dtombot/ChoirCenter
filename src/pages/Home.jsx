@@ -45,10 +45,11 @@ function Home() {
     return () => clearInterval(slideInterval);
   }, []);
 
-  const handleSearch = async (e) => {
+  const handleSearch = (e) => {
     e.preventDefault();
     if (!searchQuery.trim()) return;
-    // Add search logic if needed, e.g., navigate to a search page
+    navigate(`/search?query=${encodeURIComponent(searchQuery)}`);
+    setSearchQuery('');
   };
 
   const handleSongClick = (permalink) => {
@@ -70,31 +71,31 @@ function Home() {
         </div>
         <div className="hero-overlay"></div>
         <div className="hero-content">
-          <h1 className="hero-title">Welcome to ChoirCenter</h1>
-          <p className="hero-text">Your hub for choir music and insights.</p>
+          <h1 className="hero-title animate-text">Welcome to ChoirCenter</h1>
+          <p className="hero-text animate-text">Your hub for choir music and insights.</p>
           <form onSubmit={handleSearch} className="search-form">
             <input
               type="text"
               placeholder="Search songs..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="search-input"
+              className="search-input animate-input"
             />
           </form>
           <div className="button-group">
-            <Link to="/library" className="action-button">Explore Library</Link>
-            <Link to="/blog" className="action-button">Latest Insights</Link>
+            <Link to="/library" className="action-button animate-button">Explore Library</Link>
+            <Link to="/blog" className="action-button animate-button">Latest Insights</Link>
           </div>
         </div>
       </section>
       {error && <p className="error-message">{error}</p>}
       <section className="latest-additions">
-        <h2 className="section-title">Latest Additions</h2>
+        <h2 className="section-title animate-text">Latest Additions</h2>
         <div className="song-grid">
           {songs.map(song => (
             <div
               key={song.id}
-              className="song-card"
+              className="song-card animate-card"
               onClick={() => handleSongClick(song.permalink)}
             >
               <div className="song-card-content">
@@ -112,13 +113,13 @@ function Home() {
       </section>
       <hr className="section-separator" />
       <section className="blog-list-container">
-        <h2 className="section-title">Latest Insights</h2>
+        <h2 className="section-title animate-text">Latest Insights</h2>
         <div className="blog-list">
           {posts.map(post => (
             <Link
               key={post.id}
               to={`/blog/${post.permalink || `post-${post.id}`}`}
-              className="blog-item"
+              className="blog-item animate-card"
             >
               <h3 className="blog-title">{post.title}</h3>
             </Link>

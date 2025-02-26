@@ -5,18 +5,9 @@ import { Link } from 'react-router-dom';
 function Home() {
   const [songs, setSongs] = useState([]);
   const [posts, setPosts] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const [error, setError] = useState(null);
-  const [downloadPrompt, setDownloadPrompt] = useState(null);
   const [currentSlide, setCurrentSlide] = useState(0);
-
-  const slides = [
-    '/images/choir1.jpg',
-    '/images/choir2.jpg',
-    '/images/choir3.jpg',
-    '/images/choir4.jpg',
-    '/images/choir5.jpg'
-  ];
 
   useEffect(() => {
     const fetchData = async () => {
@@ -25,199 +16,93 @@ function Home() {
         .select('*')
         .order('created_at', { ascending: false })
         .limit(10);
-      if (songError) {
-        console.error('Song fetch error:', songError.message);
-        setError('Failed to load songs.');
-      } else {
-        setSongs(songData || []);
-      }
+      if (songError) setError('Failed to load songs: ' + songError.message);
+      else setSongs(songData || []);
 
       const { data: postData, error: postError } = await supabase
         .from('blog_posts')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(10);
-      if (postError) {
-        console.error('Post fetch error:', postError.message);
-        setError(prev => prev ? `${prev} Failed to load posts.` : 'Failed to load posts.');
-      } else {
-        setPosts(postData || []);
-      }
+      if (postError) setError('Failed to load posts: ' + postError.message);
+      else setPosts(postData || []);
     };
     fetchData();
 
     const slideInterval = setInterval(() => {
-      setCurrentSlide((prev) => {
-        const next = (prev + 1) % slides.length;
-        console.log('Updating to slide:', next, 'URL:', slides[next]);
-        return next;
-      });
-    }, 10000);
-
+      setCurrentSlide(prev => (prev + 1) % 5);
+    }, 5000);
     return () => clearInterval(slideInterval);
-  }, [slides.length]);
+  }, []);
 
-  const handleDownload = async (songId, fileId) => {
-    try {
-      const { data: userData, error: userError } = await supabase.auth.getUser();
-      const isAuthenticated = userData?.user && !userError;
-
-      if (!isAuthenticated) {
-        const downloadCount = parseInt(localStorage.getItem('downloadCount') || '0', 10);
-        if (downloadCount >= 5) {
-          setDownloadPrompt('You’ve reached the limit of 5 downloads. Please log in to download more.');
-          return;
-        }
-        localStorage.setItem('downloadCount', downloadCount + 1);
-      }
-
-      const url = `https://drive.google.com/uc?export=download&id=${fileId}`;
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `choircenter.com-${songId}.pdf`;
-      link.click();
-
-      const { error: updateError } = await supabase
-        .from('songs')
-        .update({ downloads: (songs.find(s => s.id === songId)?.downloads || 0) + 1 })
-        .eq('id', songId);
-      if (updateError) throw updateError;
-
-      const { data: updatedSongs } = await supabase
-        .from('songs')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(10);
-      setSongs(updatedSongs || []);
-    } catch (err) {
-      console.error('Download error:', err.message);
-      setError('Failed to update download count.');
-    }
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+    // Add search logic if needed
   };
-
-  const handleShare = (songTitle, songId) => {
-    const shareUrl = `${window.location.origin}/song/${songId}`;
-    const shareText = `Check out "${songTitle}" on Choir Center!`;
-    
-    if (navigator.share) {
-      navigator.share({
-        title: songTitle,
-        text: shareText,
-        url: shareUrl,
-      }).catch(err => console.error('Share error:', err));
-    } else {
-      navigator.clipboard.writeText(shareUrl)
-        .then(() => alert('Link copied to clipboard! Share it manually.'))
-        .catch(err => console.error('Clipboard error:', err));
-    }
-  };
-
-  const filteredSongs = songs.filter(song =>
-    song.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (song.composer && song.composer.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
 
   return (
-    <>
+    <div className="container">
       <section className="hero-section">
         <div className="hero-slideshow">
-          <img
-            key={currentSlide}
-            src={slides[currentSlide]}
-            alt={`Choir Slide ${currentSlide + 1}`}
-            className="hero-slide-img active"
-            onLoad={() => console.log('Image loaded:', slides[currentSlide])}
-            onError={() => console.error('Image failed to load:', slides[currentSlide])}
-          />
+          {[1, 2, 3, 4, 5].map(num => (
+            <img
+              key={num}
+              src={`/images/choir${num}.jpg`}
+              alt={`Choir ${num}`}
+              className={`hero-slide-img ${currentSlide === num - 1 ? 'active' : ''}`}
+            />
+          ))}
         </div>
-        <div className="hero-overlay" />
+        <div className="hero-overlay"></div>
         <div className="hero-content">
-          <h2 className="hero-title">Everything Your Choir Needs in One Place</h2>
-          <p className="hero-text">Find and download choir music resources easily.</p>
-          <input
-            type="text"
-            placeholder="Search for songs..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="search-input"
-          />
+          <h1 className="hero-title">Welcome to ChoirCenter</h1>
+          <p className="hero-text">Your hub for choir music and insights.</p>
+          <form onSubmit={handleSearch}>
+            <input
+              type="text"
+              placeholder="Search songs..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="search-input"
+            />
+          </form>
           <div className="button-group">
-            <Link to="/library">
-              <button className="action-button">Explore Library</button>
-            </Link>
-            <Link to="/blog">
-              <button className="action-button">Blog Posts</button>
-            </Link>
+            <button className="action-button">Explore Library</button>
+            <button className="action-button">Latest Insights</button>
           </div>
         </div>
       </section>
-      <div className="container">
-        {error && <p className="error-message">{error}</p>}
-        <h3 className="section-title">Latest Additions</h3>
-        {songs.length === 0 && !error ? (
-          <p>No songs available.</p>
-        ) : (
-          <div className="song-list-container">
-            <div className="song-list">
-              {filteredSongs.map((song) => (
-                <Link to={`/song/${song.permalink || song.id}`} key={song.id} className="song-item">
-                  <div className="song-info">
-                    <h4 className="song-title">{song.title}</h4>
-                    <p className="song-composer">{song.composer || 'Unknown Composer'}</p>
-                  </div>
-                  <div className="download-container">
-                    <span className="song-downloads">Downloaded {song.downloads || 0} times</span>
-                  </div>
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleDownload(song.id, song.google_drive_file_id);
-                    }}
-                    className="download-button"
-                  >
-                    Download
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleShare(song.title, song.permalink || song.id);
-                    }}
-                    className="share-button"
-                  >
-                    Share
-                  </button>
-                </Link>
-              ))}
+      {error && <p className="error-message">{error}</p>}
+      <section className="song-list-container">
+        <h2 className="section-title">Latest Additions</h2>
+        <div className="song-list">
+          {songs.map(song => (
+            <div key={song.id} className="song-item">
+              <div className="song-info">
+                <h3 className="song-title">{song.title}</h3>
+                <p className="song-composer">{song.composer}</p>
+              </div>
+              <div className="download-container">
+                <p className="song-downloads">{song.downloads || 0} Downloads</p>
+                <button className="download-button">Download</button>
+              </div>
             </div>
-          </div>
-        )}
-        <hr className="section-separator" />
-        <h3 className="section-title">Latest Insights</h3>
-        {posts.length === 0 && !error ? (
-          <p>No posts available.</p>
-        ) : (
-          <div className="blog-list">
-            {posts.map(post => (
-              <Link to={`/blog/${post.permalink || post.id}`} key={post.id} className="blog-item">
-                <h4 className="blog-title">{post.title}</h4>
-              </Link>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {downloadPrompt && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <h3 className="modal-title">Download Limit Reached</h3>
-            <p className="modal-text">
-              {downloadPrompt} <Link to="/login" className="modal-link">Log in here</Link>.
-            </p>
-            <button onClick={() => setDownloadPrompt(null)} className="cancel-button">Close</button>
-          </div>
+          ))}
         </div>
-      )}
-    </>
+      </section>
+      <hr className="section-separator" />
+      <section className="blog-list-container">
+        <h2 className="section-title">Latest Insights</h2>
+        <div className="blog-list">
+          {posts.map(post => (
+            <Link key={post.id} to={`/blog/${post.permalink}`} className="blog-item">
+              <h3 className="blog-title">{post.title}</h3>
+            </Link>
+          ))}
+        </div>
+      </section>
+    </div>
   );
 }
 

@@ -16,25 +16,16 @@ function Home() {
         .select('*')
         .order('created_at', { ascending: false })
         .limit(10);
-      if (songError) {
-        console.error('Error fetching songs:', songError.message);
-        setError('Failed to load songs: ' + songError.message);
-      } else {
-        setSongs(songData || []);
-      }
+      if (songError) setError('Failed to load songs: ' + songError.message);
+      else setSongs(songData || []);
 
       const { data: postData, error: postError } = await supabase
         .from('blog_posts')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(10);
-      if (postError) {
-        console.error('Error fetching posts:', postError.message);
-        setError('Failed to load posts: ' + postError.message);
-      } else {
-        console.log('Posts fetched:', postData);
-        setPosts(postData || []);
-      }
+      if (postError) setError('Failed to load posts: ' + postError.message);
+      else setPosts(postData || []);
     };
     fetchData();
 
@@ -95,6 +86,7 @@ function Home() {
               <div className="download-container">
                 <p className="song-downloads">{song.downloads || 0} Downloads</p>
                 <button className="download-button">Download</button>
+                <button className="share-button">Share</button>
               </div>
             </div>
           ))}

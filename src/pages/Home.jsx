@@ -52,7 +52,7 @@ function Home() {
   };
 
   const handleSongClick = (permalink) => {
-    navigate(`/song/${permalink}`);
+    navigate(`/song/${permalink || `song-${song.id}`}`);
   };
 
   return (
@@ -95,7 +95,7 @@ function Home() {
             <div
               key={song.id}
               className="song-card"
-              onClick={() => handleSongClick(song.permalink || `song-${song.id}`)}
+              onClick={() => handleSongClick(song.permalink)}
             >
               <div className="song-card-content">
                 <h3 className="song-card-title">{song.title}</h3>

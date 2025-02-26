@@ -1,8 +1,10 @@
 /* Base Styles */
 body {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Neue Haas Grotesk', 'Helvetica', 'Arial', sans-serif; /* Mimic Atom.com typography */
   margin: 0;
   padding: 0;
+  font-weight: 400;
+  line-height: 1.5;
 }
 
 .container {
@@ -28,8 +30,9 @@ body {
 }
 
 .header-title {
-  font-size: 1.5rem;
+  font-size: 1.75rem; /* Slightly larger for Atom.com feel */
   margin: 0;
+  font-weight: 700; /* Bold for emphasis */
 }
 
 .header-link {
@@ -47,6 +50,7 @@ body {
   text-decoration: none;
   color: #98fb98;
   font-size: 1rem;
+  font-weight: 500;
   transition: color 0.3s ease;
 }
 
@@ -60,6 +64,7 @@ body {
   color: #98fb98;
   cursor: pointer;
   font-size: 1rem;
+  font-weight: 500;
   transition: color 0.3s ease;
 }
 
@@ -106,6 +111,7 @@ body {
 
 .footer-text {
   font-size: 0.9rem;
+  font-weight: 400;
 }
 
 .footer-links {
@@ -118,6 +124,7 @@ body {
   color: #98fb98;
   text-decoration: none;
   font-size: 0.9rem;
+  font-weight: 500;
   transition: color 0.3s ease;
 }
 
@@ -205,46 +212,59 @@ body {
 .hero-text {
   font-size: 1.2rem;
   max-width: 600px;
-  margin: 0 auto 1rem;
+  margin: 0 auto 1.5rem;
+  font-weight: 400;
 }
 
 .search-input {
-  padding: 0.5rem;
-  width: 50%;
-  max-width: 400px;
+  padding: 0.75rem 1.5rem;
+  width: 60%;
+  max-width: 500px;
   border: none;
-  border-radius: 5px;
+  border-radius: 30px;
   font-size: 1rem;
+  font-weight: 400;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: width 0.3s ease, box-shadow 0.3s ease;
+}
+
+.search-input:focus {
+  width: 70%;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+  outline: none;
 }
 
 .button-group {
   margin-top: 1rem;
   display: flex;
   justify-content: center;
-  gap: 0.5rem;
+  gap: 1rem;
   flex-wrap: wrap;
 }
 
 .action-button {
-  padding: 0.75rem 1.5rem;
+  padding: 0.75rem 2rem;
   border: none;
-  border-radius: 5px;
-  background: #fff;
-  color: #2f4f2f;
+  border-radius: 30px;
+  background: linear-gradient(135deg, #3cb371, #2f9e5e);
+  color: #fff;
   font-size: 1rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: transform 0.3s ease, background 0.3s ease;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .action-button:hover {
   transform: scale(1.05);
-  background: #e6f4ea;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .error-message {
   color: #e63946;
   margin-bottom: 1rem;
   text-align: center;
+  font-weight: 500;
 }
 
 .section-title {
@@ -274,7 +294,7 @@ body {
   flex: 1 1 300px;
   max-width: 100%;
   display: flex;
-  flex-direction: column; /* Stack elements vertically */
+  flex-direction: column;
   padding: 1rem;
   background: #fff;
   border-radius: 10px;
@@ -282,7 +302,7 @@ body {
   text-decoration: none;
   color: #333;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
-  animation: slideIn 0.5s ease forwards; /* Fade-in animation */
+  animation: slideIn 0.5s ease forwards;
 }
 
 @keyframes slideIn {
@@ -293,15 +313,6 @@ body {
 .song-item:hover {
   transform: translateY(-5px);
   box-shadow: 0 6px 12px rgba(0,0,0,0.15);
-}
-
-.song-number {
-  width: 2rem;
-  text-align: center;
-  font-size: 1rem;
-  font-weight: 700;
-  color: #3cb371;
-  margin-bottom: 0.5rem;
 }
 
 .song-info {
@@ -315,11 +326,11 @@ body {
   font-weight: 700;
   color: #2f4f2f;
   margin: 0;
-  white-space: normal; /* Allow wrapping */
+  white-space: normal;
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
-  -webkit-line-clamp: 2; /* Limit to 2 lines */
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
 }
 
@@ -343,16 +354,15 @@ body {
 
 .download-container {
   display: flex;
-  flex-direction: column;
   align-items: center;
   margin-top: 0.5rem;
 }
 
 .download-icon {
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 1rem; /* Smaller size */
+  height: 1rem;
   fill: #3cb371;
-  margin-bottom: 0.25rem;
+  margin-right: 0.5rem; /* Beside counter */
 }
 
 .song-downloads {
@@ -853,10 +863,6 @@ body {
     max-width: 400px;
   }
 
-  .song-number {
-    margin-bottom: 0.5rem;
-  }
-
   .song-downloads {
     margin-right: 0;
     margin-top: 0.5rem;
@@ -910,16 +916,25 @@ body {
     padding: 1rem 0.25rem;
   }
 
-  .action-button {
+  .hero-title {
+    font-size: 2rem;
+  }
+
+  .hero-text {
+    font-size: 1rem;
+  }
+
+  .search-input {
+    width: 90%;
     padding: 0.5rem 1rem;
+  }
+
+  .action-button {
+    padding: 0.5rem 1.5rem;
   }
 
   .song-item {
     padding: 0.5rem;
-  }
-
-  .song-number {
-    width: 1.5rem;
   }
 
   .song-title {

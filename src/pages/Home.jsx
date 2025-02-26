@@ -16,16 +16,25 @@ function Home() {
         .select('*')
         .order('created_at', { ascending: false })
         .limit(10);
-      if (songError) setError('Failed to load songs: ' + songError.message);
-      else setSongs(songData || []);
+      if (songError) {
+        console.error('Error fetching songs:', songError.message);
+        setError('Failed to load songs: ' + songError.message);
+      } else {
+        setSongs(songData || []);
+      }
 
       const { data: postData, error: postError } = await supabase
         .from('blog_posts')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(10);
-      if (postError) setError('Failed to load posts: ' + postError.message);
-      else setPosts(postData || []);
+      if (postError) {
+        console.error('Error fetching posts:', postError.message);
+        setError('Failed to load posts: ' + postError.message);
+      } else {
+        console.log('Posts fetched:', postData);
+        setPosts(postData || []);
+      }
     };
     fetchData();
 

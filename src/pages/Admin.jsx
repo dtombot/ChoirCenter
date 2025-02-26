@@ -24,37 +24,38 @@ function Admin() {
       }
       setUser(user);
 
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('is_admin')
-        .eq('id', user.id)
+      const { data: adminData, error: adminError } = await supabase
+        .from('admins')
+        .select('user_id')
+        .eq('user_id', user.id)
         .single();
-      if (profileError || !profileData?.is_admin) {
-        navigate('/');
+      if (adminError || !adminData) {
+        navigate('/'); // Redirect if not admin
+        return;
       }
+
+      const fetchSongs = async () => {
+        const { data, error } = await supabase.from('songs').select('*');
+        if (error) setError('Failed to load songs: ' + error.message);
+        else setSongs(data || []);
+      };
+      fetchSongs();
+
+      const fetchPosts = async () => {
+        const { data, error } = await supabase.from('blog_posts').select('*');
+        if (error) setError('Failed to load posts: ' + error.message);
+        else setPosts(data || []);
+      };
+      fetchPosts();
+
+      const fetchUsers = async () => {
+        const { data, error } = await supabase.from('profiles').select('id, email, is_admin');
+        if (error) setError('Failed to load users: ' + error.message);
+        else setUsers(data || []);
+      };
+      fetchUsers();
     };
     fetchUser();
-
-    const fetchSongs = async () => {
-      const { data, error } = await supabase.from('songs').select('*');
-      if (error) setError('Failed to load songs.');
-      else setSongs(data || []);
-    };
-    fetchSongs();
-
-    const fetchPosts = async () => {
-      const { data, error } = await supabase.from('blog_posts').select('*');
-      if (error) setError('Failed to load posts.');
-      else setPosts(data || []);
-    };
-    fetchPosts();
-
-    const fetchUsers = async () => {
-      const { data, error } = await supabase.from('profiles').select('id, email, is_admin');
-      if (error) setError('Failed to load users.');
-      else setUsers(data || []);
-    };
-    fetchUsers();
   }, [navigate]);
 
   const handleLogout = async () => {
@@ -82,7 +83,7 @@ function Admin() {
       const { data } = await supabase.from('songs').select('*');
       setSongs(data || []);
     } catch (err) {
-      setError('Failed to save song.');
+      setError('Failed to save song: ' + err.message);
     }
   };
 
@@ -106,7 +107,7 @@ function Admin() {
       const { data } = await supabase.from('blog_posts').select('*');
       setPosts(data || []);
     } catch (err) {
-      setError('Failed to save post.');
+      setError('Failed to save post: ' + err.message);
     }
   };
 
@@ -123,7 +124,7 @@ function Admin() {
   const deleteSong = async (id) => {
     if (window.confirm('Are you sure you want to delete this song?')) {
       const { error } = await supabase.from('songs').delete().eq('id', id);
-      if (error) setError('Failed to delete song.');
+      if (error) setError('Failed to delete song: ' + error.message);
       else setSongs(songs.filter(song => song.id !== id));
     }
   };
@@ -131,14 +132,14 @@ function Admin() {
   const deletePost = async (id) => {
     if (window.confirm('Are you sure you want to delete this post?')) {
       const { error } = await supabase.from('blog_posts').delete().eq('id', id);
-      if (error) setError('Failed to delete post.');
+      if (error) setError('Failed to delete post: ' + error.message);
       else setPosts(posts.filter(post => post.id !== id));
     }
   };
 
   const toggleSongPublic = async (id, isPublic) => {
     const { error } = await supabase.from('songs').update({ is_public: !isPublic }).eq('id', id);
-    if (error) setError('Failed to update song status.');
+    if (error) setError('Failed to update song status: ' + error.message);
     else setSongs(songs.map(song => song.id === id ? { ...song, is_public: !isPublic } : song));
   };
 
@@ -147,9 +148,19 @@ function Admin() {
       setError('Cannot modify your own admin status.');
       return;
     }
-    const { error } = await supabase.from('profiles').update({ is_admin: !isAdmin }).eq('id', id);
-    if (error) setError('Failed to update user status.');
-    else setUsers(users.map(u => u.id === id ? { ...u, is_admin: !isAdmin } : u));
+    try {
+      if (isAdmin) {
+        const { error } = await supabase.from('admins').delete().eq('user_id', id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('admins').insert([{ user_id: id }]);
+        if (error) throw error;
+      }
+      const { data } = await supabase.from('profiles').select('id, email, is_admin');
+      setUsers(data || []);
+    } catch (err) {
+      setError('Failed to update user status: ' + err.message);
+    }
   };
 
   const deleteUser = async (id) => {
@@ -159,7 +170,7 @@ function Admin() {
     }
     if (window.confirm('Are you sure you want to delete this user?')) {
       const { error } = await supabase.from('profiles').delete().eq('id', id);
-      if (error) setError('Failed to delete user.');
+      if (error) setError('Failed to delete user: ' + error.message);
       else setUsers(users.filter(u => u.id !== id));
     }
   };

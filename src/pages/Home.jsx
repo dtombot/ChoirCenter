@@ -11,11 +11,11 @@ function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
 
   const slides = [
-    'https://images.unsplash.com/photo-1506748686214-e9df14d4d9d0',
-    'https://images.unsplash.com/photo-1511671788563-3028fb3da85b',
-    'https://images.unsplash.com/photo-1470225620780-d4df7d9e4d93',
-    'https://images.unsplash.com/photo-1519125323398-675f398f6978',
-    'https://images.unsplash.com/photo-1501389446297-06c0e9288e8e'
+    'https://images.unsplash.com/photo-1713450793849-ec8f31cc0b8b?w=1600',
+    'https://images.unsplash.com/photo-1593186398679-069e4958f7b8?w=1600',
+    'https://images.unsplash.com/photo-1503097333080-d878e145e220?w=1600',
+    'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1600',
+    'https://images.unsplash.com/photo-1600585154526-990dced4363e?w=1600'
   ];
 
   useEffect(() => {
@@ -56,7 +56,7 @@ function Home() {
     }, 4000); // Change every 4 seconds
 
     return () => clearInterval(slideInterval);
-  }, []);
+  }, [slides.length]);
 
   const handleDownload = async (songId, fileId) => {
     try {

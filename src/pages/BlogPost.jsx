@@ -71,7 +71,6 @@ function BlogPost() {
       const { data: { user }, error } = await supabase.auth.getUser();
       if (error) {
         console.error('Fetch user error:', error.message);
-        setError('Failed to fetch user: ' + error.message);
       } else {
         setUser(user);
       }

@@ -13,6 +13,11 @@ function BlogPost() {
 
   useEffect(() => {
     const fetchPost = async () => {
+      if (!permalink || permalink === 'undefined') {
+        console.error('Permalink is undefined or invalid:', permalink);
+        setError('Invalid post URL');
+        return;
+      }
       console.log('Fetching post with permalink:', permalink);
       const { data, error } = await supabase
         .from('blog_posts')

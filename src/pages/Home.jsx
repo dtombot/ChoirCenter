@@ -182,7 +182,7 @@ function Home() {
           {posts.map(post => (
             <Link
               key={post.id}
-              to={`/blog/${post.id}`}
+              to={`/blog/${post.permalink || `post-${post.id}`}`}
               className="blog-item animate-card"
             >
               <h3 className="blog-title">{post.title}</h3>

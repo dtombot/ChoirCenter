@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../supabase';
 import { useNavigate } from 'react-router-dom';
 import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css'; // Import React Quill styles
+import 'react-quill/dist/quill.snow.css';
 
 function Admin() {
   const [user, setUser] = useState(null);
@@ -32,7 +32,7 @@ function Admin() {
         .eq('user_id', user.id)
         .single();
       if (adminError || !adminData) {
-        navigate('/'); // Redirect if not admin
+        navigate('/');
         return;
       }
 
@@ -92,17 +92,24 @@ function Admin() {
   const handlePostSubmit = async (e) => {
     e.preventDefault();
     try {
+      // Auto-generate permalink from title if empty
+      const generatedPermalink = postForm.permalink.trim() || postForm.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      if (!generatedPermalink) {
+        setError('Title is required to generate a permalink');
+        return;
+      }
+
       if (editingPostId) {
         const { error } = await supabase
           .from('blog_posts')
-          .update({ title: postForm.title, content: postForm.content, permalink: postForm.permalink })
+          .update({ title: postForm.title, content: postForm.content, permalink: generatedPermalink })
           .eq('id', editingPostId);
         if (error) throw error;
         setEditingPostId(null);
       } else {
         const { error } = await supabase
           .from('blog_posts')
-          .insert([{ title: postForm.title, content: postForm.content, permalink: postForm.permalink }]);
+          .insert([{ title: postForm.title, content: postForm.content, permalink: generatedPermalink }]);
         if (error) throw error;
       }
       setPostForm({ title: '', content: '', permalink: '' });
@@ -119,7 +126,7 @@ function Admin() {
   };
 
   const editPost = (post) => {
-    setPostForm({ title: post.title, content: post.content, permalink: post.permalink });
+    setPostForm({ title: post.title, content: post.content, permalink: post.permalink || '' });
     setEditingPostId(post.id);
   };
 
@@ -172,7 +179,7 @@ function Admin() {
     }
     if (window.confirm('Are you sure you want to delete this user?')) {
       const { error } = await supabase.from('profiles').delete().eq('id', id);
-      if (error) setError('Failed to delete user: ' + err.message);
+      if (error) setError('Failed to delete user: ' + error.message);
       else setUsers(users.filter(u => u.id !== id));
     }
   };
@@ -186,7 +193,7 @@ function Admin() {
       ['clean']
     ],
     clipboard: {
-      matchVisual: false // Preserve formatting from pasted text
+      matchVisual: false
     }
   };
 
@@ -315,7 +322,7 @@ function Admin() {
               />
               <input
                 type="text"
-                placeholder="Permalink"
+                placeholder="Permalink (auto-generated if blank)"
                 value={postForm.permalink}
                 onChange={(e) => setPostForm({ ...postForm, permalink: e.target.value })}
                 className="form-input"

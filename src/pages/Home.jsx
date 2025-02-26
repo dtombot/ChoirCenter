@@ -106,10 +106,11 @@ function Home() {
       <section className="hero-section">
         <div className="hero-slideshow">
           {slides.map((slide, index) => (
-            <div
+            <img
               key={index}
-              className={`hero-slide ${index === currentSlide ? 'active' : ''}`}
-              style={{ backgroundImage: `url(${slide})` }}
+              src={slide}
+              alt={`Choir Slide ${index + 1}`}
+              className={`hero-slide-img ${index === currentSlide ? 'active' : ''}`}
             />
           ))}
         </div>

@@ -134,7 +134,7 @@ function App() {
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/blog" element={<Blog />} />
-        <Route path="/blog/:id" element={<BlogPost />} />
+        <Route path="/blog/:permalink" element={<BlogPost />} /> {/* Changed to :permalink */}
         <Route path="/song/:id" element={<Song />} />
         <Route path="/search" element={<div>Search Placeholder</div>} />
       </Routes>

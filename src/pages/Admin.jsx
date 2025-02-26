@@ -7,6 +7,7 @@ function Admin() {
   const [activeTab, setActiveTab] = useState('songs');
   const [songs, setSongs] = useState([]);
   const [posts, setPosts] = useState([]);
+  const [users, setUsers] = useState([]);
   const [songForm, setSongForm] = useState({ title: '', composer: '', google_drive_file_id: '', permalink: '', is_public: true });
   const [postForm, setPostForm] = useState({ title: '', content: '', permalink: '' });
   const [editingSongId, setEditingSongId] = useState(null);
@@ -47,6 +48,13 @@ function Admin() {
       else setPosts(data || []);
     };
     fetchPosts();
+
+    const fetchUsers = async () => {
+      const { data, error } = await supabase.from('profiles').select('id, email, is_admin');
+      if (error) setError('Failed to load users.');
+      else setUsers(data || []);
+    };
+    fetchUsers();
   }, [navigate]);
 
   const handleLogout = async () => {
@@ -134,7 +142,33 @@ function Admin() {
     else setSongs(songs.map(song => song.id === id ? { ...song, is_public: !isPublic } : song));
   };
 
+  const toggleUserAdmin = async (id, isAdmin) => {
+    if (id === user.id) {
+      setError('Cannot modify your own admin status.');
+      return;
+    }
+    const { error } = await supabase.from('profiles').update({ is_admin: !isAdmin }).eq('id', id);
+    if (error) setError('Failed to update user status.');
+    else setUsers(users.map(u => u.id === id ? { ...u, is_admin: !isAdmin } : u));
+  };
+
+  const deleteUser = async (id) => {
+    if (id === user.id) {
+      setError('Cannot delete your own account.');
+      return;
+    }
+    if (window.confirm('Are you sure you want to delete this user?')) {
+      const { error } = await supabase.from('profiles').delete().eq('id', id);
+      if (error) setError('Failed to delete user.');
+      else setUsers(users.filter(u => u.id !== id));
+    }
+  };
+
   if (!user) return null;
+
+  const totalDownloads = songs.reduce((sum, song) => sum + (song.downloads || 0), 0);
+  const publicSongs = songs.filter(song => song.is_public).length;
+  const privateSongs = songs.length - publicSongs;
 
   return (
     <div className="container">
@@ -145,6 +179,8 @@ function Admin() {
       <div className="tab-bar">
         <button className={`tab-button ${activeTab === 'songs' ? 'active' : ''}`} onClick={() => setActiveTab('songs')}>Songs</button>
         <button className={`tab-button ${activeTab === 'posts' ? 'active' : ''}`} onClick={() => setActiveTab('posts')}>Blog Posts</button>
+        <button className={`tab-button ${activeTab === 'analytics' ? 'active' : ''}`} onClick={() => setActiveTab('analytics')}>Analytics</button>
+        <button className={`tab-button ${activeTab === 'users' ? 'active' : ''}`} onClick={() => setActiveTab('users')}>Manage Users</button>
       </div>
       <div className="admin-content">
         {error && <p className="error-message">{error}</p>}
@@ -285,6 +321,74 @@ function Admin() {
               </table>
             </div>
           </>
+        )}
+        {activeTab === 'analytics' && (
+          <div className="analytics-grid">
+            <div className="analytics-item">
+              <h3 className="analytics-title">Total Songs</h3>
+              <p className="analytics-value">{songs.length}</p>
+            </div>
+            <div className="analytics-item">
+              <h3 className="analytics-title">Total Downloads</h3>
+              <p className="analytics-value">{totalDownloads}</p>
+            </div>
+            <div className="analytics-item">
+              <h3 className="analytics-title">Public Songs</h3>
+              <p className="analytics-value">{publicSongs}</p>
+            </div>
+            <div className="analytics-item">
+              <h3 className="analytics-title">Private Songs</h3>
+              <p className="analytics-value">{privateSongs}</p>
+            </div>
+            <div className="analytics-item">
+              <h3 className="analytics-title">Total Blog Posts</h3>
+              <p className="analytics-value">{posts.length}</p>
+            </div>
+            <div className="analytics-item">
+              <h3 className="analytics-title">Total Users</h3>
+              <p className="analytics-value">{users.length}</p>
+            </div>
+          </div>
+        )}
+        {activeTab === 'users' && (
+          <div className="table-container">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Email</th>
+                  <th>Admin</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.map(u => (
+                  <tr key={u.id}>
+                    <td>{u.id}</td>
+                    <td>{u.email}</td>
+                    <td>
+                      <button
+                        onClick={() => toggleUserAdmin(u.id, u.is_admin)}
+                        className={`toggle-button ${u.is_admin ? 'admin' : ''}`}
+                        disabled={u.id === user.id}
+                      >
+                        {u.is_admin ? 'Yes' : 'No'}
+                      </button>
+                    </td>
+                    <td>
+                      <button
+                        onClick={() => deleteUser(u.id)}
+                        className="delete-button"
+                        disabled={u.id === user.id}
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>

@@ -52,23 +52,62 @@ function Home() {
     setSearchQuery('');
   };
 
-  const handleSongClick = (permalink) => {
-    navigate(`/song/${permalink || `song-${song.id}`}`);
+  const handleSongClick = (id) => {
+    navigate(`/song/${id}`);
   };
 
-  const handleDownload = (google_drive_file_id) => {
-    // Placeholder: Replace with actual download logic
-    alert(`Downloading file with ID: ${google_drive_file_id}`);
-    // Example: window.open(`https://drive.google.com/uc?export=download&id=${google_drive_file_id}`, '_blank');
+  const handleDownload = async (songId, fileId) => {
+    try {
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      const isAuthenticated = userData?.user && !userError;
+
+      if (!isAuthenticated) {
+        const downloadCount = parseInt(localStorage.getItem('downloadCount') || '0', 10);
+        if (downloadCount >= 5) {
+          alert('You’ve reached the limit of 5 downloads. Please log in to download more.');
+          return;
+        }
+        localStorage.setItem('downloadCount', downloadCount + 1);
+      }
+
+      const url = `https://drive.google.com/uc?export=download&id=${fileId}`;
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `choircenter.com-${songId}.pdf`;
+      link.click();
+
+      const { error: updateError } = await supabase
+        .from('songs')
+        .update({ downloads: (songs.find(s => s.id === songId)?.downloads || 0) + 1 })
+        .eq('id', songId);
+      if (updateError) throw updateError;
+
+      const { data: updatedSongs } = await supabase
+        .from('songs')
+        .select('id, title, composer, google_drive_file_id, permalink, is_public, downloads')
+        .order('created_at', { ascending: false })
+        .limit(10);
+      setSongs(updatedSongs || []);
+    } catch (err) {
+      console.error('Download error:', err.message);
+      setError('Failed to update download count.');
+    }
   };
 
-  const handleShare = (title, permalink) => {
-    // Placeholder: Replace with actual share logic
-    alert(`Sharing: ${title} - /song/${permalink}`);
-    // Example using Web Share API:
-    // if (navigator.share) {
-    //   navigator.share({ title, url: `${window.location.origin}/song/${permalink}` });
-    // }
+  const handleShare = (songTitle, songId) => {
+    const shareUrl = `${window.location.origin}/song/${songId}`;
+    const shareText = `Check out "${songTitle}" on Choir Center!`;
+    if (navigator.share) {
+      navigator.share({
+        title: songTitle,
+        text: shareText,
+        url: shareUrl,
+      }).catch(err => console.error('Share error:', err));
+    } else {
+      navigator.clipboard.writeText(shareUrl)
+        .then(() => alert('Link copied to clipboard! Share it manually.'))
+        .catch(err => console.error('Clipboard error:', err));
+    }
   };
 
   return (
@@ -111,7 +150,7 @@ function Home() {
             <div
               key={song.id}
               className="song-card animate-card"
-              onClick={() => handleSongClick(song.permalink)}
+              onClick={() => handleSongClick(song.id)}
             >
               <div className="song-card-content">
                 <h3 className="song-card-title">{song.title}</h3>
@@ -121,13 +160,13 @@ function Home() {
               <div className="song-card-actions">
                 <button
                   className="download-button"
-                  onClick={(e) => { e.stopPropagation(); handleDownload(song.google_drive_file_id); }}
+                  onClick={(e) => { e.stopPropagation(); handleDownload(song.id, song.google_drive_file_id); }}
                 >
                   Download
                 </button>
                 <button
                   className="share-button"
-                  onClick={(e) => { e.stopPropagation(); handleShare(song.title, song.permalink); }}
+                  onClick={(e) => { e.stopPropagation(); handleShare(song.title, song.id); }}
                 >
                   Share
                 </button>
@@ -143,7 +182,7 @@ function Home() {
           {posts.map(post => (
             <Link
               key={post.id}
-              to={`/blog/${post.permalink || `post-${post.id}`}`}
+              to={`/blog/${post.id}`}
               className="blog-item animate-card"
             >
               <h3 className="blog-title">{post.title}</h3>

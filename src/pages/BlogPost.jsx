@@ -49,7 +49,6 @@ function BlogPost() {
         return;
       }
 
-      // Fetch user emails separately
       const userIds = commentData.map(comment => comment.user_id);
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
@@ -61,7 +60,6 @@ function BlogPost() {
         return;
       }
 
-      // Combine comments with user emails
       const enrichedComments = commentData.map(comment => ({
         ...comment,
         profiles: profileData.find(profile => profile.id === comment.user_id) || { email: 'Unknown' }
@@ -175,13 +173,13 @@ function BlogPost() {
             <div className="post-content" dangerouslySetInnerHTML={{ __html: post.content }} />
             <div className="social-share">
               <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`} target="_blank" rel="noopener noreferrer" className="share-button facebook">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#fff"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#fff"><path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.95c5.05-.5 9-4.76 9-9.95z"/></svg>
               </a>
-              <a href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareTitle)}`} target="_blank" rel="noopener noreferrer" className="share-button twitter">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#fff"><path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"/></svg>
+              <a href={`https://x.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareTitle)}`} target="_blank" rel="noopener noreferrer" className="share-button twitter">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#fff"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
               </a>
               <a href={`https://api.whatsapp.com/send?text=${encodeURIComponent(shareTitle + ' ' + shareUrl)}`} target="_blank" rel="noopener noreferrer" className="share-button whatsapp">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#fff"><path d="M20.1 3.9C17.8 1.7 14.5 0.5 11 0.5 5.3 0.5 0.6 5.2 0.6 10.9c0 1.8 0.5 3.6 1.4 5.2L0 23l7.1-1.9c1.6 0.9 3.4 1.4 5.3 1.4 5.7 0 10.4-4.7 10.4-10.4 0-2.8-1.1-5.4-3.2-7.2zm-8.9 16.1c-1.6 0-3.2-0.5-4.5-1.3l-0.3-0.2-4.2 1.1 1.1-4.1-0.2-0.3c-0.9-1.3-1.4-2.9-1.4-4.6 0-4.8 3.9-8.7 8.7-8.7 2.3 0 4.5 0.9 6.1 2.5 1.6 1.6 2.5 3.8 2.5 6.1 0 4.8-3.9 8.7-8.7 8.7zm4.7-6.5c-0.3-0.1-1.7-0.8-2-0.9-0.3-0.1-0.5-0.1-0.7 0.2-0.2 0.3-0.8 0.9-1 1.1-0.2 0.2-0.4 0.2-0.7 0.1-0.3-0.1-1.3-0.4-2.5-1.2-0.9-0.6-1.5-1.4-1.7-1.6-0.2-0.2-0.1-0.4 0-0.6 0.1-0.2 0.3-0.5 0.4-0.7 0.1-0.2 0.2-0.4 0.3-0.6 0.1-0.2 0-0.4-0.1-0.6-0.1-0.2-0.7-0.3-1.5-0.3z"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#fff"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.85.5 3.58 1.36 5.07L2 22l4.93-1.36C8.42 21.5 10.15 22 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm3.97 15.03c-.25.7-.76 1.27-1.45 1.6-.7.34-1.6.5-2.52.25-1.8-.5-3.3-2-3.8-3.8-.25-.9-.08-1.8.25-2.52.33-.7.9-1.2 1.6-1.45.15-.05.3-.08.45-.08s.3.03.45.08c.35.15.6.45.7.8.1.35.15.7.15 1.05 0 .35-.05.7-.15 1.05-.5 1.5.5 2.5 1.5 3s2-.5 1.5-1.5c-.15-.35-.2-.7-.15-1.05s.2-.7.55-.85c.15-.05.3-.08.45-.08s.3.03.45.08z"/></svg>
               </a>
             </div>
           </div>

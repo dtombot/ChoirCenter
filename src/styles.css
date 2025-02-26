@@ -842,7 +842,7 @@ body {
   }
 
   .song-item {
-    padding: 1rem 0.5rem; /* Restored original top/bottom padding */
+    padding: 1rem 0.5rem;
     width: 100%;
     max-width: 400px;
   }
@@ -851,35 +851,17 @@ body {
     margin-bottom: 0.25rem;
   }
 
-  .song-title {
-    font-size: 1.1rem; /* Restored original font size */
-  }
-
-  .song-composer {
-    font-size: 0.9rem; /* Restored original font size */
-    margin: 0.25rem 0 0;
-  }
-
-  .download-container {
-    margin-top: 0.25rem;
-  }
-
   .song-downloads {
-    font-size: 0.85rem; /* Restored original font size */
     margin-top: 0.25rem;
   }
 
   .download-button {
-    padding: 0.5rem 1.25rem; /* Restored original padding */
-    font-size: 0.9rem; /* Restored original font size */
     margin-top: 0.25rem;
     width: 100%;
     text-align: center;
   }
 
   .share-button {
-    padding: 0.5rem 1.25rem; /* Restored original padding */
-    font-size: 0.9rem; /* Restored original font size */
     margin-top: 0.25rem;
   }
 
@@ -893,11 +875,7 @@ body {
   .blog-item {
     width: 100%;
     max-width: 400px;
-    padding: 0.75rem; /* Restored original padding */
-  }
-
-  .blog-title {
-    font-size: 1.1rem; /* Restored original font size */
+    padding: 0.75rem;
   }
 
   .filter-bar {
@@ -959,29 +937,29 @@ body {
   }
 
   .song-item {
-    padding: 1rem 0.5rem; /* Restored original top/bottom padding */
+    padding: 1rem 0.5rem;
   }
 
   .song-title {
-    font-size: 1.1rem; /* Restored original font size */
+    font-size: 1rem;
   }
 
   .song-composer {
-    font-size: 0.9rem; /* Restored original font size */
+    font-size: 0.85rem;
   }
 
   .song-downloads {
-    font-size: 0.85rem; /* Restored original font size */
+    font-size: 0.8rem;
   }
 
   .download-button {
-    padding: 0.5rem 1.25rem; /* Restored original padding */
-    font-size: 0.9rem; /* Restored original font size */
+    padding: 0.4rem 1rem;
+    font-size: 0.85rem;
   }
 
   .share-button {
-    padding: 0.5rem 1.25rem; /* Restored original padding */
-    font-size: 0.9rem; /* Restored original font size */
+    padding: 0.4rem 1rem;
+    font-size: 0.85rem;
   }
 
   .blog-list {
@@ -990,11 +968,11 @@ body {
   }
 
   .blog-item {
-    padding: 0.75rem; /* Restored original padding */
+    padding: 0.75rem;
   }
 
   .blog-title {
-    font-size: 1.1rem; /* Restored original font size */
+    font-size: 1rem;
   }
 
   .filter-input {
@@ -1027,4 +1005,31 @@ body {
     padding: 0.5rem;
     font-size: 0.875rem;
   }
+}
+
+/* React Quill Editor Styles */
+.quill-editor {
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  grid-column: 1 / -1; /* Span full width in form-grid */
+}
+
+.quill-editor .ql-toolbar {
+  border-bottom: 1px solid #ccc;
+  background: #f9fafb;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+}
+
+.quill-editor .ql-container {
+  border: none;
+  min-height: 150px;
+  font-size: 1rem;
+  color: #333;
+}
+
+.quill-editor .ql-editor {
+  padding: 0.75rem;
 }

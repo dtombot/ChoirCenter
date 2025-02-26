@@ -9,6 +9,7 @@ function Home() {
   const [searchQuery, setSearchQuery] = useState('');
   const [error, setError] = useState(null);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [downloadPrompt, setDownloadPrompt] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -62,12 +63,14 @@ function Home() {
       const isAuthenticated = userData?.user && !userError;
 
       if (!isAuthenticated) {
-        const downloadCount = parseInt(localStorage.getItem('downloadCount') || '0', 10);
+        const today = new Date().toDateString();
+        const downloadKey = `downloads_${today}`;
+        const downloadCount = parseInt(localStorage.getItem(downloadKey) || '0', 10);
         if (downloadCount >= 5) {
-          alert('You’ve reached the limit of 5 downloads. Please log in to download more.');
+          setDownloadPrompt('You’ve reached the daily limit of 5 downloads. Register to download more!');
           return;
         }
-        localStorage.setItem('downloadCount', downloadCount + 1);
+        localStorage.setItem(downloadKey, downloadCount + 1);
       }
 
       const url = `https://drive.google.com/uc?export=download&id=${fileId}`;
@@ -125,8 +128,8 @@ function Home() {
         </div>
         <div className="hero-overlay"></div>
         <div className="hero-content">
-          <h1 className="hero-title animate-text">Welcome to ChoirCenter</h1>
-          <p className="hero-text animate-text">Your hub for choir music and insights.</p>
+          <h1 className="hero-title animate-text">Everything your choir needs in one place</h1>
+          <p className="hero-text animate-text">Discover and find choir music resources</p>
           <form onSubmit={handleSearch} className="search-form">
             <input
               type="text"
@@ -190,6 +193,17 @@ function Home() {
           ))}
         </div>
       </section>
+      {downloadPrompt && (
+        <div className="modal-overlay">
+          <div className="modal-content download-modal">
+            <h3 className="modal-title">Download Limit Reached</h3>
+            <p className="modal-text">
+              {downloadPrompt} <Link to="/signup" className="modal-link">Sign up here</Link> to enjoy unlimited downloads!
+            </p>
+            <button onClick={() => setDownloadPrompt(null)} className="cancel-button">Close</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

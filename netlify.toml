@@ -9,3 +9,13 @@
       script-src 'self' 'unsafe-inline';
       connect-src 'self' https://*.supabase.co;
     """
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/favicon.ico"
+  to = "/index.html"
+  status = 200

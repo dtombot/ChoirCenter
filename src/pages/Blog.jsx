@@ -39,7 +39,7 @@ function Blog() {
           {posts.map(post => (
             <Link
               key={post.id}
-              to={`/blog/${post.id}`}
+              to={`/blog/${post.permalink || `post-${post.id}`}`}
               className="blog-card animate-card"
             >
               <h2 className="blog-card-title">{post.title}</h2>

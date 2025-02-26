@@ -11,7 +11,15 @@ function Admin() {
   const [posts, setPosts] = useState([]);
   const [users, setUsers] = useState([]);
   const [songForm, setSongForm] = useState({ title: '', composer: '', google_drive_file_id: '', permalink: '', is_public: true });
-  const [postForm, setPostForm] = useState({ title: '', content: '', permalink: '' });
+  const [postForm, setPostForm] = useState({ 
+    title: '', 
+    content: '', 
+    permalink: '', 
+    meta_description: '', 
+    tags: '', 
+    category: '', 
+    focus_keyword: '' 
+  });
   const [editingSongId, setEditingSongId] = useState(null);
   const [editingPostId, setEditingPostId] = useState(null);
   const [error, setError] = useState(null);
@@ -94,25 +102,35 @@ function Admin() {
     try {
       // Auto-generate permalink from title if empty
       const generatedPermalink = postForm.permalink.trim() || postForm.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-      if (!generatedPermalink) {
-        setError('Title is required to generate a permalink');
+      if (!postForm.title.trim()) {
+        setError('Title is required');
         return;
       }
+
+      const postData = {
+        title: postForm.title,
+        content: postForm.content,
+        permalink: generatedPermalink,
+        meta_description: postForm.meta_description || null,
+        tags: postForm.tags || null,
+        category: postForm.category || null,
+        focus_keyword: postForm.focus_keyword || null
+      };
 
       if (editingPostId) {
         const { error } = await supabase
           .from('blog_posts')
-          .update({ title: postForm.title, content: postForm.content, permalink: generatedPermalink })
+          .update(postData)
           .eq('id', editingPostId);
         if (error) throw error;
         setEditingPostId(null);
       } else {
         const { error } = await supabase
           .from('blog_posts')
-          .insert([{ title: postForm.title, content: postForm.content, permalink: generatedPermalink }]);
+          .insert([postData]);
         if (error) throw error;
       }
-      setPostForm({ title: '', content: '', permalink: '' });
+      setPostForm({ title: '', content: '', permalink: '', meta_description: '', tags: '', category: '', focus_keyword: '' });
       const { data } = await supabase.from('blog_posts').select('*');
       setPosts(data || []);
     } catch (err) {
@@ -126,7 +144,15 @@ function Admin() {
   };
 
   const editPost = (post) => {
-    setPostForm({ title: post.title, content: post.content, permalink: post.permalink || '' });
+    setPostForm({ 
+      title: post.title, 
+      content: post.content, 
+      permalink: post.permalink || '', 
+      meta_description: post.meta_description || '', 
+      tags: post.tags || '', 
+      category: post.category || '', 
+      focus_keyword: post.focus_keyword || '' 
+    });
     setEditingPostId(post.id);
   };
 
@@ -192,16 +218,12 @@ function Admin() {
       ['link', 'image'],
       ['clean']
     ],
-    clipboard: {
-      matchVisual: false
-    }
+    clipboard: { matchVisual: false }
   };
 
   const quillFormats = [
-    'header',
-    'bold', 'italic', 'underline', 'strike',
-    'list', 'bullet',
-    'link', 'image'
+    'header', 'bold', 'italic', 'underline', 'strike',
+    'list', 'bullet', 'link', 'image'
   ];
 
   if (!user) return null;
@@ -227,45 +249,11 @@ function Admin() {
         {activeTab === 'songs' && (
           <>
             <form onSubmit={handleSongSubmit} className="form-grid">
-              <input
-                type="text"
-                placeholder="Song Title"
-                value={songForm.title}
-                onChange={(e) => setSongForm({ ...songForm, title: e.target.value })}
-                className="form-input"
-                required
-              />
-              <input
-                type="text"
-                placeholder="Composer"
-                value={songForm.composer}
-                onChange={(e) => setSongForm({ ...songForm, composer: e.target.value })}
-                className="form-input"
-                required
-              />
-              <input
-                type="text"
-                placeholder="Google Drive File ID"
-                value={songForm.google_drive_file_id}
-                onChange={(e) => setSongForm({ ...songForm, google_drive_file_id: e.target.value })}
-                className="form-input"
-                required
-              />
-              <input
-                type="text"
-                placeholder="Permalink"
-                value={songForm.permalink}
-                onChange={(e) => setSongForm({ ...songForm, permalink: e.target.value })}
-                className="form-input"
-              />
-              <label>
-                <input
-                  type="checkbox"
-                  checked={songForm.is_public}
-                  onChange={(e) => setSongForm({ ...songForm, is_public: e.target.checked })}
-                />
-                Public
-              </label>
+              <input type="text" placeholder="Song Title" value={songForm.title} onChange={(e) => setSongForm({ ...songForm, title: e.target.value })} className="form-input" required />
+              <input type="text" placeholder="Composer" value={songForm.composer} onChange={(e) => setSongForm({ ...songForm, composer: e.target.value })} className="form-input" required />
+              <input type="text" placeholder="Google Drive File ID" value={songForm.google_drive_file_id} onChange={(e) => setSongForm({ ...songForm, google_drive_file_id: e.target.value })} className="form-input" required />
+              <input type="text" placeholder="Permalink" value={songForm.permalink} onChange={(e) => setSongForm({ ...songForm, permalink: e.target.value })} className="form-input" />
+              <label><input type="checkbox" checked={songForm.is_public} onChange={(e) => setSongForm({ ...songForm, is_public: e.target.checked })} /> Public</label>
               <button type="submit" className="form-submit">{editingSongId ? 'Update Song' : 'Add Song'}</button>
               {editingSongId && (
                 <button type="button" className="cancel-button" onClick={() => { setSongForm({ title: '', composer: '', google_drive_file_id: '', permalink: '', is_public: true }); setEditingSongId(null); }}>Cancel</button>
@@ -291,10 +279,7 @@ function Admin() {
                       <td>{song.google_drive_file_id}</td>
                       <td>{song.downloads || 0}</td>
                       <td>
-                        <button
-                          onClick={() => toggleSongPublic(song.id, song.is_public)}
-                          className={`toggle-button ${song.is_public ? 'admin' : ''}`}
-                        >
+                        <button onClick={() => toggleSongPublic(song.id, song.is_public)} className={`toggle-button ${song.is_public ? 'admin' : ''}`}>
                           {song.is_public ? 'Yes' : 'No'}
                         </button>
                       </td>
@@ -310,85 +295,120 @@ function Admin() {
           </>
         )}
         {activeTab === 'posts' && (
-          <>
-            <form onSubmit={handlePostSubmit} className="form-grid">
-              <input
-                type="text"
-                placeholder="Post Title"
-                value={postForm.title}
-                onChange={(e) => setPostForm({ ...postForm, title: e.target.value })}
-                className="form-input"
-                required
-              />
-              <input
-                type="text"
-                placeholder="Permalink (auto-generated if blank)"
-                value={postForm.permalink}
-                onChange={(e) => setPostForm({ ...postForm, permalink: e.target.value })}
-                className="form-input"
-              />
-              <ReactQuill
-                value={postForm.content}
-                onChange={(content) => setPostForm({ ...postForm, content })}
-                modules={quillModules}
-                formats={quillFormats}
-                className="quill-editor"
-                placeholder="Write your blog post content here..."
-              />
-              <button type="submit" className="form-submit">{editingPostId ? 'Update Post' : 'Add Post'}</button>
-              {editingPostId && (
-                <button type="button" className="cancel-button" onClick={() => { setPostForm({ title: '', content: '', permalink: '' }); setEditingPostId(null); }}>Cancel</button>
-              )}
-            </form>
-            <div className="table-container">
-              <table className="admin-table">
-                <thead>
-                  <tr>
-                    <th>Title</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {posts.map(post => (
-                    <tr key={post.id}>
-                      <td>{post.title}</td>
-                      <td>
-                        <button onClick={() => editPost(post)} className="edit-button">Edit</button>
-                        <button onClick={() => deletePost(post.id)} className="delete-button">Delete</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          <div className="blog-posts-tab">
+            <div className="form-card">
+              <h3 className="form-title">{editingPostId ? 'Edit Blog Post' : 'Add New Blog Post'}</h3>
+              <form onSubmit={handlePostSubmit} className="modern-form-grid">
+                <div className="form-group">
+                  <label htmlFor="title">Title *</label>
+                  <input
+                    id="title"
+                    type="text"
+                    placeholder="Enter post title"
+                    value={postForm.title}
+                    onChange={(e) => setPostForm({ ...postForm, title: e.target.value })}
+                    className="form-input"
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="permalink">Permalink (auto-generated if blank)</label>
+                  <input
+                    id="permalink"
+                    type="text"
+                    placeholder="e.g., my-post-title"
+                    value={postForm.permalink}
+                    onChange={(e) => setPostForm({ ...postForm, permalink: e.target.value })}
+                    className="form-input"
+                  />
+                </div>
+                <div className="form-group full-width">
+                  <label htmlFor="content">Content</label>
+                  <ReactQuill
+                    value={postForm.content}
+                    onChange={(content) => setPostForm({ ...postForm, content })}
+                    modules={quillModules}
+                    formats={quillFormats}
+                    className="quill-editor"
+                    placeholder="Write your blog post content here..."
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="meta_description">Meta Description</label>
+                  <input
+                    id="meta_description"
+                    type="text"
+                    placeholder="Short description for SEO"
+                    value={postForm.meta_description}
+                    onChange={(e) => setPostForm({ ...postForm, meta_description: e.target.value })}
+                    className="form-input"
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="tags">Tags (comma-separated)</label>
+                  <input
+                    id="tags"
+                    type="text"
+                    placeholder="e.g., music, choir"
+                    value={postForm.tags}
+                    onChange={(e) => setPostForm({ ...postForm, tags: e.target.value })}
+                    className="form-input"
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="category">Category</label>
+                  <input
+                    id="category"
+                    type="text"
+                    placeholder="e.g., Vocal Tips"
+                    value={postForm.category}
+                    onChange={(e) => setPostForm({ ...postForm, category: e.target.value })}
+                    className="form-input"
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="focus_keyword">Focus Keyword</label>
+                  <input
+                    id="focus_keyword"
+                    type="text"
+                    placeholder="e.g., vocal warm-ups"
+                    value={postForm.focus_keyword}
+                    onChange={(e) => setPostForm({ ...postForm, focus_keyword: e.target.value })}
+                    className="form-input"
+                  />
+                </div>
+                <div className="form-actions">
+                  <button type="submit" className="form-submit">{editingPostId ? 'Update Post' : 'Add Post'}</button>
+                  {editingPostId && (
+                    <button type="button" className="cancel-button" onClick={() => { setPostForm({ title: '', content: '', permalink: '', meta_description: '', tags: '', category: '', focus_keyword: '' }); setEditingPostId(null); }}>Cancel</button>
+                  )}
+                </div>
+              </form>
             </div>
-          </>
+            <div className="posts-grid">
+              {posts.map(post => (
+                <div key={post.id} className="post-card">
+                  <h4 className="post-card-title">{post.title}</h4>
+                  <p className="post-card-meta"><strong>Permalink:</strong> {post.permalink || 'N/A'}</p>
+                  <p className="post-card-meta"><strong>Category:</strong> {post.category || 'Uncategorized'}</p>
+                  <p className="post-card-meta"><strong>Created:</strong> {new Date(post.created_at).toLocaleDateString()}</p>
+                  <div className="post-card-actions">
+                    <button onClick={() => editPost(post)} className="edit-button">Edit</button>
+                    <button onClick={() => deletePost(post.id)} className="delete-button">Delete</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
         {activeTab === 'analytics' && (
           <div className="analytics-grid">
-            <div className="analytics-item">
-              <h3 className="analytics-title">Total Songs</h3>
-              <p className="analytics-value">{songs.length}</p>
-            </div>
-            <div className="analytics-item">
-              <h3 className="analytics-title">Total Downloads</h3>
-              <p className="analytics-value">{totalDownloads}</p>
-            </div>
-            <div className="analytics-item">
-              <h3 className="analytics-title">Public Songs</h3>
-              <p className="analytics-value">{publicSongs}</p>
-            </div>
-            <div className="analytics-item">
-              <h3 className="analytics-title">Private Songs</h3>
-              <p className="analytics-value">{privateSongs}</p>
-            </div>
-            <div className="analytics-item">
-              <h3 className="analytics-title">Total Blog Posts</h3>
-              <p className="analytics-value">{posts.length}</p>
-            </div>
-            <div className="analytics-item">
-              <h3 className="analytics-title">Total Users</h3>
-              <p className="analytics-value">{users.length}</p>
-            </div>
+            <div className="analytics-item"><h3 className="analytics-title">Total Songs</h3><p className="analytics-value">{songs.length}</p></div>
+            <div className="analytics-item"><h3 className="analytics-title">Total Downloads</h3><p className="analytics-value">{totalDownloads}</p></div>
+            <div className="analytics-item"><h3 className="analytics-title">Public Songs</h3><p className="analytics-value">{publicSongs}</p></div>
+            <div className="analytics-item"><h3 className="analytics-title">Private Songs</h3><p className="analytics-value">{privateSongs}</p></div>
+            <div className="analytics-item"><h3 className="analytics-title">Total Blog Posts</h3><p className="analytics-value">{posts.length}</p></div>
+            <div className="analytics-item"><h3 className="analytics-title">Total Users</h3><p className="analytics-value">{users.length}</p></div>
           </div>
         )}
         {activeTab === 'users' && (
@@ -408,22 +428,12 @@ function Admin() {
                     <td>{u.id}</td>
                     <td>{u.email}</td>
                     <td>
-                      <button
-                        onClick={() => toggleUserAdmin(u.id, u.is_admin)}
-                        className={`toggle-button ${u.is_admin ? 'admin' : ''}`}
-                        disabled={u.id === user.id}
-                      >
+                      <button onClick={() => toggleUserAdmin(u.id, u.is_admin)} className={`toggle-button ${u.is_admin ? 'admin' : ''}`} disabled={u.id === user.id}>
                         {u.is_admin ? 'Yes' : 'No'}
                       </button>
                     </td>
                     <td>
-                      <button
-                        onClick={() => deleteUser(u.id)}
-                        className="delete-button"
-                        disabled={u.id === user.id}
-                      >
-                        Delete
-                      </button>
+                      <button onClick={() => deleteUser(u.id)} className="delete-button" disabled={u.id === user.id}>Delete</button>
                     </td>
                   </tr>
                 ))}

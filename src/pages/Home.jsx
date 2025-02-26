@@ -11,11 +11,11 @@ function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
 
   const slides = [
-    'https://images.unsplash.com/photo-1713450793849-ec8f31cc0b8b?w=1600',
-    'https://images.unsplash.com/photo-1593186398679-069e4958f7b8?w=1600',
-    'https://images.unsplash.com/photo-1503097333080-d878e145e220?w=1600',
     'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1600',
-    'https://images.unsplash.com/photo-1600585154526-990dced4363e?w=1600'
+    'https://images.unsplash.com/photo-1503097333080-d878e145e220?w=1600',
+    'https://images.unsplash.com/photo-1511671788563-3028fb3da85b?w=1600',
+    'https://images.unsplash.com/photo-1470225620780-d4df7d9e4d93?w=1600',
+    'https://images.unsplash.com/photo-1713450793849-ec8f31cc0b8b?w=1600'
   ];
 
   useEffect(() => {
@@ -168,7 +168,7 @@ function Home() {
           </div>
         )}
         <h3 className="section-title">Latest Insights</h3>
-        {posts.length === 0 && !error ? (
+        {songs.length === 0 && !error ? (
           <p>No posts available.</p>
         ) : (
           <div className="blog-list">

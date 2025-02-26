@@ -110,7 +110,7 @@ function Home() {
       <section className="hero-section">
         <div className="hero-slideshow">
           <img
-            key={currentSlide} // Force re-render with each slide change
+            key={currentSlide}
             src={slides[currentSlide]}
             alt={`Choir Slide ${currentSlide + 1}`}
             className="hero-slide-img active"
@@ -155,7 +155,7 @@ function Home() {
                     <p className="song-description">{song.description || 'No description'}</p>
                   </div>
                   <span className="song-size">{song.fileSize}</span>
-                  <span className="song-downloads">{song.downloads || 0} downloads</span>
+                  <span className="song-downloads">{song.downloads || 0}</span>
                   <button
                     onClick={(e) => {
                       e.preventDefault();

@@ -67,6 +67,23 @@ function Library() {
     }
   };
 
+  const handleShare = (songTitle, songId) => {
+    const shareUrl = `${window.location.origin}/song/${songId}`;
+    const shareText = `Check out "${songTitle}" on Choir Center!`;
+    
+    if (navigator.share) {
+      navigator.share({
+        title: songTitle,
+        text: shareText,
+        url: shareUrl,
+      }).catch(err => console.error('Share error:', err));
+    } else {
+      navigator.clipboard.writeText(shareUrl)
+        .then(() => alert('Link copied to clipboard! Share it manually.'))
+        .catch(err => console.error('Clipboard error:', err));
+    }
+  };
+
   const filteredSongs = songs.filter(song =>
     song.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (song.description && song.description.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -115,7 +132,12 @@ function Library() {
                   <p className="song-description">{song.description || 'No description'}</p>
                 </div>
                 <span className="song-size">{song.fileSize}</span>
-                <span className="song-downloads">{song.downloads || 0}</span>
+                <div className="download-container">
+                  <svg className="download-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                  </svg>
+                  <span className="song-downloads">{song.downloads || 0}</span>
+                </div>
                 <button
                   onClick={(e) => {
                     e.preventDefault();
@@ -124,6 +146,15 @@ function Library() {
                   className="download-button"
                 >
                   Download
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleShare(song.title, song.permalink || song.id);
+                  }}
+                  className="share-button"
+                >
+                  Share
                 </button>
               </Link>
             ))}

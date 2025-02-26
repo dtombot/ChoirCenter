@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../supabase';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import '../styles.css';
 
 function Library() {
   const [songs, setSongs] = useState([]);
@@ -9,12 +10,13 @@ function Library() {
   const [sortOrder, setSortOrder] = useState('desc');
   const [error, setError] = useState(null);
   const [downloadPrompt, setDownloadPrompt] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchSongs = async () => {
       const { data: songData, error: songError } = await supabase
         .from('songs')
-        .select('*')
+        .select('id, title, composer, google_drive_file_id, permalink, is_public, downloads')
         .order(sortBy, { ascending: sortOrder === 'asc' });
       if (songError) {
         console.error('Song fetch error:', songError.message);
@@ -54,7 +56,7 @@ function Library() {
 
       const { data: updatedSongs } = await supabase
         .from('songs')
-        .select('*')
+        .select('id, title, composer, google_drive_file_id, permalink, is_public, downloads')
         .order(sortBy, { ascending: sortOrder === 'asc' });
       setSongs(updatedSongs || []);
     } catch (err) {
@@ -80,14 +82,18 @@ function Library() {
     }
   };
 
+  const handleSongClick = (permalink) => {
+    navigate(`/song/${permalink || `song-${song.id}`}`);
+  };
+
   const filteredSongs = songs.filter(song =>
     song.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (song.composer && song.composer.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   return (
-    <div className="container">
-      <h2 className="section-title">Library</h2>
+    <div className="library-container">
+      <h1 className="library-title animate-text">Song Library</h1>
       <div className="filter-bar">
         <input
           type="text"
@@ -118,20 +124,22 @@ function Library() {
       {songs.length === 0 && !error ? (
         <p>No songs available.</p>
       ) : (
-        <div className="song-list-container">
-          <div className="song-list">
-            {filteredSongs.map((song) => (
-              <Link to={`/song/${song.permalink || song.id}`} key={song.id} className="song-item">
-                <div className="song-info">
-                  <h4 className="song-title">{song.title}</h4>
-                  <p className="song-composer">{song.composer || 'Unknown Composer'}</p>
-                </div>
-                <div className="download-container">
-                  <span className="song-downloads">Downloaded {song.downloads || 0} times</span>
-                </div>
+        <div className="song-grid">
+          {filteredSongs.map((song) => (
+            <div
+              key={song.id}
+              className="song-card animate-card"
+              onClick={() => handleSongClick(song.permalink)}
+            >
+              <div className="song-card-content">
+                <h3 className="song-card-title">{song.title}</h3>
+                <p className="song-card-composer">{song.composer || 'Unknown Composer'}</p>
+                <p className="song-card-downloads">Downloaded {song.downloads || 0} times</p>
+              </div>
+              <div className="song-card-actions">
                 <button
                   onClick={(e) => {
-                    e.preventDefault();
+                    e.stopPropagation();
                     handleDownload(song.id, song.google_drive_file_id);
                   }}
                   className="download-button"
@@ -140,19 +148,18 @@ function Library() {
                 </button>
                 <button
                   onClick={(e) => {
-                    e.preventDefault();
+                    e.stopPropagation();
                     handleShare(song.title, song.permalink || song.id);
                   }}
                   className="share-button"
                 >
                   Share
                 </button>
-              </Link>
-            ))}
-          </div>
+              </div>
+            </div>
+          ))}
         </div>
       )}
-
       {downloadPrompt && (
         <div className="modal-overlay">
           <div className="modal-content">

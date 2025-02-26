@@ -160,20 +160,19 @@ body {
   z-index: 1;
 }
 
-.hero-slide {
+.hero-slide-img {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background-size: cover;
-  background-position: center;
+  object-fit: cover;
   opacity: 0;
   transition: opacity 1s ease-in-out;
 }
 
-.hero-slide.active {
-  opacity: 0.7; /* Slight transparency to let content stand out */
+.hero-slide-img.active {
+  opacity: 0.7; /* Slight transparency for content visibility */
 }
 
 .hero-content {

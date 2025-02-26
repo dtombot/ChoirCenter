@@ -57,7 +57,7 @@ function Home() {
         console.log('Updating to slide:', next, 'URL:', slides[next]);
         return next;
       });
-    }, 4000); // Change every 4 seconds
+    }, 10000); // Change every 10 seconds
 
     return () => clearInterval(slideInterval);
   }, [slides.length]);

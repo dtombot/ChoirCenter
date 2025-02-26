@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../supabase';
 import { useNavigate } from 'react-router-dom';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css'; // Import React Quill styles
 
 function Admin() {
   const [user, setUser] = useState(null);
@@ -175,6 +177,23 @@ function Admin() {
     }
   };
 
+  const quillModules = {
+    toolbar: [
+      [{ 'header': [1, 2, 3, false] }],
+      ['bold', 'italic', 'underline', 'strike'],
+      [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+      ['link', 'image'],
+      ['clean']
+    ]
+  };
+
+  const quillFormats = [
+    'header',
+    'bold', 'italic', 'underline', 'strike',
+    'list', 'bullet',
+    'link', 'image'
+  ];
+
   if (!user) return null;
 
   const totalDownloads = songs.reduce((sum, song) => sum + (song.downloads || 0), 0);
@@ -298,12 +317,13 @@ function Admin() {
                 onChange={(e) => setPostForm({ ...postForm, permalink: e.target.value })}
                 className="form-input"
               />
-              <textarea
-                placeholder="Content"
+              <ReactQuill
                 value={postForm.content}
-                onChange={(e) => setPostForm({ ...postForm, content: e.target.value })}
-                className="form-textarea"
-                required
+                onChange={(content) => setPostForm({ ...postForm, content })}
+                modules={quillModules}
+                formats={quillFormats}
+                className="quill-editor"
+                placeholder="Write your blog post content here..."
               />
               <button type="submit" className="form-submit">{editingPostId ? 'Update Post' : 'Add Post'}</button>
               {editingPostId && (

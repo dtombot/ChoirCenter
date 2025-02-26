@@ -110,7 +110,6 @@ function Home() {
         url: shareUrl,
       }).catch(err => console.error('Share error:', err));
     } else {
-      // Fallback: Copy URL to clipboard
       navigator.clipboard.writeText(shareUrl)
         .then(() => alert('Link copied to clipboard! Share it manually.'))
         .catch(err => console.error('Clipboard error:', err));
@@ -137,7 +136,7 @@ function Home() {
         </div>
         <div className="hero-overlay" />
         <div className="hero-content">
-          <h2 className="hero-title">Welcome to Choir Center</h2>
+          <h2 className="hero-title">Everything Your Choir Needs in One Place</h2>
           <p className="hero-text">Find and download choir music resources easily.</p>
           <input
             type="text"
@@ -164,9 +163,8 @@ function Home() {
         ) : (
           <div className="song-list-container">
             <div className="song-list">
-              {filteredSongs.map((song, index) => (
+              {filteredSongs.map((song) => (
                 <Link to={`/song/${song.permalink || song.id}`} key={song.id} className="song-item">
-                  <span className="song-number">{index + 1}</span>
                   <div className="song-info">
                     <h4 className="song-title">{song.title}</h4>
                     <p className="song-description">{song.description || 'No description'}</p>

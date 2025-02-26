@@ -842,7 +842,7 @@ body {
   }
 
   .song-item {
-    padding: 0.5rem; /* Reduced top/bottom padding */
+    padding: 1rem 0.5rem; /* Restored original top/bottom padding */
     width: 100%;
     max-width: 400px;
   }
@@ -852,11 +852,11 @@ body {
   }
 
   .song-title {
-    font-size: 1rem; /* Reduced font size */
+    font-size: 1.1rem; /* Restored original font size */
   }
 
   .song-composer {
-    font-size: 0.8rem; /* Reduced font size */
+    font-size: 0.9rem; /* Restored original font size */
     margin: 0.25rem 0 0;
   }
 
@@ -865,21 +865,21 @@ body {
   }
 
   .song-downloads {
-    font-size: 0.75rem; /* Reduced font size */
+    font-size: 0.85rem; /* Restored original font size */
     margin-top: 0.25rem;
   }
 
   .download-button {
-    padding: 0.4rem 1rem; /* Reduced padding */
-    font-size: 0.8rem; /* Reduced font size */
+    padding: 0.5rem 1.25rem; /* Restored original padding */
+    font-size: 0.9rem; /* Restored original font size */
     margin-top: 0.25rem;
     width: 100%;
     text-align: center;
   }
 
   .share-button {
-    padding: 0.4rem 1rem; /* Reduced padding */
-    font-size: 0.8rem; /* Reduced font size */
+    padding: 0.5rem 1.25rem; /* Restored original padding */
+    font-size: 0.9rem; /* Restored original font size */
     margin-top: 0.25rem;
   }
 
@@ -893,11 +893,11 @@ body {
   .blog-item {
     width: 100%;
     max-width: 400px;
-    padding: 0.5rem; /* Reduced top/bottom padding */
+    padding: 0.75rem; /* Restored original padding */
   }
 
   .blog-title {
-    font-size: 1rem; /* Reduced font size */
+    font-size: 1.1rem; /* Restored original font size */
   }
 
   .filter-bar {
@@ -959,29 +959,29 @@ body {
   }
 
   .song-item {
-    padding: 0.25rem; /* Further reduced top/bottom padding */
+    padding: 1rem 0.5rem; /* Restored original top/bottom padding */
   }
 
   .song-title {
-    font-size: 0.9rem; /* Further reduced font size */
+    font-size: 1.1rem; /* Restored original font size */
   }
 
   .song-composer {
-    font-size: 0.75rem; /* Further reduced font size */
+    font-size: 0.9rem; /* Restored original font size */
   }
 
   .song-downloads {
-    font-size: 0.7rem; /* Further reduced font size */
+    font-size: 0.85rem; /* Restored original font size */
   }
 
   .download-button {
-    padding: 0.3rem 0.8rem; /* Further reduced padding */
-    font-size: 0.75rem; /* Further reduced font size */
+    padding: 0.5rem 1.25rem; /* Restored original padding */
+    font-size: 0.9rem; /* Restored original font size */
   }
 
   .share-button {
-    padding: 0.3rem 0.8rem; /* Further reduced padding */
-    font-size: 0.75rem; /* Further reduced font size */
+    padding: 0.5rem 1.25rem; /* Restored original padding */
+    font-size: 0.9rem; /* Restored original font size */
   }
 
   .blog-list {
@@ -990,11 +990,11 @@ body {
   }
 
   .blog-item {
-    padding: 0.25rem; /* Further reduced top/bottom padding */
+    padding: 0.75rem; /* Restored original padding */
   }
 
   .blog-title {
-    font-size: 0.9rem; /* Further reduced font size */
+    font-size: 1.1rem; /* Restored original font size */
   }
 
   .filter-input {

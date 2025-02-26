@@ -10,19 +10,19 @@ function BlogPost() {
   const [user, setUser] = useState(null);
   const [error, setError] = useState(null);
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
-  const { permalink } = useParams();
+  const { id } = useParams(); // Changed from permalink to id
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchPost = async () => {
-      if (!permalink || permalink === 'undefined') {
+      if (!id || id === 'undefined') {
         setError('Invalid post URL');
         return;
       }
       const { data, error } = await supabase
         .from('blog_posts')
         .select('*')
-        .eq('permalink', permalink)
+        .eq('id', id) // Fetch by id
         .single();
       if (error) {
         setError(`Failed to load post: ${error.message}`);
@@ -54,7 +54,7 @@ function BlogPost() {
 
     fetchPost();
     fetchUser();
-  }, [permalink, navigate]);
+  }, [id, navigate]);
 
   useEffect(() => {
     if (post) {

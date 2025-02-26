@@ -50,14 +50,13 @@ function Home() {
     };
     fetchData();
 
-    // Slideshow timer
     const slideInterval = setInterval(() => {
       setCurrentSlide((prev) => {
         const next = (prev + 1) % slides.length;
         console.log('Updating to slide:', next, 'URL:', slides[next]);
         return next;
       });
-    }, 10000); // Change every 10 seconds
+    }, 10000);
 
     return () => clearInterval(slideInterval);
   }, [slides.length]);
@@ -97,6 +96,24 @@ function Home() {
     } catch (err) {
       console.error('Download error:', err.message);
       setError('Failed to update download count.');
+    }
+  };
+
+  const handleShare = (songTitle, songId) => {
+    const shareUrl = `${window.location.origin}/song/${songId}`;
+    const shareText = `Check out "${songTitle}" on Choir Center!`;
+    
+    if (navigator.share) {
+      navigator.share({
+        title: songTitle,
+        text: shareText,
+        url: shareUrl,
+      }).catch(err => console.error('Share error:', err));
+    } else {
+      // Fallback: Copy URL to clipboard
+      navigator.clipboard.writeText(shareUrl)
+        .then(() => alert('Link copied to clipboard! Share it manually.'))
+        .catch(err => console.error('Clipboard error:', err));
     }
   };
 
@@ -155,7 +172,12 @@ function Home() {
                     <p className="song-description">{song.description || 'No description'}</p>
                   </div>
                   <span className="song-size">{song.fileSize}</span>
-                  <span className="song-downloads">{song.downloads || 0}</span>
+                  <div className="download-container">
+                    <svg className="download-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                      <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                    </svg>
+                    <span className="song-downloads">{song.downloads || 0}</span>
+                  </div>
                   <button
                     onClick={(e) => {
                       e.preventDefault();
@@ -164,6 +186,15 @@ function Home() {
                     className="download-button"
                   >
                     Download
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleShare(song.title, song.permalink || song.id);
+                    }}
+                    className="share-button"
+                  >
+                    Share
                   </button>
                 </Link>
               ))}

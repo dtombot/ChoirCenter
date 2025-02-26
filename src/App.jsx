@@ -136,6 +136,7 @@ function App() {
         <Route path="/blog" element={<Blog />} />
         <Route path="/blog/:id" element={<BlogPost />} />
         <Route path="/song/:id" element={<Song />} />
+        <Route path="/search" element={<div>Search Placeholder</div>} />
       </Routes>
       <footer className="footer">
         <div className="footer-text">

@@ -1,6 +1,6 @@
 /* Base Styles */
 body {
-  font-family: 'Neue Haas Grotesk', 'Helvetica', 'Arial', sans-serif; /* Mimic Atom.com typography */
+  font-family: 'Neue Haas Grotesk', 'Helvetica', 'Arial', sans-serif;
   margin: 0;
   padding: 0;
   font-weight: 400;
@@ -30,9 +30,9 @@ body {
 }
 
 .header-title {
-  font-size: 1.75rem; /* Slightly larger for Atom.com feel */
+  font-size: 1.75rem;
   margin: 0;
-  font-weight: 700; /* Bold for emphasis */
+  font-weight: 700;
 }
 
 .header-link {
@@ -275,6 +275,16 @@ body {
   text-align: center;
 }
 
+/* Separator */
+.section-separator {
+  width: 80%;
+  max-width: 300px;
+  height: 2px;
+  background: linear-gradient(to right, transparent, #3cb371, transparent);
+  margin: 2rem auto;
+  border: none;
+}
+
 /* Song List (Latest Additions and Library) */
 .song-list-container {
   background: #f9fafb;
@@ -318,7 +328,7 @@ body {
 .song-info {
   flex: 1;
   min-width: 0;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.25rem; /* Reduced space */
 }
 
 .song-title {
@@ -334,53 +344,29 @@ body {
   -webkit-box-orient: vertical;
 }
 
-.song-description {
+.song-composer {
   font-size: 0.9rem;
   color: #666;
   margin: 0.25rem 0 0;
-  white-space: normal;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  font-style: italic;
 }
 
 .song-size {
   font-size: 0.85rem;
   color: #999;
-  margin-top: 0.5rem;
+  margin-top: 0.25rem;
 }
 
 .download-container {
   display: flex;
   align-items: center;
-  margin-top: 0.5rem;
-}
-
-.download-icon {
-  width: 1rem; /* Smaller size */
-  height: 1rem;
-  fill: #3cb371;
-  margin-right: 0.5rem; /* Beside counter */
+  margin-top: 0.25rem; /* Reduced space */
 }
 
 .song-downloads {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.5rem;
-  height: 2.5rem;
-  background: #e6f4ea;
-  border-radius: 50%;
-  font-size: 1rem;
-  font-weight: 700;
+  font-size: 0.85rem;
   color: #3cb371;
-  transition: background 0.3s ease;
-}
-
-.song-item:hover .song-downloads {
-  background: #d4e9dc;
+  font-weight: 500;
 }
 
 .download-button {
@@ -393,7 +379,7 @@ body {
   font-weight: 600;
   cursor: pointer;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
-  margin-top: 0.5rem;
+  margin-top: 0.25rem; /* Reduced space */
 }
 
 .download-button:hover {
@@ -423,7 +409,7 @@ body {
 .blog-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: 0.5rem; /* Narrower gap */
   justify-content: center;
 }
 
@@ -431,7 +417,7 @@ body {
   flex: 1 1 250px;
   max-width: 100%;
   background: #fff;
-  padding: 1rem;
+  padding: 0.75rem; /* Reduced padding */
   border-radius: 10px;
   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
   text-decoration: none;
@@ -864,7 +850,6 @@ body {
   }
 
   .song-downloads {
-    margin-right: 0;
     margin-top: 0.5rem;
   }
 
@@ -941,19 +926,16 @@ body {
     font-size: 1rem;
   }
 
-  .song-description {
+  .song-composer {
     font-size: 0.85rem;
   }
 
   .song-size {
-    margin-right: 0.5rem;
     font-size: 0.8rem;
   }
 
   .song-downloads {
-    width: 2rem;
-    height: 2rem;
-    font-size: 0.9rem;
+    font-size: 0.8rem;
   }
 
   .download-button {
@@ -967,7 +949,7 @@ body {
   }
 
   .blog-item {
-    padding: 0.75rem;
+    padding: 0.5rem;
   }
 
   .blog-title {

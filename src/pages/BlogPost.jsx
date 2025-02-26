@@ -10,21 +10,22 @@ function BlogPost() {
   const [user, setUser] = useState(null);
   const [error, setError] = useState(null);
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
-  const { id } = useParams(); // Changed from permalink to id
+  const { permalink } = useParams();
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchPost = async () => {
-      if (!id || id === 'undefined') {
+      if (!permalink || permalink === 'undefined') {
         setError('Invalid post URL');
         return;
       }
       const { data, error } = await supabase
         .from('blog_posts')
         .select('*')
-        .eq('id', id) // Fetch by id
+        .eq('permalink', permalink)
         .single();
       if (error) {
+        console.error('Fetch post error:', error.message);
         setError(`Failed to load post: ${error.message}`);
         return;
       }
@@ -39,22 +40,30 @@ function BlogPost() {
       if (!post?.id) return;
       const { data, error } = await supabase
         .from('comments')
-        .select('id, content, created_at, user_id, profiles (email)')
+        .select('id, content, created_at, user_id, profiles!user_id(email)') // Fixed join syntax
         .eq('post_id', post.id)
         .order('created_at', { ascending: true });
-      if (error) setError('Failed to load comments: ' + error.message);
-      else setComments(data || []);
+      if (error) {
+        console.error('Fetch comments error:', error.message, error.details);
+        setError('Failed to load comments: ' + error.message);
+      } else {
+        setComments(data || []);
+      }
     };
 
     const fetchUser = async () => {
       const { data: { user }, error } = await supabase.auth.getUser();
-      if (error) setError('Failed to fetch user: ' + error.message);
-      else setUser(user);
+      if (error) {
+        console.error('Fetch user error:', error.message);
+        setError('Failed to fetch user: ' + error.message);
+      } else {
+        setUser(user);
+      }
     };
 
     fetchPost();
     fetchUser();
-  }, [id, navigate]);
+  }, [permalink, navigate]);
 
   useEffect(() => {
     if (post) {
@@ -62,11 +71,15 @@ function BlogPost() {
       const fetchComments = async () => {
         const { data, error } = await supabase
           .from('comments')
-          .select('id, content, created_at, user_id, profiles (email)')
+          .select('id, content, created_at, user_id, profiles!user_id(email)')
           .eq('post_id', post.id)
           .order('created_at', { ascending: true });
-        if (error) setError('Failed to load comments: ' + error.message);
-        else setComments(data || []);
+        if (error) {
+          console.error('Fetch comments error:', error.message, error.details);
+          setError('Failed to load comments: ' + error.message);
+        } else {
+          setComments(data || []);
+        }
       };
       fetchComments();
     }
@@ -86,11 +99,12 @@ function BlogPost() {
       setNewComment('');
       const { data } = await supabase
         .from('comments')
-        .select('id, content, created_at, user_id, profiles (email)')
+        .select('id, content, created_at, user_id, profiles!user_id(email)')
         .eq('post_id', post.id)
         .order('created_at', { ascending: true });
       setComments(data || []);
     } catch (err) {
+      console.error('Comment submit error:', err.message);
       setError('Failed to add comment: ' + err.message);
     }
   };
@@ -105,6 +119,7 @@ function BlogPost() {
         if (error) throw error;
         setComments(comments.filter(comment => comment.id !== commentId));
       } catch (err) {
+        console.error('Comment delete error:', err.message);
         setError('Failed to delete comment: ' + err.message);
       }
     }

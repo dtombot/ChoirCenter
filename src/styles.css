@@ -291,7 +291,7 @@ body {
   padding: 1rem;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-  margin-bottom: 1rem; /* Reduced for tighter spacing */
+  margin-bottom: 1rem;
 }
 
 .song-list {
@@ -348,14 +348,14 @@ body {
 .song-composer {
   font-size: 0.9rem;
   color: #666;
-  margin: 0.15rem 0 0; /* Tightened margin */
+  margin: 0.25rem 0 0;
   font-style: italic;
 }
 
 .download-container {
   display: flex;
   align-items: center;
-  margin-top: 0.15rem; /* Tightened margin */
+  margin-top: 0.25rem;
 }
 
 .song-downloads {
@@ -374,7 +374,7 @@ body {
   font-weight: 600;
   cursor: pointer;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
-  margin-top: 0.15rem; /* Tightened margin */
+  margin-top: 0.25rem;
 }
 
 .download-button:hover {
@@ -392,7 +392,7 @@ body {
   font-weight: 600;
   cursor: pointer;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
-  margin-top: 0.15rem; /* Tightened margin */
+  margin-top: 0.25rem;
 }
 
 .share-button:hover {
@@ -406,7 +406,7 @@ body {
   flex-wrap: wrap;
   gap: 0.5rem;
   justify-content: center;
-  margin-bottom: 1rem; /* Reduced for tighter spacing */
+  margin-bottom: 1rem;
 }
 
 .blog-item {
@@ -831,32 +831,32 @@ body {
   }
 
   .song-list-container {
-    padding: 0.5rem; /* Reduced padding */
-    margin-bottom: 0.5rem; /* Tighter spacing */
+    padding: 0.75rem;
+    margin-bottom: 1rem;
   }
 
   .song-list {
     flex-direction: column;
     align-items: center;
-    gap: 0.5rem; /* Reduced gap */
+    gap: 1rem;
   }
 
   .song-item {
-    padding: 0.5rem; /* Reduced padding */
+    padding: 0.75rem 0.5rem; /* Reduced top/bottom padding, kept sides */
     width: 100%;
     max-width: 400px;
   }
 
   .song-info {
-    margin-bottom: 0.1rem; /* Tighter spacing */
+    margin-bottom: 0.25rem;
   }
 
   .song-composer {
-    margin: 0.1rem 0 0; /* Tighter spacing */
+    margin: 0.25rem 0 0;
   }
 
   .download-container {
-    margin-top: 0.1rem; /* Tighter spacing */
+    margin-top: 0.25rem;
   }
 
   .song-downloads {
@@ -864,26 +864,26 @@ body {
   }
 
   .download-button {
-    margin-top: 0.25rem; /* Tighter spacing */
+    margin-top: 0.25rem;
     width: 100%;
     text-align: center;
   }
 
   .share-button {
-    margin-top: 0.25rem; /* Tighter spacing */
+    margin-top: 0.25rem;
   }
 
   .blog-list {
     flex-direction: column;
     align-items: center;
-    gap: 0.25rem; /* Reduced gap */
-    margin-bottom: 0.5rem; /* Tighter spacing */
+    gap: 0.5rem;
+    margin-bottom: 1rem;
   }
 
   .blog-item {
     width: 100%;
     max-width: 400px;
-    padding: 0.5rem; /* Reduced padding */
+    padding: 0.5rem; /* Reduced top/bottom padding */
   }
 
   .filter-bar {
@@ -911,7 +911,7 @@ body {
 
 @media (max-width: 480px) {
   .container {
-    padding: 0.25rem; /* Reduced padding */
+    padding: 0.5rem;
   }
 
   .hero-section {
@@ -936,16 +936,16 @@ body {
   }
 
   .song-list-container {
-    padding: 0.25rem; /* Reduced padding */
-    margin-bottom: 0.25rem; /* Tighter spacing */
+    padding: 0.5rem;
+    margin-bottom: 1rem;
   }
 
   .song-list {
-    gap: 0.25rem; /* Reduced gap */
+    gap: 1rem;
   }
 
   .song-item {
-    padding: 0.25rem; /* Reduced padding */
+    padding: 0.5rem 0.25rem; /* Further reduced top/bottom padding */
   }
 
   .song-title {
@@ -954,11 +954,6 @@ body {
 
   .song-composer {
     font-size: 0.85rem;
-    margin: 0.05rem 0 0; /* Tighter spacing */
-  }
-
-  .download-container {
-    margin-top: 0.05rem; /* Tighter spacing */
   }
 
   .song-downloads {
@@ -968,22 +963,20 @@ body {
   .download-button {
     padding: 0.4rem 1rem;
     font-size: 0.85rem;
-    margin-top: 0.1rem; /* Tighter spacing */
   }
 
   .share-button {
     padding: 0.4rem 1rem;
     font-size: 0.85rem;
-    margin-top: 0.1rem; /* Tighter spacing */
   }
 
   .blog-list {
-    gap: 0.15rem; /* Reduced gap */
-    margin-bottom: 0.25rem; /* Tighter spacing */
+    gap: 0.5rem;
+    margin-bottom: 1rem;
   }
 
   .blog-item {
-    padding: 0.25rem; /* Reduced padding */
+    padding: 0.25rem; /* Further reduced top/bottom padding */
   }
 
   .blog-title {

@@ -3,6 +3,7 @@ import { supabase } from '../supabase';
 import { useNavigate } from 'react-router-dom';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
+import '../styles.css';
 
 function Admin() {
   const [user, setUser] = useState(null);
@@ -100,7 +101,6 @@ function Admin() {
   const handlePostSubmit = async (e) => {
     e.preventDefault();
     try {
-      // Auto-generate permalink from title if empty
       const generatedPermalink = postForm.permalink.trim() || postForm.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
       if (!postForm.title.trim()) {
         setError('Title is required');
@@ -205,7 +205,7 @@ function Admin() {
     }
     if (window.confirm('Are you sure you want to delete this user?')) {
       const { error } = await supabase.from('profiles').delete().eq('id', id);
-      if (error) setError('Failed to delete user: ' + error.message);
+      if (error) setError('Failed to delete user: ' + err.message);
       else setUsers(users.filter(u => u.id !== id));
     }
   };

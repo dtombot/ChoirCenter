@@ -124,9 +124,8 @@ function Library() {
       ) : (
         <div className="song-list-container">
           <div className="song-list">
-            {filteredSongs.map((song, index) => (
+            {filteredSongs.map((song) => (
               <Link to={`/song/${song.permalink || song.id}`} key={song.id} className="song-item">
-                <span className="song-number">{index + 1}</span>
                 <div className="song-info">
                   <h4 className="song-title">{song.title}</h4>
                   <p className="song-description">{song.description || 'No description'}</p>

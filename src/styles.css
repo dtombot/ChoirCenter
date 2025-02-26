@@ -291,6 +291,7 @@ body {
   padding: 1rem;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  margin-bottom: 1rem; /* Reduced for tighter spacing */
 }
 
 .song-list {
@@ -347,14 +348,14 @@ body {
 .song-composer {
   font-size: 0.9rem;
   color: #666;
-  margin: 0.25rem 0 0;
+  margin: 0.15rem 0 0; /* Tightened margin */
   font-style: italic;
 }
 
 .download-container {
   display: flex;
   align-items: center;
-  margin-top: 0.25rem;
+  margin-top: 0.15rem; /* Tightened margin */
 }
 
 .song-downloads {
@@ -373,7 +374,7 @@ body {
   font-weight: 600;
   cursor: pointer;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
-  margin-top: 0.25rem;
+  margin-top: 0.15rem; /* Tightened margin */
 }
 
 .download-button:hover {
@@ -391,7 +392,7 @@ body {
   font-weight: 600;
   cursor: pointer;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
-  margin-top: 0.25rem;
+  margin-top: 0.15rem; /* Tightened margin */
 }
 
 .share-button:hover {
@@ -405,6 +406,7 @@ body {
   flex-wrap: wrap;
   gap: 0.5rem;
   justify-content: center;
+  margin-bottom: 1rem; /* Reduced for tighter spacing */
 }
 
 .blog-item {
@@ -829,38 +831,59 @@ body {
   }
 
   .song-list-container {
-    padding: 0.75rem;
+    padding: 0.5rem; /* Reduced padding */
+    margin-bottom: 0.5rem; /* Tighter spacing */
   }
 
   .song-list {
     flex-direction: column;
     align-items: center;
+    gap: 0.5rem; /* Reduced gap */
   }
 
   .song-item {
-    padding: 0.75rem;
+    padding: 0.5rem; /* Reduced padding */
     width: 100%;
     max-width: 400px;
   }
 
+  .song-info {
+    margin-bottom: 0.1rem; /* Tighter spacing */
+  }
+
+  .song-composer {
+    margin: 0.1rem 0 0; /* Tighter spacing */
+  }
+
+  .download-container {
+    margin-top: 0.1rem; /* Tighter spacing */
+  }
+
   .song-downloads {
-    margin-top: 0.5rem;
+    margin-top: 0.25rem;
   }
 
   .download-button {
-    margin-top: 0.5rem;
+    margin-top: 0.25rem; /* Tighter spacing */
     width: 100%;
     text-align: center;
+  }
+
+  .share-button {
+    margin-top: 0.25rem; /* Tighter spacing */
   }
 
   .blog-list {
     flex-direction: column;
     align-items: center;
+    gap: 0.25rem; /* Reduced gap */
+    margin-bottom: 0.5rem; /* Tighter spacing */
   }
 
   .blog-item {
     width: 100%;
     max-width: 400px;
+    padding: 0.5rem; /* Reduced padding */
   }
 
   .filter-bar {
@@ -888,7 +911,7 @@ body {
 
 @media (max-width: 480px) {
   .container {
-    padding: 0.5rem;
+    padding: 0.25rem; /* Reduced padding */
   }
 
   .hero-section {
@@ -912,8 +935,17 @@ body {
     padding: 0.5rem 1.5rem;
   }
 
+  .song-list-container {
+    padding: 0.25rem; /* Reduced padding */
+    margin-bottom: 0.25rem; /* Tighter spacing */
+  }
+
+  .song-list {
+    gap: 0.25rem; /* Reduced gap */
+  }
+
   .song-item {
-    padding: 0.5rem;
+    padding: 0.25rem; /* Reduced padding */
   }
 
   .song-title {
@@ -922,6 +954,11 @@ body {
 
   .song-composer {
     font-size: 0.85rem;
+    margin: 0.05rem 0 0; /* Tighter spacing */
+  }
+
+  .download-container {
+    margin-top: 0.05rem; /* Tighter spacing */
   }
 
   .song-downloads {
@@ -931,15 +968,22 @@ body {
   .download-button {
     padding: 0.4rem 1rem;
     font-size: 0.85rem;
+    margin-top: 0.1rem; /* Tighter spacing */
   }
 
   .share-button {
     padding: 0.4rem 1rem;
     font-size: 0.85rem;
+    margin-top: 0.1rem; /* Tighter spacing */
+  }
+
+  .blog-list {
+    gap: 0.15rem; /* Reduced gap */
+    margin-bottom: 0.25rem; /* Tighter spacing */
   }
 
   .blog-item {
-    padding: 0.5rem;
+    padding: 0.25rem; /* Reduced padding */
   }
 
   .blog-title {

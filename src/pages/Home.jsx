@@ -114,6 +114,7 @@ function Home() {
             />
           ))}
         </div>
+        <div className="hero-overlay" /> {/* Added overlay */}
         <div className="hero-content">
           <h2 className="hero-title">Welcome to Choir Center</h2>
           <p className="hero-text">Find and download choir music resources easily.</p>

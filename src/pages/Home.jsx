@@ -13,7 +13,7 @@ function Home() {
     const fetchData = async () => {
       const { data: songData, error: songError } = await supabase
         .from('songs')
-        .select('*')
+        .select('title, composer, google_drive_file_id, permalink, is_public, downloads')
         .order('created_at', { ascending: false })
         .limit(10);
       if (songError) setError('Failed to load songs: ' + songError.message);
@@ -21,7 +21,7 @@ function Home() {
 
       const { data: postData, error: postError } = await supabase
         .from('blog_posts')
-        .select('*')
+        .select('title, content, permalink')
         .order('created_at', { ascending: false })
         .limit(10);
       if (postError) setError('Failed to load posts: ' + postError.message);

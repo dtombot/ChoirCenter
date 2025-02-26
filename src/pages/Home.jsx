@@ -16,16 +16,25 @@ function Home() {
         .select('title, composer, google_drive_file_id, permalink, is_public, downloads')
         .order('created_at', { ascending: false })
         .limit(10);
-      if (songError) setError('Failed to load songs: ' + songError.message);
-      else setSongs(songData || []);
+      if (songError) {
+        console.error('Error fetching songs:', songError.message);
+        setError('Failed to load songs: ' + songError.message);
+      } else {
+        setSongs(songData || []);
+      }
 
       const { data: postData, error: postError } = await supabase
         .from('blog_posts')
-        .select('title, content, permalink')
+        .select('id, title, content, permalink')
         .order('created_at', { ascending: false })
         .limit(10);
-      if (postError) setError('Failed to load posts: ' + postError.message);
-      else setPosts(postData || []);
+      if (postError) {
+        console.error('Error fetching posts:', postError.message);
+        setError('Failed to load posts: ' + postError.message);
+      } else {
+        console.log('Posts fetched for Home:', postData);
+        setPosts(postData || []);
+      }
     };
     fetchData();
 
@@ -97,7 +106,12 @@ function Home() {
         <h2 className="section-title">Latest Insights</h2>
         <div className="blog-list">
           {posts.map(post => (
-            <Link key={post.id} to={`/blog/${post.permalink}`} className="blog-item">
+            <Link
+              key={post.id}
+              to={`/blog/${post.permalink || 'missing-permalink'}`}
+              className="blog-item"
+              onClick={() => console.log('Navigating to:', `/blog/${post.permalink}`)}
+            >
               <h3 className="blog-title">{post.title}</h3>
             </Link>
           ))}

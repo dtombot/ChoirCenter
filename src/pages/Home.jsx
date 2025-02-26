@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../supabase';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import './styles.css';
 
 function Home() {
   const [songs, setSongs] = useState([]);
@@ -8,32 +9,31 @@ function Home() {
   const [searchQuery, setSearchQuery] = useState('');
   const [error, setError] = useState(null);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchData = async () => {
       const { data: songData, error: songError } = await supabase
         .from('songs')
-        .select('title, composer, google_drive_file_id, permalink, is_public, downloads')
+        .select('id, title, composer, google_drive_file_id, permalink, is_public, downloads')
         .order('created_at', { ascending: false })
         .limit(10);
       if (songError) {
         console.error('Error fetching songs:', songError.message);
         setError('Failed to load songs: ' + songError.message);
       } else {
-        console.log('Songs fetched:', songData);
         setSongs(songData || []);
       }
 
       const { data: postData, error: postError } = await supabase
         .from('blog_posts')
-        .select('id, title, content, permalink, created_at')
+        .select('id, title, permalink')
         .order('created_at', { ascending: false })
         .limit(10);
       if (postError) {
         console.error('Error fetching posts:', postError.message);
         setError('Failed to load posts: ' + postError.message);
       } else {
-        console.log('Posts fetched for Home:', postData);
         setPosts(postData || []);
       }
     };
@@ -48,12 +48,16 @@ function Home() {
   const handleSearch = async (e) => {
     e.preventDefault();
     if (!searchQuery.trim()) return;
-    // Add search logic if needed
+    // Add search logic if needed, e.g., navigate to a search page
+  };
+
+  const handleSongClick = (permalink) => {
+    navigate(`/song/${permalink}`);
   };
 
   return (
-    <div className="container">
-      <section className="hero-section">
+    <div className="home-container">
+      <section className="hero-section full-width">
         <div className="hero-slideshow">
           {[1, 2, 3, 4, 5].map(num => (
             <img
@@ -68,7 +72,7 @@ function Home() {
         <div className="hero-content">
           <h1 className="hero-title">Welcome to ChoirCenter</h1>
           <p className="hero-text">Your hub for choir music and insights.</p>
-          <form onSubmit={handleSearch}>
+          <form onSubmit={handleSearch} className="search-form">
             <input
               type="text"
               placeholder="Search songs..."
@@ -78,23 +82,27 @@ function Home() {
             />
           </form>
           <div className="button-group">
-            <button className="action-button">Explore Library</button>
-            <button className="action-button">Latest Insights</button>
+            <Link to="/library" className="action-button">Explore Library</Link>
+            <Link to="/blog" className="action-button">Latest Insights</Link>
           </div>
         </div>
       </section>
       {error && <p className="error-message">{error}</p>}
-      <section className="song-list-container">
+      <section className="latest-additions">
         <h2 className="section-title">Latest Additions</h2>
-        <div className="song-list">
+        <div className="song-grid">
           {songs.map(song => (
-            <div key={song.id} className="song-item">
-              <div className="song-info">
-                <h3 className="song-title">{song.title}</h3>
-                <p className="song-composer">{song.composer}</p>
+            <div
+              key={song.id}
+              className="song-card"
+              onClick={() => handleSongClick(song.permalink || `song-${song.id}`)}
+            >
+              <div className="song-card-content">
+                <h3 className="song-card-title">{song.title}</h3>
+                <p className="song-card-composer">{song.composer}</p>
+                <p className="song-card-downloads">Downloaded {song.downloads || 0} times</p>
               </div>
-              <div className="download-container">
-                <p className="song-downloads">Downloaded {song.downloads || 0} times</p>
+              <div className="song-card-actions">
                 <button className="download-button">Download</button>
                 <button className="share-button">Share</button>
               </div>
@@ -106,19 +114,15 @@ function Home() {
       <section className="blog-list-container">
         <h2 className="section-title">Latest Insights</h2>
         <div className="blog-list">
-          {posts.map(post => {
-            const validPermalink = post.permalink && post.permalink !== 'undefined' && post.permalink !== '' ? post.permalink : `post-${post.id}`;
-            return (
-              <Link
-                key={post.id}
-                to={`/blog/${validPermalink}`}
-                className="blog-item"
-                onClick={() => console.log('Navigating to:', `/blog/${validPermalink}`)}
-              >
-                <h3 className="blog-title">{post.title}</h3>
-              </Link>
-            );
-          })}
+          {posts.map(post => (
+            <Link
+              key={post.id}
+              to={`/blog/${post.permalink || `post-${post.id}`}`}
+              className="blog-item"
+            >
+              <h3 className="blog-title">{post.title}</h3>
+            </Link>
+          ))}
         </div>
       </section>
     </div>

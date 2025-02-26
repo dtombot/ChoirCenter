@@ -20,12 +20,13 @@ function Home() {
         console.error('Error fetching songs:', songError.message);
         setError('Failed to load songs: ' + songError.message);
       } else {
+        console.log('Songs fetched:', songData);
         setSongs(songData || []);
       }
 
       const { data: postData, error: postError } = await supabase
         .from('blog_posts')
-        .select('id, title, content, permalink')
+        .select('id, title, content, permalink, created_at')
         .order('created_at', { ascending: false })
         .limit(10);
       if (postError) {

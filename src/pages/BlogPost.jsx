@@ -38,17 +38,35 @@ function BlogPost() {
 
     const fetchComments = async () => {
       if (!post?.id) return;
-      const { data, error } = await supabase
+      const { data: commentData, error: commentError } = await supabase
         .from('comments')
-        .select('id, content, created_at, user_id, profiles!user_id(email)') // Fixed join syntax
+        .select('id, content, created_at, user_id')
         .eq('post_id', post.id)
         .order('created_at', { ascending: true });
-      if (error) {
-        console.error('Fetch comments error:', error.message, error.details);
-        setError('Failed to load comments: ' + error.message);
-      } else {
-        setComments(data || []);
+      if (commentError) {
+        console.error('Fetch comments error:', commentError.message, commentError.details);
+        setError('Failed to load comments: ' + commentError.message);
+        return;
       }
+
+      // Fetch user emails separately
+      const userIds = commentData.map(comment => comment.user_id);
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('id, email')
+        .in('id', userIds);
+      if (profileError) {
+        console.error('Fetch profiles error:', profileError.message);
+        setError('Failed to load user data: ' + profileError.message);
+        return;
+      }
+
+      // Combine comments with user emails
+      const enrichedComments = commentData.map(comment => ({
+        ...comment,
+        profiles: profileData.find(profile => profile.id === comment.user_id) || { email: 'Unknown' }
+      }));
+      setComments(enrichedComments || []);
     };
 
     const fetchUser = async () => {
@@ -66,24 +84,38 @@ function BlogPost() {
   }, [permalink, navigate]);
 
   useEffect(() => {
-    if (post) {
-      setComments([]);
-      const fetchComments = async () => {
-        const { data, error } = await supabase
-          .from('comments')
-          .select('id, content, created_at, user_id, profiles!user_id(email)')
-          .eq('post_id', post.id)
-          .order('created_at', { ascending: true });
-        if (error) {
-          console.error('Fetch comments error:', error.message, error.details);
-          setError('Failed to load comments: ' + error.message);
-        } else {
-          setComments(data || []);
-        }
-      };
-      fetchComments();
-    }
+    if (post) fetchComments();
   }, [post]);
+
+  const fetchComments = async () => {
+    const { data: commentData, error: commentError } = await supabase
+      .from('comments')
+      .select('id, content, created_at, user_id')
+      .eq('post_id', post.id)
+      .order('created_at', { ascending: true });
+    if (commentError) {
+      console.error('Fetch comments error:', commentError.message, commentError.details);
+      setError('Failed to load comments: ' + commentError.message);
+      return;
+    }
+
+    const userIds = commentData.map(comment => comment.user_id);
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
+      .select('id, email')
+      .in('id', userIds);
+    if (profileError) {
+      console.error('Fetch profiles error:', profileError.message);
+      setError('Failed to load user data: ' + profileError.message);
+      return;
+    }
+
+    const enrichedComments = commentData.map(comment => ({
+      ...comment,
+      profiles: profileData.find(profile => profile.id === comment.user_id) || { email: 'Unknown' }
+    }));
+    setComments(enrichedComments || []);
+  };
 
   const handleCommentSubmit = async (e) => {
     e.preventDefault();
@@ -97,12 +129,7 @@ function BlogPost() {
         .insert([{ post_id: post.id, user_id: user.id, content: newComment }]);
       if (error) throw error;
       setNewComment('');
-      const { data } = await supabase
-        .from('comments')
-        .select('id, content, created_at, user_id, profiles!user_id(email)')
-        .eq('post_id', post.id)
-        .order('created_at', { ascending: true });
-      setComments(data || []);
+      fetchComments();
     } catch (err) {
       console.error('Comment submit error:', err.message);
       setError('Failed to add comment: ' + err.message);

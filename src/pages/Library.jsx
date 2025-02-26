@@ -86,7 +86,7 @@ function Library() {
 
   const filteredSongs = songs.filter(song =>
     song.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (song.description && song.description.toLowerCase().includes(searchTerm.toLowerCase()))
+    (song.composer && song.composer.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   return (
@@ -128,14 +128,11 @@ function Library() {
               <Link to={`/song/${song.permalink || song.id}`} key={song.id} className="song-item">
                 <div className="song-info">
                   <h4 className="song-title">{song.title}</h4>
-                  <p className="song-description">{song.description || 'No description'}</p>
+                  <p className="song-composer">{song.composer || 'Unknown Composer'}</p>
                 </div>
                 <span className="song-size">{song.fileSize}</span>
                 <div className="download-container">
-                  <svg className="download-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                    <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
-                  </svg>
-                  <span className="song-downloads">{song.downloads || 0}</span>
+                  <span className="song-downloads">Downloaded {song.downloads || 0} times</span>
                 </div>
                 <button
                   onClick={(e) => {

@@ -54,7 +54,7 @@ function Home() {
     const slideInterval = setInterval(() => {
       setCurrentSlide((prev) => {
         const next = (prev + 1) % slides.length;
-        console.log('Current slide:', next); // Debug log
+        console.log('Updating to slide:', next, 'URL:', slides[next]);
         return next;
       });
     }, 4000); // Change every 4 seconds
@@ -110,9 +110,12 @@ function Home() {
       <section className="hero-section">
         <div className="hero-slideshow">
           <img
+            key={currentSlide} // Force re-render with each slide change
             src={slides[currentSlide]}
             alt={`Choir Slide ${currentSlide + 1}`}
             className="hero-slide-img active"
+            onLoad={() => console.log('Image loaded:', slides[currentSlide])}
+            onError={() => console.error('Image failed to load:', slides[currentSlide])}
           />
         </div>
         <div className="hero-overlay" />
@@ -168,7 +171,7 @@ function Home() {
           </div>
         )}
         <h3 className="section-title">Latest Insights</h3>
-        {songs.length === 0 && !error ? (
+        {posts.length === 0 && !error ? (
           <p>No posts available.</p>
         ) : (
           <div className="blog-list">

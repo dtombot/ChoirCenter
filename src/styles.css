@@ -842,7 +842,7 @@ body {
   }
 
   .song-item {
-    padding: 0.75rem 0.5rem; /* Reduced top/bottom padding, kept sides */
+    padding: 0.5rem; /* Reduced top/bottom padding */
     width: 100%;
     max-width: 400px;
   }
@@ -851,7 +851,12 @@ body {
     margin-bottom: 0.25rem;
   }
 
+  .song-title {
+    font-size: 1rem; /* Reduced font size */
+  }
+
   .song-composer {
+    font-size: 0.8rem; /* Reduced font size */
     margin: 0.25rem 0 0;
   }
 
@@ -860,16 +865,21 @@ body {
   }
 
   .song-downloads {
+    font-size: 0.75rem; /* Reduced font size */
     margin-top: 0.25rem;
   }
 
   .download-button {
+    padding: 0.4rem 1rem; /* Reduced padding */
+    font-size: 0.8rem; /* Reduced font size */
     margin-top: 0.25rem;
     width: 100%;
     text-align: center;
   }
 
   .share-button {
+    padding: 0.4rem 1rem; /* Reduced padding */
+    font-size: 0.8rem; /* Reduced font size */
     margin-top: 0.25rem;
   }
 
@@ -884,6 +894,10 @@ body {
     width: 100%;
     max-width: 400px;
     padding: 0.5rem; /* Reduced top/bottom padding */
+  }
+
+  .blog-title {
+    font-size: 1rem; /* Reduced font size */
   }
 
   .filter-bar {
@@ -945,29 +959,29 @@ body {
   }
 
   .song-item {
-    padding: 0.5rem 0.25rem; /* Further reduced top/bottom padding */
+    padding: 0.25rem; /* Further reduced top/bottom padding */
   }
 
   .song-title {
-    font-size: 1rem;
+    font-size: 0.9rem; /* Further reduced font size */
   }
 
   .song-composer {
-    font-size: 0.85rem;
+    font-size: 0.75rem; /* Further reduced font size */
   }
 
   .song-downloads {
-    font-size: 0.8rem;
+    font-size: 0.7rem; /* Further reduced font size */
   }
 
   .download-button {
-    padding: 0.4rem 1rem;
-    font-size: 0.85rem;
+    padding: 0.3rem 0.8rem; /* Further reduced padding */
+    font-size: 0.75rem; /* Further reduced font size */
   }
 
   .share-button {
-    padding: 0.4rem 1rem;
-    font-size: 0.85rem;
+    padding: 0.3rem 0.8rem; /* Further reduced padding */
+    font-size: 0.75rem; /* Further reduced font size */
   }
 
   .blog-list {
@@ -980,7 +994,7 @@ body {
   }
 
   .blog-title {
-    font-size: 1rem;
+    font-size: 0.9rem; /* Further reduced font size */
   }
 
   .filter-input {

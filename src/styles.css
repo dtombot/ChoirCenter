@@ -328,7 +328,7 @@ body {
 .song-info {
   flex: 1;
   min-width: 0;
-  margin-bottom: 0.25rem; /* Reduced space */
+  margin-bottom: 0.25rem;
 }
 
 .song-title {
@@ -351,16 +351,10 @@ body {
   font-style: italic;
 }
 
-.song-size {
-  font-size: 0.85rem;
-  color: #999;
-  margin-top: 0.25rem;
-}
-
 .download-container {
   display: flex;
   align-items: center;
-  margin-top: 0.25rem; /* Reduced space */
+  margin-top: 0.25rem;
 }
 
 .song-downloads {
@@ -379,7 +373,7 @@ body {
   font-weight: 600;
   cursor: pointer;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
-  margin-top: 0.25rem; /* Reduced space */
+  margin-top: 0.25rem;
 }
 
 .download-button:hover {
@@ -409,7 +403,7 @@ body {
 .blog-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem; /* Narrower gap */
+  gap: 0.5rem;
   justify-content: center;
 }
 
@@ -417,7 +411,7 @@ body {
   flex: 1 1 250px;
   max-width: 100%;
   background: #fff;
-  padding: 0.75rem; /* Reduced padding */
+  padding: 0.75rem;
   border-radius: 10px;
   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
   text-decoration: none;
@@ -928,10 +922,6 @@ body {
 
   .song-composer {
     font-size: 0.85rem;
-  }
-
-  .song-size {
-    font-size: 0.8rem;
   }
 
   .song-downloads {

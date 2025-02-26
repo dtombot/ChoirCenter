@@ -52,7 +52,11 @@ function Home() {
 
     // Slideshow timer
     const slideInterval = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % slides.length);
+      setCurrentSlide((prev) => {
+        const next = (prev + 1) % slides.length;
+        console.log('Current slide:', next); // Debug log
+        return next;
+      });
     }, 4000); // Change every 4 seconds
 
     return () => clearInterval(slideInterval);
@@ -105,16 +109,13 @@ function Home() {
     <>
       <section className="hero-section">
         <div className="hero-slideshow">
-          {slides.map((slide, index) => (
-            <img
-              key={index}
-              src={slide}
-              alt={`Choir Slide ${index + 1}`}
-              className={`hero-slide-img ${index === currentSlide ? 'active' : ''}`}
-            />
-          ))}
+          <img
+            src={slides[currentSlide]}
+            alt={`Choir Slide ${currentSlide + 1}`}
+            className="hero-slide-img active"
+          />
         </div>
-        <div className="hero-overlay" /> {/* Added overlay */}
+        <div className="hero-overlay" />
         <div className="hero-content">
           <h2 className="hero-title">Welcome to Choir Center</h2>
           <p className="hero-text">Find and download choir music resources easily.</p>

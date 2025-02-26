@@ -172,7 +172,7 @@ function Admin() {
     }
     if (window.confirm('Are you sure you want to delete this user?')) {
       const { error } = await supabase.from('profiles').delete().eq('id', id);
-      if (error) setError('Failed to delete user: ' + error.message);
+      if (error) setError('Failed to delete user: ' + err.message);
       else setUsers(users.filter(u => u.id !== id));
     }
   };
@@ -184,7 +184,10 @@ function Admin() {
       [{ 'list': 'ordered' }, { 'list': 'bullet' }],
       ['link', 'image'],
       ['clean']
-    ]
+    ],
+    clipboard: {
+      matchVisual: false // Preserve formatting from pasted text
+    }
   };
 
   const quillFormats = [

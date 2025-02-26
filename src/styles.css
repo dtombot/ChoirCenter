@@ -6,7 +6,7 @@ body {
 }
 
 .container {
-  padding: 2rem;
+  padding: 1rem; /* Reduced padding for mobile */
   max-width: 100%;
   margin: 0 auto;
 }
@@ -148,7 +148,7 @@ body {
   text-align: center;
   padding: 4rem 1rem;
   overflow: hidden;
-  background: #3cb371; /* Fallback color */
+  background: #3cb371;
 }
 
 .hero-slideshow {
@@ -175,7 +175,6 @@ body {
   opacity: 0.4;
 }
 
-/* Overlay for text readability */
 .hero-overlay {
   position: absolute;
   top: 0;
@@ -258,19 +257,22 @@ body {
 
 /* Song List (Latest Additions and Library) */
 .song-list-container {
-  background: #f9fafb; /* Light background for modern look */
+  background: #f9fafb;
   padding: 1rem;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
 
 .song-list {
-  display: grid;
+  display: flex; /* Changed to flex for better control */
+  flex-wrap: wrap; /* Allow wrapping */
   gap: 1rem;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  justify-content: center; /* Center items */
 }
 
 .song-item {
+  flex: 1 1 300px; /* Flexible width, min 300px */
+  max-width: 100%; /* Ensure it fits container */
   display: flex;
   align-items: center;
   padding: 1rem;
@@ -280,7 +282,6 @@ body {
   text-decoration: none;
   color: #333;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
-  flex-wrap: wrap;
 }
 
 .song-item:hover {
@@ -348,7 +349,7 @@ body {
 
 .download-button {
   padding: 0.5rem 1.25rem;
-  background: linear-gradient(135deg, #3cb371, #2f9e5e); /* Gradient */
+  background: linear-gradient(135deg, #3cb371, #2f9e5e);
   color: #fff;
   border: none;
   border-radius: 25px;
@@ -361,6 +362,39 @@ body {
 .download-button:hover {
   transform: scale(1.1);
   box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+/* Blog List (Latest Insights) */
+.blog-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.blog-item {
+  flex: 1 1 250px; /* Flexible width, min 250px */
+  max-width: 100%;
+  background: #fff;
+  padding: 1rem;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  text-decoration: none;
+  color: #333;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.blog-item:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+}
+
+.blog-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #2f4f2f;
+  margin: 0;
+  text-align: center;
 }
 
 /* Library */
@@ -764,14 +798,16 @@ body {
   }
 
   .song-list {
-    grid-template-columns: 1fr; /* Stack on tablet */
-    gap: 0.75rem;
+    flex-direction: column; /* Stack items */
+    align-items: center;
   }
 
   .song-item {
-    padding: 0.75rem;
     flex-direction: column;
     align-items: flex-start;
+    padding: 0.75rem;
+    width: 100%; /* Full width on tablet */
+    max-width: 400px; /* Limit width */
   }
 
   .song-number {
@@ -788,6 +824,16 @@ body {
     margin-top: 0.5rem;
     width: 100%;
     text-align: center;
+  }
+
+  .blog-list {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .blog-item {
+    width: 100%;
+    max-width: 400px;
   }
 
   .filter-bar {
@@ -814,6 +860,10 @@ body {
 }
 
 @media (max-width: 480px) {
+  .container {
+    padding: 0.5rem; /* Tighter padding on mobile */
+  }
+
   .hero-section {
     padding: 1rem 0.25rem;
   }
@@ -852,6 +902,14 @@ body {
   .download-button {
     padding: 0.4rem 1rem;
     font-size: 0.85rem;
+  }
+
+  .blog-item {
+    padding: 0.75rem;
+  }
+
+  .blog-title {
+    font-size: 1rem;
   }
 
   .filter-input {

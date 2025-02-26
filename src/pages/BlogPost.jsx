@@ -13,29 +13,29 @@ function BlogPost() {
 
   useEffect(() => {
     const fetchPost = async () => {
+      console.log('Fetching post with permalink:', permalink);
       const { data, error } = await supabase
         .from('blog_posts')
         .select('*')
         .eq('permalink', permalink)
         .single();
       if (error) {
-        console.error('Error fetching post:', error.message);
+        console.error('Supabase error fetching post:', error.message, error.details, error.hint);
         setError(`Failed to load post: ${error.message}`);
-        // Comment out redirect to debug
-        // navigate('/');
         return;
       }
       if (!data) {
         console.error('No post found for permalink:', permalink);
         setError('Post not found');
-        // navigate('/');
         return;
       }
+      console.log('Post fetched successfully:', data);
       setPost(data);
     };
 
     const fetchComments = async () => {
-      if (!post) return;
+      if (!post?.id) return;
+      console.log('Fetching comments for post ID:', post.id);
       const { data, error } = await supabase
         .from('comments')
         .select('id, content, created_at, user_id, profiles (email)')
@@ -60,9 +60,14 @@ function BlogPost() {
     };
 
     fetchPost();
-    fetchComments();
     fetchUser();
-  }, [permalink, navigate, post]);
+  }, [permalink, navigate]);
+
+  useEffect(() => {
+    if (post) {
+      fetchComments();
+    }
+  }, [post]);
 
   const handleCommentSubmit = async (e) => {
     e.preventDefault();
@@ -113,6 +118,7 @@ function BlogPost() {
         <div className="content-section">
           <h1 className="content-title">Error</h1>
           <p className="error-message">{error}</p>
+          <button onClick={() => navigate('/')} className="action-button">Back to Home</button>
         </div>
       ) : (
         <>

@@ -167,13 +167,12 @@ body {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  display: none; /* Hide inactive slides */
+  opacity: 0; /* All start hidden */
   transition: opacity 1s ease-in-out;
 }
 
 .hero-slide-img.active {
-  display: block; /* Show only active slide */
-  opacity: 0.4; /* Lowered opacity for better text contrast */
+  opacity: 0.4; /* Only active slide visible */
 }
 
 /* Overlay for text readability */

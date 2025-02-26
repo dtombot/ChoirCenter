@@ -56,6 +56,21 @@ function Home() {
     navigate(`/song/${permalink || `song-${song.id}`}`);
   };
 
+  const handleDownload = (google_drive_file_id) => {
+    // Placeholder: Replace with actual download logic
+    alert(`Downloading file with ID: ${google_drive_file_id}`);
+    // Example: window.open(`https://drive.google.com/uc?export=download&id=${google_drive_file_id}`, '_blank');
+  };
+
+  const handleShare = (title, permalink) => {
+    // Placeholder: Replace with actual share logic
+    alert(`Sharing: ${title} - /song/${permalink}`);
+    // Example using Web Share API:
+    // if (navigator.share) {
+    //   navigator.share({ title, url: `${window.location.origin}/song/${permalink}` });
+    // }
+  };
+
   return (
     <div className="home-container">
       <section className="hero-section full-width">
@@ -104,8 +119,18 @@ function Home() {
                 <p className="song-card-downloads">Downloaded {song.downloads || 0} times</p>
               </div>
               <div className="song-card-actions">
-                <button className="download-button">Download</button>
-                <button className="share-button">Share</button>
+                <button
+                  className="download-button"
+                  onClick={(e) => { e.stopPropagation(); handleDownload(song.google_drive_file_id); }}
+                >
+                  Download
+                </button>
+                <button
+                  className="share-button"
+                  onClick={(e) => { e.stopPropagation(); handleShare(song.title, song.permalink); }}
+                >
+                  Share
+                </button>
               </div>
             </div>
           ))}

@@ -84,7 +84,7 @@ function Home() {
                 <p className="song-composer">{song.composer}</p>
               </div>
               <div className="download-container">
-                <p className="song-downloads">{song.downloads || 0} Downloads</p>
+                <p className="song-downloads">Downloaded {song.downloads || 0} times</p>
                 <button className="download-button">Download</button>
                 <button className="share-button">Share</button>
               </div>

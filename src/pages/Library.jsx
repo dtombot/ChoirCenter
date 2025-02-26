@@ -82,8 +82,8 @@ function Library() {
     }
   };
 
-  const handleSongClick = (permalink) => {
-    navigate(`/song/${permalink || `song-${song.id}`}`);
+  const handleSongClick = (id) => {
+    navigate(`/song/${id}`);
   };
 
   const filteredSongs = songs.filter(song =>
@@ -129,7 +129,7 @@ function Library() {
             <div
               key={song.id}
               className="song-card animate-card"
-              onClick={() => handleSongClick(song.permalink)}
+              onClick={() => handleSongClick(song.id)}
             >
               <div className="song-card-content">
                 <h3 className="song-card-title">{song.title}</h3>
@@ -149,7 +149,7 @@ function Library() {
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleShare(song.title, song.permalink || song.id);
+                    handleShare(song.title, song.id);
                   }}
                   className="share-button"
                 >

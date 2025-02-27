@@ -1,13 +1,20 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../supabase';
 import { Link, useParams, useNavigate } from 'react-router-dom';
+import { Document, Page, pdfjs } from 'react-pdf';
+import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
+import 'react-pdf/dist/esm/Page/TextLayer.css';
 import '../styles.css';
+
+// Set up pdfjs worker (required for react-pdf)
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
 
 function Song() {
   const { id } = useParams();
   const [song, setSong] = useState(null);
   const [error, setError] = useState(null);
   const [downloadPrompt, setDownloadPrompt] = useState(null);
+  const [numPages, setNumPages] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -82,6 +89,10 @@ function Song() {
     }
   };
 
+  const onDocumentLoadSuccess = ({ numPages }) => {
+    setNumPages(numPages);
+  };
+
   if (error) {
     return (
       <div className="song-container">
@@ -95,11 +106,25 @@ function Song() {
     return <div className="song-container">Loading...</div>;
   }
 
+  const pdfUrl = `https://drive.google.com/uc?export=view&id=${song.google_drive_file_id}`;
+
   return (
     <div className="song-container">
       <h1 className="song-title">{song.title}</h1>
       <p className="song-composer">{song.composer || 'Unknown Composer'}</p>
       <p className="song-downloads">Downloaded {song.downloads || 0} times</p>
+      <div className="song-preview">
+        <Document
+          file={pdfUrl}
+          onLoadSuccess={onDocumentLoadSuccess}
+          onLoadError={(err) => setError('Failed to load PDF preview: ' + err.message)}
+        >
+          <Page pageNumber={1} width={600} />
+        </Document>
+        {numPages > 1 && (
+          <p className="preview-note">Previewing page 1 of {numPages}. Download to view the full song.</p>
+        )}
+      </div>
       <div className="song-actions">
         <button onClick={handleDownload} className="download-button">Download</button>
         <button onClick={handleShare} className="share-button">Share</button>

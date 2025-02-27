@@ -10,6 +10,7 @@ function Home() {
   const [error, setError] = useState(null);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [downloadPrompt, setDownloadPrompt] = useState(null);
+  const [songOfTheWeek, setSongOfTheWeek] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -36,6 +37,16 @@ function Home() {
         setError('Failed to load posts: ' + postError.message);
       } else {
         setPosts(postData || []);
+      }
+
+      const { data: songOfTheWeekData, error: sotwError } = await supabase
+        .from('song_of_the_week')
+        .select('spotify_embed_url')
+        .single();
+      if (sotwError) {
+        console.error('Error fetching song of the week:', sotwError.message);
+      } else {
+        setSongOfTheWeek(songOfTheWeekData?.spotify_embed_url || null);
       }
     };
     fetchData();
@@ -144,6 +155,24 @@ function Home() {
             <Link to="/blog" className="action-button animate-button">Latest Insights</Link>
           </div>
         </div>
+      </section>
+      <section className="song-of-the-week">
+        <h2 className="section-title animate-text">Song of the Week</h2>
+        {songOfTheWeek ? (
+          <div className="audio-player animate-text">
+            <iframe
+              src={songOfTheWeek}
+              width="100%"
+              height="80"
+              frameBorder="0"
+              allowTransparency="true"
+              allow="encrypted-media"
+              title="Song of the Week"
+            ></iframe>
+          </div>
+        ) : (
+          <p className="animate-text">No song selected for this week.</p>
+        )}
       </section>
       {error && <p className="error-message">{error}</p>}
       <section className="latest-additions">

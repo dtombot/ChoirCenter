@@ -1,13 +1,16 @@
 const { google } = require('googleapis');
-const fetch = require('node-fetch');
 
 exports.handler = async (event, context) => {
   const { code } = event.queryStringParameters;
 
+  const oauth2Client = new google.auth.OAuth2(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    `${process.env.SITE_URL}/.netlify/functions/auth-callback`
+  );
+
   if (!code) {
-    const authUrl = google.auth.OAuth2.generateAuthUrl({
-      client_id: process.env.GOOGLE_CLIENT_ID,
-      redirect_uri: `${process.env.SITE_URL}/.netlify/functions/auth-callback`,
+    const authUrl = oauth2Client.generateAuthUrl({
       scope: [
         'https://www.googleapis.com/auth/analytics.readonly',
         'https://www.googleapis.com/auth/webmasters.readonly',

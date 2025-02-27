@@ -107,9 +107,9 @@ function Admin() {
         const { data, error } = await supabase
           .from('blog_posts')
           .select('title, views')
-          .order('views', { ascending: false })
+          .order('views', { ascending: false, nullsLast: true })
           .limit(5);
-        if (error) setError('Failed to load top posts: ' + error.message);
+        if (error) console.warn('Top posts fetch warning: ' + error.message); // Log but don’t crash
         else setTopPosts(data || []);
       };
       fetchTopPosts();
@@ -178,7 +178,7 @@ function Admin() {
         tags: postForm.tags || null,
         category: postForm.category || null,
         focus_keyword: postForm.focus_keyword || null,
-        views: 0 // Initialize views for new posts
+        views: 0
       };
 
       if (editingPostId) {
@@ -569,62 +569,64 @@ function Admin() {
           </div>
         )}
         {activeTab === 'analytics' && (
-          <div className="admin-analytics-grid">
+          <div className="admin-analytics-container">
             <div className="analytics-section local-data">
               <h3 className="analytics-section-title">Local Data</h3>
-              <div className="admin-analytics-item">
-                <h4 className="admin-analytics-title">Total Songs</h4>
-                <p className="admin-analytics-value">{songs.length}</p>
-              </div>
-              <div className="admin-analytics-item">
-                <h4 className="admin-analytics-title">Total Downloads</h4>
-                <p className="admin-analytics-value">{totalDownloads}</p>
-              </div>
-              <div className="admin-analytics-item">
-                <h4 className="admin-analytics-title">Public Songs</h4>
-                <p className="admin-analytics-value">{publicSongs}</p>
-              </div>
-              <div className="admin-analytics-item">
-                <h4 className="admin-analytics-title">Private Songs</h4>
-                <p className="admin-analytics-value">{privateSongs}</p>
-              </div>
-              <div className="admin-analytics-item">
-                <h4 className="admin-analytics-title">Total Blog Posts</h4>
-                <p className="admin-analytics-value">{posts.length}</p>
-              </div>
-              <div className="admin-analytics-item">
-                <h4 className="admin-analytics-title">Total Users</h4>
-                <p className="admin-analytics-value">{users.length}</p>
-              </div>
-              <div className="admin-analytics-item">
-                <h4 className="admin-analytics-title">Top Downloaded Songs</h4>
-                {topSongs.length > 0 ? (
-                  <ul className="top-items">
-                    {topSongs.map((song, index) => (
-                      <li key={index}>{song.title}: {song.downloads || 0} downloads</li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="admin-analytics-value">No data available</p>
-                )}
-              </div>
-              <div className="admin-analytics-item">
-                <h4 className="admin-analytics-title">Top Viewed Blog Posts</h4>
-                {topPosts.length > 0 ? (
-                  <ul className="top-items">
-                    {topPosts.map((post, index) => (
-                      <li key={index}>{post.title}: {post.views || 0} views</li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="admin-analytics-value">No data available</p>
-                )}
+              <div className="analytics-row">
+                <div className="admin-analytics-item">
+                  <h4 className="admin-analytics-title">Total Songs</h4>
+                  <p className="admin-analytics-value">{songs.length}</p>
+                </div>
+                <div className="admin-analytics-item">
+                  <h4 className="admin-analytics-title">Total Downloads</h4>
+                  <p className="admin-analytics-value">{totalDownloads}</p>
+                </div>
+                <div className="admin-analytics-item">
+                  <h4 className="admin-analytics-title">Public Songs</h4>
+                  <p className="admin-analytics-value">{publicSongs}</p>
+                </div>
+                <div className="admin-analytics-item">
+                  <h4 className="admin-analytics-title">Private Songs</h4>
+                  <p className="admin-analytics-value">{privateSongs}</p>
+                </div>
+                <div className="admin-analytics-item">
+                  <h4 className="admin-analytics-title">Total Blog Posts</h4>
+                  <p className="admin-analytics-value">{posts.length}</p>
+                </div>
+                <div className="admin-analytics-item">
+                  <h4 className="admin-analytics-title">Total Users</h4>
+                  <p className="admin-analytics-value">{users.length}</p>
+                </div>
+                <div className="admin-analytics-item">
+                  <h4 className="admin-analytics-title">Top Songs</h4>
+                  {topSongs.length > 0 ? (
+                    <ul className="top-items">
+                      {topSongs.map((song, index) => (
+                        <li key={index}>{song.title}: {song.downloads || 0}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="admin-analytics-value">N/A</p>
+                  )}
+                </div>
+                <div className="admin-analytics-item">
+                  <h4 className="admin-analytics-title">Top Posts</h4>
+                  {topPosts.length > 0 ? (
+                    <ul className="top-items">
+                      {topPosts.map((post, index) => (
+                        <li key={index}>{post.title}: {post.views || 0}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="admin-analytics-value">N/A</p>
+                  )}
+                </div>
               </div>
             </div>
             <div className="analytics-section google-data">
               <h3 className="analytics-section-title">Google Analytics (Last 30 Days)</h3>
               {analyticsData.ga ? (
-                <>
+                <div className="analytics-row">
                   <div className="admin-analytics-item">
                     <h4 className="admin-analytics-title">Active Users</h4>
                     <p className="admin-analytics-value">{analyticsData.ga.rows?.[0]?.metricValues?.[0]?.value || 'N/A'}</p>
@@ -642,7 +644,7 @@ function Admin() {
                     <p className="admin-analytics-value">{analyticsData.ga.rows?.[0]?.metricValues?.[3]?.value ? `${(parseFloat(analyticsData.ga.rows[0].metricValues[3].value) * 100).toFixed(1)}%` : 'N/A'}</p>
                   </div>
                   <div className="admin-analytics-item">
-                    <h4 className="admin-analytics-title">Avg. Session Duration</h4>
+                    <h4 className="admin-analytics-title">Avg. Duration</h4>
                     <p className="admin-analytics-value">{analyticsData.ga.rows?.[0]?.metricValues?.[4]?.value ? `${Math.round(analyticsData.ga.rows[0].metricValues[4].value)}s` : 'N/A'}</p>
                   </div>
                   <div className="admin-analytics-item">
@@ -653,36 +655,41 @@ function Admin() {
                     <h4 className="admin-analytics-title">New Users</h4>
                     <p className="admin-analytics-value">{analyticsData.ga.rows?.[0]?.metricValues?.[6]?.value || 'N/A'}</p>
                   </div>
-                </>
+                </div>
               ) : (
-                <div className="admin-analytics-item">
-                  <h4 className="admin-analytics-title">Loading...</h4>
-                  <p className="admin-analytics-value">Awaiting data</p>
+                <div className="analytics-row">
+                  <div className="admin-analytics-item">
+                    <h4 className="admin-analytics-title">Loading...</h4>
+                    <p className="admin-analytics-value">Awaiting data</p>
+                  </div>
                 </div>
               )}
             </div>
             <div className="analytics-section google-data">
               <h3 className="analytics-section-title">Google Search Console (Last 30 Days)</h3>
               {analyticsData.gsc ? (
-                <div className="admin-analytics-item">
-                  <h4 className="admin-analytics-title">Top Search Queries</h4>
-                  {analyticsData.gsc.rows && analyticsData.gsc.rows.length > 0 ? (
-                    <ul className="search-queries">
-                      {analyticsData.gsc.rows.map((row, index) => (
-                        <li key={index}>
-                          {row.keys[0]}: {row.clicks} clicks, {row.impressions} impressions, 
-                          {(row.ctr * 100).toFixed(1)}% CTR, {row.position.toFixed(1)} avg. position
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="admin-analytics-value">No data available</p>
-                  )}
+                <div className="analytics-row">
+                  <div className="admin-analytics-item">
+                    <h4 className="admin-analytics-title">Top Queries</h4>
+                    {analyticsData.gsc.rows && analyticsData.gsc.rows.length > 0 ? (
+                      <ul className="search-queries">
+                        {analyticsData.gsc.rows.map((row, index) => (
+                          <li key={index}>
+                            {row.keys[0]}: {row.clicks} clicks, {row.impressions} imp., {(row.ctr * 100).toFixed(1)}% CTR, {row.position.toFixed(1)} pos.
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="admin-analytics-value">N/A</p>
+                    )}
+                  </div>
                 </div>
               ) : (
-                <div className="admin-analytics-item">
-                  <h4 className="admin-analytics-title">Loading...</h4>
-                  <p className="admin-analytics-value">Awaiting data</p>
+                <div className="analytics-row">
+                  <div className="admin-analytics-item">
+                    <h4 className="admin-analytics-title">Loading...</h4>
+                    <p className="admin-analytics-value">Awaiting data</p>
+                  </div>
                 </div>
               )}
             </div>

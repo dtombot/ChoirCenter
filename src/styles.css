@@ -1652,15 +1652,18 @@ body {
   margin: 0 0 2rem;
   text-align: center;
   overflow: hidden;
+  width: 100%;
 }
 
 .song-preview-modern .react-pdf__Document {
   display: inline-block;
-  max-width: 100%;
+  width: 100%;
 }
 
 .song-preview-modern .react-pdf__Page {
+  width: 100% !important;
   max-width: 100%;
+  height: auto !important;
   border-radius: 8px;
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
   transition: transform 0.3s ease;
@@ -1874,6 +1877,7 @@ body {
 
   .song-card-modern {
     padding: 1.5rem;
+    max-width: 100%;
   }
 
   .song-title-modern {
@@ -1889,6 +1893,15 @@ body {
     width: 100%;
     max-width: 250px;
     margin: 0 auto;
+  }
+
+  .song-preview-modern {
+    margin: 0 0 1.5rem;
+  }
+
+  .song-preview-modern .react-pdf__Page {
+    width: 100% !important;
+    max-width: 450px;
   }
 }
 
@@ -2021,9 +2034,19 @@ body {
 
   .song-card-modern {
     padding: 1rem;
+    max-width: 100%;
   }
 
   .song-title-modern {
     font-size: 1.5rem;
+  }
+
+  .song-preview-modern {
+    margin: 0 0 1rem;
+  }
+
+  .song-preview-modern .react-pdf__Page {
+    width: 100% !important;
+    max-width: 300px;
   }
 }

@@ -32,6 +32,7 @@ function Admin() {
   const [analyticsData, setAnalyticsData] = useState({ ga: null, gsc: null });
   const [topSongs, setTopSongs] = useState([]);
   const [topPosts, setTopPosts] = useState([]);
+  const [songOfTheWeekUrl, setSongOfTheWeekUrl] = useState('');
   const [editingSongId, setEditingSongId] = useState(null);
   const [editingPostId, setEditingPostId] = useState(null);
   const [error, setError] = useState(null);
@@ -109,10 +110,20 @@ function Admin() {
           .select('title, views')
           .order('views', { ascending: false, nullsLast: true })
           .limit(5);
-        if (error) console.warn('Top posts fetch warning: ' + error.message); // Log but don’t crash
+        if (error) console.warn('Top posts fetch warning: ' + error.message);
         else setTopPosts(data || []);
       };
       fetchTopPosts();
+
+      const fetchSongOfTheWeek = async () => {
+        const { data, error } = await supabase
+          .from('song_of_the_week')
+          .select('spotify_embed_url')
+          .single();
+        if (error) console.warn('Song of the week fetch warning: ' + error.message);
+        else setSongOfTheWeekUrl(data?.spotify_embed_url || '');
+      };
+      fetchSongOfTheWeek();
     };
     fetchUser();
   }, [navigate]);
@@ -199,6 +210,33 @@ function Admin() {
       setPosts(data || []);
     } catch (err) {
       setError('Failed to save post: ' + err.message);
+    }
+  };
+
+  const handleSongOfTheWeekSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const { data: existingData, error: fetchError } = await supabase
+        .from('song_of_the_week')
+        .select('id')
+        .single();
+      if (fetchError && fetchError.code !== 'PGRST116') throw fetchError;
+
+      if (existingData) {
+        const { error } = await supabase
+          .from('song_of_the_week')
+          .update({ spotify_embed_url: songOfTheWeekUrl })
+          .eq('id', existingData.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('song_of_the_week')
+          .insert([{ spotify_embed_url: songOfTheWeekUrl }]);
+        if (error) throw error;
+      }
+      setError('Song of the Week updated successfully!');
+    } catch (err) {
+      setError('Failed to update Song of the Week: ' + err.message);
     }
   };
 
@@ -326,6 +364,7 @@ function Admin() {
         <button className={`tab-button ${activeTab === 'posts' ? 'active' : ''}`} onClick={() => setActiveTab('posts')}>Blog Posts</button>
         <button className={`tab-button ${activeTab === 'analytics' ? 'active' : ''}`} onClick={() => setActiveTab('analytics')}>Analytics</button>
         <button className={`tab-button ${activeTab === 'users' ? 'active' : ''}`} onClick={() => setActiveTab('users')}>Manage Users</button>
+        <button className={`tab-button ${activeTab === 'songOfTheWeek' ? 'active' : ''}`} onClick={() => setActiveTab('songOfTheWeek')}>Song of the Week</button>
       </div>
       <div className="admin-content">
         {error && <p className="error-message">{error}</p>}
@@ -723,6 +762,26 @@ function Admin() {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+        {activeTab === 'songOfTheWeek' && (
+          <div className="admin-form-card">
+            <h3 className="admin-form-title">Song of the Week</h3>
+            <form onSubmit={handleSongOfTheWeekSubmit} className="admin-form-grid">
+              <div className="admin-form-group full-width">
+                <label htmlFor="spotifyEmbedUrl">Spotify Embed URL</label>
+                <input
+                  id="spotifyEmbedUrl"
+                  type="text"
+                  placeholder="e.g., https://open.spotify.com/embed/track/..."
+                  value={songOfTheWeekUrl}
+                  onChange={(e) => setSongOfTheWeekUrl(e.target.value)}
+                  className="admin-form-input"
+                />
+              </div>
+              <button type="submit" className="admin-form-submit">Update Song of the Week</button>
+            </form>
+            <p className="admin-note">Paste the Spotify embed URL (e.g., from "Share > Copy Embed Code" on Spotify). Leave blank to remove the player.</p>
           </div>
         )}
       </div>

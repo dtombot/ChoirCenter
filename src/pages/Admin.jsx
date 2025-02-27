@@ -11,7 +11,15 @@ function Admin() {
   const [songs, setSongs] = useState([]);
   const [posts, setPosts] = useState([]);
   const [users, setUsers] = useState([]);
-  const [songForm, setSongForm] = useState({ title: '', composer: '', google_drive_file_id: '', permalink: '', is_public: true });
+  const [songForm, setSongForm] = useState({ 
+    title: '', 
+    composer: '', 
+    google_drive_file_id: '', 
+    github_file_url: '', 
+    permalink: '', 
+    is_public: true,
+    source: 'google_drive' // Default source
+  });
   const [postForm, setPostForm] = useState({ 
     title: '', 
     content: '', 
@@ -24,6 +32,8 @@ function Admin() {
   const [editingSongId, setEditingSongId] = useState(null);
   const [editingPostId, setEditingPostId] = useState(null);
   const [error, setError] = useState(null);
+  const [songSearch, setSongSearch] = useState('');
+  const [songFilter, setSongFilter] = useState('all');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -80,17 +90,32 @@ function Admin() {
       if (editingSongId) {
         const { error } = await supabase
           .from('songs')
-          .update({ title: songForm.title, composer: songForm.composer, google_drive_file_id: songForm.google_drive_file_id, permalink: songForm.permalink, is_public: songForm.is_public })
+          .update({ 
+            title: songForm.title, 
+            composer: songForm.composer, 
+            google_drive_file_id: songForm.source === 'google_drive' ? songForm.google_drive_file_id : null, 
+            github_file_url: songForm.source === 'github' ? songForm.github_file_url : null, 
+            permalink: songForm.permalink, 
+            is_public: songForm.is_public 
+          })
           .eq('id', editingSongId);
         if (error) throw error;
         setEditingSongId(null);
       } else {
         const { error } = await supabase
           .from('songs')
-          .insert([{ title: songForm.title, composer: songForm.composer, google_drive_file_id: songForm.google_drive_file_id, permalink: songForm.permalink, is_public: songForm.is_public, downloads: 0 }]);
+          .insert([{ 
+            title: songForm.title, 
+            composer: songForm.composer, 
+            google_drive_file_id: songForm.source === 'google_drive' ? songForm.google_drive_file_id : null, 
+            github_file_url: songForm.source === 'github' ? songForm.github_file_url : null, 
+            permalink: songForm.permalink, 
+            is_public: songForm.is_public, 
+            downloads: 0 
+          }]);
         if (error) throw error;
       }
-      setSongForm({ title: '', composer: '', google_drive_file_id: '', permalink: '', is_public: true });
+      setSongForm({ title: '', composer: '', google_drive_file_id: '', github_file_url: '', permalink: '', is_public: true, source: 'google_drive' });
       const { data } = await supabase.from('songs').select('*');
       setSongs(data || []);
     } catch (err) {
@@ -139,7 +164,15 @@ function Admin() {
   };
 
   const editSong = (song) => {
-    setSongForm({ title: song.title, composer: song.composer, google_drive_file_id: song.google_drive_file_id, permalink: song.permalink, is_public: song.is_public });
+    setSongForm({ 
+      title: song.title, 
+      composer: song.composer, 
+      google_drive_file_id: song.google_drive_file_id || '', 
+      github_file_url: song.github_file_url || '', 
+      permalink: song.permalink, 
+      is_public: song.is_public,
+      source: song.google_drive_file_id ? 'google_drive' : 'github'
+    });
     setEditingSongId(song.id);
   };
 
@@ -226,6 +259,17 @@ function Admin() {
     'list', 'bullet', 'link', 'image'
   ];
 
+  const filteredSongs = songs.filter(song => {
+    const matchesSearch = 
+      song.title.toLowerCase().includes(songSearch.toLowerCase()) || 
+      song.composer.toLowerCase().includes(songSearch.toLowerCase());
+    const matchesFilter = 
+      songFilter === 'all' || 
+      (songFilter === 'public' && song.is_public) || 
+      (songFilter === 'private' && !song.is_public);
+    return matchesSearch && matchesFilter;
+  });
+
   if (!user) return null;
 
   const totalDownloads = songs.reduce((sum, song) => sum + (song.downloads || 0), 0);
@@ -249,40 +293,121 @@ function Admin() {
         {activeTab === 'songs' && (
           <>
             <form onSubmit={handleSongSubmit} className="admin-form-grid">
-              <input type="text" placeholder="Song Title" value={songForm.title} onChange={(e) => setSongForm({ ...songForm, title: e.target.value })} className="admin-form-input" required />
-              <input type="text" placeholder="Composer" value={songForm.composer} onChange={(e) => setSongForm({ ...songForm, composer: e.target.value })} className="admin-form-input" required />
-              <input type="text" placeholder="Google Drive File ID" value={songForm.google_drive_file_id} onChange={(e) => setSongForm({ ...songForm, google_drive_file_id: e.target.value })} className="admin-form-input" required />
-              <input type="text" placeholder="Permalink" value={songForm.permalink} onChange={(e) => setSongForm({ ...songForm, permalink: e.target.value })} className="admin-form-input" />
+              <input 
+                type="text" 
+                placeholder="Song Title" 
+                value={songForm.title} 
+                onChange={(e) => setSongForm({ ...songForm, title: e.target.value })} 
+                className="admin-form-input" 
+                required 
+              />
+              <input 
+                type="text" 
+                placeholder="Composer" 
+                value={songForm.composer} 
+                onChange={(e) => setSongForm({ ...songForm, composer: e.target.value })} 
+                className="admin-form-input" 
+                required 
+              />
+              <div className="admin-form-group">
+                <label htmlFor="source">File Source</label>
+                <select
+                  id="source"
+                  value={songForm.source}
+                  onChange={(e) => setSongForm({ ...songForm, source: e.target.value })}
+                  className="admin-form-input"
+                >
+                  <option value="google_drive">Google Drive</option>
+                  <option value="github">GitHub (/public/pdf)</option>
+                </select>
+              </div>
+              {songForm.source === 'google_drive' ? (
+                <input 
+                  type="text" 
+                  placeholder="Google Drive File ID" 
+                  value={songForm.google_drive_file_id} 
+                  onChange={(e) => setSongForm({ ...songForm, google_drive_file_id: e.target.value })} 
+                  className="admin-form-input" 
+                  required 
+                />
+              ) : (
+                <input 
+                  type="text" 
+                  placeholder="GitHub Raw URL (e.g., https://raw.githubusercontent.com/.../song.pdf)" 
+                  value={songForm.github_file_url} 
+                  onChange={(e) => setSongForm({ ...songForm, github_file_url: e.target.value })} 
+                  className="admin-form-input" 
+                  required 
+                />
+              )}
+              <input 
+                type="text" 
+                placeholder="Permalink" 
+                value={songForm.permalink} 
+                onChange={(e) => setSongForm({ ...songForm, permalink: e.target.value })} 
+                className="admin-form-input" 
+              />
               <label className="admin-checkbox">
-                <input type="checkbox" checked={songForm.is_public} onChange={(e) => setSongForm({ ...songForm, is_public: e.target.checked })} />
+                <input 
+                  type="checkbox" 
+                  checked={songForm.is_public} 
+                  onChange={(e) => setSongForm({ ...songForm, is_public: e.target.checked })} 
+                />
                 Public
               </label>
               <button type="submit" className="admin-form-submit">{editingSongId ? 'Update Song' : 'Add Song'}</button>
               {editingSongId && (
-                <button type="button" className="admin-cancel-button" onClick={() => { setSongForm({ title: '', composer: '', google_drive_file_id: '', permalink: '', is_public: true }); setEditingSongId(null); }}>Cancel</button>
+                <button 
+                  type="button" 
+                  className="admin-cancel-button" 
+                  onClick={() => { setSongForm({ title: '', composer: '', google_drive_file_id: '', github_file_url: '', permalink: '', is_public: true, source: 'google_drive' }); setEditingSongId(null); }}
+                >
+                  Cancel
+                </button>
               )}
             </form>
+            <div className="admin-filter-bar">
+              <input 
+                type="text" 
+                placeholder="Search songs..." 
+                value={songSearch} 
+                onChange={(e) => setSongSearch(e.target.value)} 
+                className="admin-filter-input" 
+              />
+              <select 
+                value={songFilter} 
+                onChange={(e) => setSongFilter(e.target.value)} 
+                className="admin-filter-select"
+              >
+                <option value="all">All</option>
+                <option value="public">Public</option>
+                <option value="private">Private</option>
+              </select>
+            </div>
             <div className="admin-table-container">
               <table className="admin-table">
                 <thead>
                   <tr>
                     <th>Title</th>
                     <th>Composer</th>
-                    <th>File ID</th>
+                    <th>File Source</th>
                     <th>Downloads</th>
                     <th>Public</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {songs.map(song => (
+                  {filteredSongs.map(song => (
                     <tr key={song.id}>
                       <td>{song.title}</td>
                       <td>{song.composer}</td>
-                      <td>{song.google_drive_file_id}</td>
+                      <td>{song.google_drive_file_id ? 'Google Drive' : 'GitHub'}</td>
                       <td>{song.downloads || 0}</td>
                       <td>
-                        <button onClick={() => toggleSongPublic(song.id, song.is_public)} className={`admin-toggle-button ${song.is_public ? 'active' : ''}`}>
+                        <button 
+                          onClick={() => toggleSongPublic(song.id, song.is_public)} 
+                          className={`admin-toggle-button ${song.is_public ? 'active' : ''}`}
+                        >
                           {song.is_public ? 'Yes' : 'No'}
                         </button>
                       </td>

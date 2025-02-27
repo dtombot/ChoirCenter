@@ -41,12 +41,12 @@ function Home() {
 
       const { data: songOfTheWeekData, error: sotwError } = await supabase
         .from('song_of_the_week')
-        .select('spotify_embed_url')
+        .select('spotify_embed_html')
         .single();
       if (sotwError) {
         console.error('Error fetching song of the week:', sotwError.message);
       } else {
-        setSongOfTheWeek(songOfTheWeekData?.spotify_embed_url || null);
+        setSongOfTheWeek(songOfTheWeekData?.spotify_embed_html || null);
       }
     };
     fetchData();
@@ -159,17 +159,7 @@ function Home() {
       <section className="song-of-the-week">
         <h2 className="section-title animate-text">Song of the Week</h2>
         {songOfTheWeek ? (
-          <div className="audio-player animate-text">
-            <iframe
-              src={songOfTheWeek}
-              width="100%"
-              height="80"
-              frameBorder="0"
-              allowTransparency="true"
-              allow="encrypted-media"
-              title="Song of the Week"
-            ></iframe>
-          </div>
+          <div className="audio-player animate-text" dangerouslySetInnerHTML={{ __html: songOfTheWeek }} />
         ) : (
           <p className="animate-text">No song selected for this week.</p>
         )}

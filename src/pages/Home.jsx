@@ -70,6 +70,11 @@ function Home() {
 
   const handleSearch = (e) => {
     e.preventDefault();
+    const honeypot = e.target.elements.honeypot.value;
+    if (honeypot) {
+      setError('Spam detected');
+      return;
+    }
     if (!searchQuery.trim()) return;
     navigate(`/search?query=${encodeURIComponent(searchQuery)}`);
     setSearchQuery('');
@@ -160,6 +165,7 @@ function Home() {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="search-input animate-input"
             />
+            <input type="text" name="honeypot" className="honeypot" />
           </form>
           <div className="button-group">
             <Link to="/library" className="action-button animate-button">Explore Library</Link>

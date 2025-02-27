@@ -1,0 +1,7 @@
+User-agent: *
+Disallow: /admin
+Disallow: /signup
+Disallow: /login
+Allow: /
+
+Sitemap: https://choircenter.com/sitemap.xml

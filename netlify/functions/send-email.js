@@ -1,4 +1,4 @@
-const fetch = require('node-fetch');
+const nodemailer = require('nodemailer');
 
 exports.handler = async (event) => {
   const { email, type } = JSON.parse(event.body);
@@ -10,9 +10,15 @@ exports.handler = async (event) => {
     };
   }
 
-  // Replace with your SendGrid API key or SMTP credentials
-  const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
-  const FROM_EMAIL = 'no-reply@choircenter.com'; // Your sender email
+  const transporter = nodemailer.createTransport({
+    host: process.env.BREVO_SMTP_SERVER,
+    port: process.env.BREVO_SMTP_PORT,
+    secure: false, // Use TLS
+    auth: {
+      user: process.env.BREVO_SMTP_LOGIN,
+      pass: process.env.BREVO_SMTP_KEY,
+    },
+  });
 
   const subject = type === 'signup' ? 'Welcome to Choir Center - Signup Successful!' : 'Welcome to Choir Center!';
   const text =
@@ -21,21 +27,12 @@ exports.handler = async (event) => {
       : 'Welcome to Choir Center! We’re thrilled to have you join our community. Discover free sheet music, blog insights, and more!';
 
   try {
-    const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${SENDGRID_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        personalizations: [{ to: [{ email }] }],
-        from: { email: FROM_EMAIL },
-        subject,
-        content: [{ type: 'text/plain', value: text }],
-      }),
+    await transporter.sendMail({
+      from: 'no-reply@choircenter.com',
+      to: email,
+      subject,
+      text,
     });
-
-    if (!response.ok) throw new Error('Email send failed');
 
     return {
       statusCode: 200,

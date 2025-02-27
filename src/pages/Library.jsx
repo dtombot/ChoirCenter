@@ -34,12 +34,14 @@ function Library() {
       const isAuthenticated = userData?.user && !userError;
 
       if (!isAuthenticated) {
-        const downloadCount = parseInt(localStorage.getItem('downloadCount') || '0', 10);
+        const today = new Date().toDateString();
+        const downloadKey = `downloads_${today}`;
+        const downloadCount = parseInt(localStorage.getItem(downloadKey) || '0', 10);
         if (downloadCount >= 5) {
-          setDownloadPrompt('You’ve reached the limit of 5 downloads. Please log in to download more.');
+          setDownloadPrompt('You’ve reached the daily limit of 5 downloads. Register to download more!');
           return;
         }
-        localStorage.setItem('downloadCount', downloadCount + 1);
+        localStorage.setItem(downloadKey, downloadCount + 1);
       }
 
       const url = `https://drive.google.com/uc?export=download&id=${fileId}`;
@@ -162,10 +164,10 @@ function Library() {
       )}
       {downloadPrompt && (
         <div className="modal-overlay">
-          <div className="modal-content">
+          <div className="modal-content download-modal">
             <h3 className="modal-title">Download Limit Reached</h3>
             <p className="modal-text">
-              {downloadPrompt} <Link to="/login" className="modal-link">Log in here</Link>.
+              {downloadPrompt} <Link to="/signup" className="modal-link">Sign up here</Link> to enjoy unlimited downloads!
             </p>
             <button onClick={() => setDownloadPrompt(null)} className="cancel-button">Close</button>
           </div>

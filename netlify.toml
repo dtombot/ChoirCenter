@@ -21,3 +21,8 @@
   from = "/favicon.ico"
   to = "/index.html"
   status = 200
+
+[build]
+  functions = "netlify/functions"
+  [build.environment]
+    NODE_VERSION = "16"

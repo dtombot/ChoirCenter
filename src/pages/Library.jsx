@@ -37,8 +37,8 @@ function Library() {
         const today = new Date().toDateString();
         const downloadKey = `downloads_${today}`;
         const downloadCount = parseInt(localStorage.getItem(downloadKey) || '0', 10);
-        if (downloadCount >= 5) {
-          setDownloadPrompt('You’ve reached the daily limit of 5 downloads. Register to download more!');
+        if (downloadCount >= 2) {
+          setDownloadPrompt('You’ve reached the daily limit of 2 downloads. Register to download more!');
           return;
         }
         localStorage.setItem(downloadKey, downloadCount + 1);

@@ -45,13 +45,15 @@ function Home() {
         const { data: songOfTheWeekData, error: sotwError } = await supabase
           .from('song_of_the_week')
           .select('spotify_embed_html')
-          .single();
+          .limit(1); // Fetch at most one row
         if (sotwError) {
           console.error('Error fetching song of the week:', sotwError.message);
           setError('Failed to load Song of the Week: ' + sotwError.message);
         } else {
-          console.log('Song of the Week fetched:', songOfTheWeekData);
-          setSongOfTheWeek(songOfTheWeekData?.spotify_embed_html || null);
+          console.log('Song of the Week raw data:', songOfTheWeekData);
+          const embedHtml = songOfTheWeekData && songOfTheWeekData.length > 0 ? songOfTheWeekData[0].spotify_embed_html : null;
+          console.log('Song of the Week embed HTML:', embedHtml);
+          setSongOfTheWeek(embedHtml);
         }
       } catch (err) {
         console.error('Unexpected error in fetchData:', err);

@@ -110,25 +110,27 @@ function Song() {
 
   return (
     <div className="song-container">
-      <h1 className="song-title">{song.title}</h1>
-      <p className="song-composer">{song.composer || 'Unknown Composer'}</p>
-      <p className="song-downloads">Downloaded {song.downloads || 0} times</p>
-      <div className="song-preview">
-        <Document
-          file={pdfUrl}
-          onLoadSuccess={onDocumentLoadSuccess}
-          onLoadError={(err) => setError('Failed to load PDF preview: ' + err.message)}
-        >
-          <Page pageNumber={1} width={600} />
-        </Document>
-        {numPages > 1 && (
-          <p className="preview-note">Previewing page 1 of {numPages}. Download to view the full song.</p>
-        )}
-      </div>
-      <div className="song-actions">
-        <button onClick={handleDownload} className="download-button">Download</button>
-        <button onClick={handleShare} className="share-button">Share</button>
-        <Link to="/library" className="action-button">Back to Library</Link>
+      <div className="song-card-modern">
+        <h1 className="song-title-modern">{song.title}</h1>
+        <p className="song-composer-modern">{song.composer || 'Unknown Composer'}</p>
+        <p className="song-downloads-modern">Downloaded {song.downloads || 0} times</p>
+        <div className="song-preview-modern">
+          <Document
+            file={pdfUrl}
+            onLoadSuccess={onDocumentLoadSuccess}
+            onLoadError={(err) => setError('Failed to load PDF preview: ' + err.message)}
+          >
+            <Page pageNumber={1} scale={1.0} />
+          </Document>
+          {numPages > 1 && (
+            <p className="preview-note-modern">Previewing page 1 of {numPages}. Download to view the full song.</p>
+          )}
+        </div>
+        <div className="song-actions-modern">
+          <button onClick={handleDownload} className="download-button-modern">Download</button>
+          <button onClick={handleShare} className="share-button-modern">Share</button>
+          <Link to="/library" className="back-button-modern">Back to Library</Link>
+        </div>
       </div>
       {downloadPrompt && (
         <div className="modal-overlay">

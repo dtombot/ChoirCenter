@@ -29,6 +29,9 @@ exports.handler = async (event, context) => {
       metrics: [
         { name: 'activeUsers' },
         { name: 'screenPageViews' },
+        { name: 'sessions' },
+        { name: 'bounceRate' },
+        { name: 'averageSessionDuration' },
       ],
     },
   });
@@ -36,8 +39,8 @@ exports.handler = async (event, context) => {
   const gscResponse = await searchconsole.searchanalytics.query({
     siteUrl: process.env.SITE_URL,
     requestBody: {
-      startDate: '2025-01-28',
-      endDate: '2025-02-27',
+      startDate: '30daysAgo',
+      endDate: 'today',
       dimensions: ['query'],
       rowLimit: 5,
     },

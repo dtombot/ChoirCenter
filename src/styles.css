@@ -1042,18 +1042,6 @@ body {
   outline: none;
 }
 
-.admin-form-group {
-  display: flex;
-  flex-direction: column;
-}
-
-.admin-form-group label {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #2f4f2f;
-  margin-bottom: 0.5rem;
-}
-
 .admin-checkbox {
   display: flex;
   align-items: center;

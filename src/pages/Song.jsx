@@ -6,7 +6,7 @@ import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/TextLayer.css';
 import '../styles.css';
 
-// Set up pdfjs worker (required for react-pdf)
+// Set up pdfjs worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
 
 function Song() {
@@ -106,7 +106,7 @@ function Song() {
     return <div className="song-container">Loading...</div>;
   }
 
-  const pdfUrl = `https://drive.google.com/uc?export=view&id=${song.google_drive_file_id}`;
+  const pdfUrl = `/.netlify/functions/proxy-pdf?fileId=${song.google_drive_file_id}`;
 
   return (
     <div className="song-container">

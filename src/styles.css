@@ -1842,7 +1842,7 @@ body {
     font-size: 1.25rem;
   }
 
-  /* Song of the Week */
+ /* Song of the Week */
 .song-of-the-week {
   padding: 1rem 0;
   background: #f9fafb;
@@ -1856,15 +1856,9 @@ body {
 }
 
 .audio-player iframe {
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-/* Admin Note */
-.admin-note {
-  font-size: 0.9rem;
-  color: #666;
-  margin-top: 1rem;
-  text-align: center;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  height: 352px;
 }
 }

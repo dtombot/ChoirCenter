@@ -781,7 +781,7 @@ function Admin() {
               </div>
               <button type="submit" className="admin-form-submit">Update Song of the Week</button>
             </form>
-            <p className="admin-note">Paste the full Spotify iframe embed code (e.g., from 'Share > Copy Embed Code' on Spotify). Leave blank to remove the player.</p>
+            <p className="admin-note">Paste the full Spotify iframe embed code (e.g., from 'Share &gt; Copy Embed Code' on Spotify). Leave blank to remove the player.</p>
           </div>
         )}
       </div>

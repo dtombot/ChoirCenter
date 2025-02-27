@@ -1,29 +1,29 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../supabase';
-import { useParams, Link } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
+import '../styles.css';
 
 function Song() {
-  const [song, setSong] = useState(null);
   const { id } = useParams();
+  const [song, setSong] = useState(null);
+  const [error, setError] = useState(null);
   const [downloadPrompt, setDownloadPrompt] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchSong = async () => {
       const { data, error } = await supabase
         .from('songs')
-        .select('*')
-        .eq('permalink', id)
+        .select('id, title, composer, google_drive_file_id, downloads, is_public')
+        .eq('id', id)
         .single();
-      let songData = data;
       if (error) {
-        const { data: idData } = await supabase
-          .from('songs')
-          .select('*')
-          .eq('id', id)
-          .single();
-        songData = idData || null;
+        setError('Failed to load song: ' + error.message);
+      } else if (!data.is_public) {
+        setError('This song is private and cannot be viewed.');
+      } else {
+        setSong(data);
       }
-      setSong(songData ? { ...songData, fileSize: 'Unknown' } : null);
     };
     fetchSong();
   }, [id]);
@@ -36,19 +36,20 @@ function Song() {
       const isAuthenticated = userData?.user && !userError;
 
       if (!isAuthenticated) {
-        const downloadCount = parseInt(localStorage.getItem('downloadCount') || '0', 10);
-        if (downloadCount >= 5) {
-          setDownloadPrompt('You’ve reached the limit of 5 downloads. Please log in to download more.');
+        const today = new Date().toDateString();
+        const downloadKey = `downloads_${today}`;
+        const downloadCount = parseInt(localStorage.getItem(downloadKey) || '0', 10);
+        if (downloadCount >= 2) {
+          setDownloadPrompt('You’ve reached the daily limit of 2 downloads. Register to download more!');
           return;
         }
-        localStorage.setItem('downloadCount', downloadCount + 1);
+        localStorage.setItem(downloadKey, downloadCount + 1);
       }
 
       const url = `https://drive.google.com/uc?export=download&id=${song.google_drive_file_id}`;
       const link = document.createElement('a');
       link.href = url;
-      const safeTitle = song.title.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
-      link.download = `choircenter.com-${safeTitle}-${song.id}.pdf`;
+      link.download = `choircenter.com-${song.id}.pdf`;
       link.click();
 
       const { error: updateError } = await supabase
@@ -60,44 +61,56 @@ function Song() {
       setSong({ ...song, downloads: (song.downloads || 0) + 1 });
     } catch (err) {
       console.error('Download error:', err.message);
+      setError('Failed to update download count.');
     }
   };
 
-  if (!song) return <div className="container">Loading...</div>;
+  const handleShare = () => {
+    const shareUrl = `${window.location.origin}/song/${song.id}`;
+    const shareText = `Check out "${song.title}" on Choir Center!`;
+    
+    if (navigator.share) {
+      navigator.share({
+        title: song.title,
+        text: shareText,
+        url: shareUrl,
+      }).catch(err => console.error('Share error:', err));
+    } else {
+      navigator.clipboard.writeText(shareUrl)
+        .then(() => alert('Link copied to clipboard! Share it manually.'))
+        .catch(err => console.error('Clipboard error:', err));
+    }
+  };
+
+  if (error) {
+    return (
+      <div className="song-container">
+        <p className="error-message">{error}</p>
+        <Link to="/library" className="action-button">Back to Library</Link>
+      </div>
+    );
+  }
+
+  if (!song) {
+    return <div className="song-container">Loading...</div>;
+  }
 
   return (
-    <div className="container">
-      <h1 className="content-title">{song.title}</h1>
-      <p className="content-text">{song.description || 'No description'}</p>
-      <p className="content-text">File Size: {song.fileSize}</p>
-      <div style={{ textAlign: 'center', margin: '1rem 0' }}>
-        <button onClick={handleDownload} className="download-button">
-          Download ({song.downloads || 0})
-        </button>
+    <div className="song-container">
+      <h1 className="song-title">{song.title}</h1>
+      <p className="song-composer">{song.composer || 'Unknown Composer'}</p>
+      <p className="song-downloads">Downloaded {song.downloads || 0} times</p>
+      <div className="song-actions">
+        <button onClick={handleDownload} className="download-button">Download</button>
+        <button onClick={handleShare} className="share-button">Share</button>
+        <Link to="/library" className="action-button">Back to Library</Link>
       </div>
-      {song.google_drive_thumbnail_id && (
-        <div className="content-section">
-          <h3 className="section-title">Preview</h3>
-          <img
-            src={`https://drive.google.com/thumbnail?id=${song.google_drive_thumbnail_id}`}
-            alt={`${song.title} preview`}
-            className="preview-image"
-          />
-        </div>
-      )}
-      {song.lyrics && (
-        <div className="content-section">
-          <h3 className="section-title">Lyrics</h3>
-          <pre className="lyrics">{song.lyrics}</pre>
-        </div>
-      )}
-
       {downloadPrompt && (
         <div className="modal-overlay">
-          <div className="modal-content">
+          <div className="modal-content download-modal">
             <h3 className="modal-title">Download Limit Reached</h3>
             <p className="modal-text">
-              {downloadPrompt} <Link to="/login" className="modal-link">Log in here</Link>.
+              {downloadPrompt} <Link to="/signup" className="modal-link">Sign up here</Link> to enjoy unlimited downloads!
             </p>
             <button onClick={() => setDownloadPrompt(null)} className="cancel-button">Close</button>
           </div>

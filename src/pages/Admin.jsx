@@ -18,7 +18,7 @@ function Admin() {
     github_file_url: '', 
     permalink: '', 
     is_public: true,
-    source: 'google_drive' // Default source
+    source: 'google_drive'
   });
   const [postForm, setPostForm] = useState({ 
     title: '', 
@@ -29,6 +29,7 @@ function Admin() {
     category: '', 
     focus_keyword: '' 
   });
+  const [analyticsData, setAnalyticsData] = useState({ ga: null, gsc: null });
   const [editingSongId, setEditingSongId] = useState(null);
   const [editingPostId, setEditingPostId] = useState(null);
   const [error, setError] = useState(null);
@@ -75,6 +76,18 @@ function Admin() {
         else setUsers(data || []);
       };
       fetchUsers();
+
+      const fetchAnalytics = async () => {
+        try {
+          const response = await fetch('/.netlify/functions/analytics');
+          if (!response.ok) throw new Error('Failed to fetch analytics data');
+          const data = await response.json();
+          setAnalyticsData(data);
+        } catch (err) {
+          setError('Analytics fetch failed: ' + err.message);
+        }
+      };
+      fetchAnalytics();
     };
     fetchUser();
   }, [navigate]);
@@ -238,7 +251,7 @@ function Admin() {
     }
     if (window.confirm('Are you sure you want to delete this user?')) {
       const { error } = await supabase.from('profiles').delete().eq('id', id);
-      if (error) setError('Failed to delete user: ' + error.message);
+      if (error) setError('Failed to delete user: ' + err.message);
       else setUsers(users.filter(u => u.id !== id));
     }
   };
@@ -531,12 +544,66 @@ function Admin() {
         )}
         {activeTab === 'analytics' && (
           <div className="admin-analytics-grid">
-            <div className="admin-analytics-item"><h3 className="admin-analytics-title">Total Songs</h3><p className="admin-analytics-value">{songs.length}</p></div>
-            <div className="admin-analytics-item"><h3 className="admin-analytics-title">Total Downloads</h3><p className="admin-analytics-value">{totalDownloads}</p></div>
-            <div className="admin-analytics-item"><h3 className="admin-analytics-title">Public Songs</h3><p className="admin-analytics-value">{publicSongs}</p></div>
-            <div className="admin-analytics-item"><h3 className="admin-analytics-title">Private Songs</h3><p className="admin-analytics-value">{privateSongs}</p></div>
-            <div className="admin-analytics-item"><h3 className="admin-analytics-title">Total Blog Posts</h3><p className="admin-analytics-value">{posts.length}</p></div>
-            <div className="admin-analytics-item"><h3 className="admin-analytics-title">Total Users</h3><p className="admin-analytics-value">{users.length}</p></div>
+            <div className="admin-analytics-item">
+              <h3 className="admin-analytics-title">Total Songs</h3>
+              <p className="admin-analytics-value">{songs.length}</p>
+            </div>
+            <div className="admin-analytics-item">
+              <h3 className="admin-analytics-title">Total Downloads</h3>
+              <p className="admin-analytics-value">{totalDownloads}</p>
+            </div>
+            <div className="admin-analytics-item">
+              <h3 className="admin-analytics-title">Public Songs</h3>
+              <p className="admin-analytics-value">{publicSongs}</p>
+            </div>
+            <div className="admin-analytics-item">
+              <h3 className="admin-analytics-title">Private Songs</h3>
+              <p className="admin-analytics-value">{privateSongs}</p>
+            </div>
+            <div className="admin-analytics-item">
+              <h3 className="admin-analytics-title">Total Blog Posts</h3>
+              <p className="admin-analytics-value">{posts.length}</p>
+            </div>
+            <div className="admin-analytics-item">
+              <h3 className="admin-analytics-title">Total Users</h3>
+              <p className="admin-analytics-value">{users.length}</p>
+            </div>
+            {analyticsData.ga ? (
+              <>
+                <div className="admin-analytics-item">
+                  <h3 className="admin-analytics-title">Active Users (30 Days)</h3>
+                  <p className="admin-analytics-value">{analyticsData.ga.rows?.[0]?.metricValues?.[0]?.value || 'N/A'}</p>
+                </div>
+                <div className="admin-analytics-item">
+                  <h3 className="admin-analytics-title">Page Views (30 Days)</h3>
+                  <p className="admin-analytics-value">{analyticsData.ga.rows?.[0]?.metricValues?.[1]?.value || 'N/A'}</p>
+                </div>
+              </>
+            ) : (
+              <div className="admin-analytics-item">
+                <h3 className="admin-analytics-title">Google Analytics</h3>
+                <p className="admin-analytics-value">Loading...</p>
+              </div>
+            )}
+            {analyticsData.gsc ? (
+              <div className="admin-analytics-item">
+                <h3 className="admin-analytics-title">Top Search Queries (30 Days)</h3>
+                {analyticsData.gsc.rows && analyticsData.gsc.rows.length > 0 ? (
+                  <ul>
+                    {analyticsData.gsc.rows.map((row, index) => (
+                      <li key={index}>{row.keys[0]}: {row.clicks} clicks</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="admin-analytics-value">No data available</p>
+                )}
+              </div>
+            ) : (
+              <div className="admin-analytics-item">
+                <h3 className="admin-analytics-title">Search Console</h3>
+                <p className="admin-analytics-value">Loading...</p>
+              </div>
+            )}
           </div>
         )}
         {activeTab === 'users' && (

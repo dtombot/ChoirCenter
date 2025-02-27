@@ -1585,22 +1585,162 @@ body {
   margin: 0;
 }
 
-/* Song Page Preview */
-.song-preview {
-  margin: 1.5rem 0;
-  text-align: center;
+/* Song Page Modern Styles */
+.song-container {
+  max-width: 900px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+  display: flex;
+  justify-content: center;
 }
 
-.song-preview .react-pdf__Page {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  border-radius: 8px;
+.song-card-modern {
+  background: #fff;
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 700px;
+  transition: transform 0.4s ease, box-shadow 0.4s ease;
+  opacity: 0;
+  animation: fadeInUp 0.6s ease forwards;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.song-card-modern:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+}
+
+.song-title-modern {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #2f4f2f;
+  margin: 0 0 0.5rem;
+  transition: color 0.3s ease;
+}
+
+.song-card-modern:hover .song-title-modern {
+  color: #3cb371;
+}
+
+.song-composer-modern {
+  font-size: 1.1rem;
+  color: #666;
+  font-style: italic;
+  margin: 0 0 1rem;
+  transition: color 0.3s ease;
+}
+
+.song-downloads-modern {
+  font-size: 0.95rem;
+  color: #3cb371;
+  font-weight: 500;
+  margin: 0 0 1.5rem;
+  transition: transform 0.3s ease;
+}
+
+.song-card-modern:hover .song-downloads-modern {
+  transform: scale(1.05);
+}
+
+.song-preview-modern {
+  margin: 0 0 2rem;
+  text-align: center;
   overflow: hidden;
 }
 
-.preview-note {
+.song-preview-modern .react-pdf__Document {
+  display: inline-block;
+  max-width: 100%;
+}
+
+.song-preview-modern .react-pdf__Page {
+  max-width: 100%;
+  border-radius: 8px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+}
+
+.song-preview-modern:hover .react-pdf__Page {
+  transform: scale(1.02);
+}
+
+.preview-note-modern {
   font-size: 0.9rem;
   color: #666;
-  margin-top: 0.5rem;
+  margin-top: 0.75rem;
+  transition: color 0.3s ease;
+}
+
+.song-card-modern:hover .preview-note-modern {
+  color: #3cb371;
+}
+
+.song-actions-modern {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.download-button-modern {
+  padding: 0.75rem 2rem;
+  background: linear-gradient(135deg, #3cb371, #2f9e5e);
+  color: #fff;
+  border: none;
+  border-radius: 30px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+}
+
+.download-button-modern:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+  background: linear-gradient(135deg, #2f9e5e, #3cb371);
+}
+
+.share-button-modern {
+  padding: 0.75rem 2rem;
+  background: linear-gradient(135deg, #98fb98, #66d966);
+  color: #2f4f2f;
+  border: none;
+  border-radius: 30px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+}
+
+.share-button-modern:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+  background: linear-gradient(135deg, #66d966, #98fb98);
+}
+
+.back-button-modern {
+  padding: 0.75rem 2rem;
+  background: #f4f6f8;
+  color: #2f4f2f;
+  border: none;
+  border-radius: 30px;
+  font-size: 1rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+}
+
+.back-button-modern:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+  background: #e6f4ea;
 }
 
 /* Responsive Adjustments */
@@ -1731,6 +1871,25 @@ body {
   .faq-answer {
     font-size: 0.85rem;
   }
+
+  .song-card-modern {
+    padding: 1.5rem;
+  }
+
+  .song-title-modern {
+    font-size: 1.75rem;
+  }
+
+  .song-actions-modern {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .download-button-modern, .share-button-modern, .back-button-modern {
+    width: 100%;
+    max-width: 250px;
+    margin: 0 auto;
+  }
 }
 
 @media (max-width: 480px) {
@@ -1858,5 +2017,13 @@ body {
 
   .admin-form-title {
     font-size: 1.25rem;
+  }
+
+  .song-card-modern {
+    padding: 1rem;
+  }
+
+  .song-title-modern {
+    font-size: 1.5rem;
   }
 }

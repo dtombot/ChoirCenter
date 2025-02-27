@@ -32,7 +32,7 @@ function Admin() {
   const [analyticsData, setAnalyticsData] = useState({ ga: null, gsc: null });
   const [topSongs, setTopSongs] = useState([]);
   const [topPosts, setTopPosts] = useState([]);
-  const [songOfTheWeekUrl, setSongOfTheWeekUrl] = useState('');
+  const [songOfTheWeekHtml, setSongOfTheWeekHtml] = useState('');
   const [editingSongId, setEditingSongId] = useState(null);
   const [editingPostId, setEditingPostId] = useState(null);
   const [error, setError] = useState(null);
@@ -118,10 +118,10 @@ function Admin() {
       const fetchSongOfTheWeek = async () => {
         const { data, error } = await supabase
           .from('song_of_the_week')
-          .select('spotify_embed_url')
+          .select('spotify_embed_html')
           .single();
         if (error) console.warn('Song of the week fetch warning: ' + error.message);
-        else setSongOfTheWeekUrl(data?.spotify_embed_url || '');
+        else setSongOfTheWeekHtml(data?.spotify_embed_html || '');
       };
       fetchSongOfTheWeek();
     };
@@ -225,13 +225,13 @@ function Admin() {
       if (existingData) {
         const { error } = await supabase
           .from('song_of_the_week')
-          .update({ spotify_embed_url: songOfTheWeekUrl })
+          .update({ spotify_embed_html: songOfTheWeekHtml })
           .eq('id', existingData.id);
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from('song_of_the_week')
-          .insert([{ spotify_embed_url: songOfTheWeekUrl }]);
+          .insert([{ spotify_embed_html: songOfTheWeekHtml }]);
         if (error) throw error;
       }
       setError('Song of the Week updated successfully!');
@@ -769,19 +769,19 @@ function Admin() {
             <h3 className="admin-form-title">Song of the Week</h3>
             <form onSubmit={handleSongOfTheWeekSubmit} className="admin-form-grid">
               <div className="admin-form-group full-width">
-                <label htmlFor="spotifyEmbedUrl">Spotify Embed URL</label>
+                <label htmlFor="spotifyEmbedHtml">Spotify Embed HTML</label>
                 <input
-                  id="spotifyEmbedUrl"
+                  id="spotifyEmbedHtml"
                   type="text"
-                  placeholder="e.g., https://open.spotify.com/embed/track/..."
-                  value={songOfTheWeekUrl}
-                  onChange={(e) => setSongOfTheWeekUrl(e.target.value)}
+                  placeholder="e.g., <iframe style='border-radius:12px' src='https://open.spotify.com/embed/track/...'>"
+                  value={songOfTheWeekHtml}
+                  onChange={(e) => setSongOfTheWeekHtml(e.target.value)}
                   className="admin-form-input"
                 />
               </div>
               <button type="submit" className="admin-form-submit">Update Song of the Week</button>
             </form>
-            <p className="admin-note">Paste the Spotify embed URL (e.g., from "Share > Copy Embed Code" on Spotify). Leave blank to remove the player.</p>
+            <p className="admin-note">Paste the full Spotify iframe embed code (e.g., from 'Share > Copy Embed Code' on Spotify). Leave blank to remove the player.</p>
           </div>
         )}
       </div>

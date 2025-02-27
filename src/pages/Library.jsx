@@ -96,6 +96,7 @@ function Library() {
   return (
     <div className="library-container">
       <h1 className="library-title animate-text">Song Library</h1>
+      <p className="library-description">Explore our extensive collection of free choir sheet music, available for download and sharing. Sort and search to find the perfect pieces for your choir.</p>
       <div className="filter-bar">
         <input
           type="text"
@@ -134,7 +135,7 @@ function Library() {
               onClick={() => handleSongClick(song.id)}
             >
               <div className="song-card-content">
-                <h3 className="song-card-title">{song.title}</h3>
+                <h2 className="song-card-title">{song.title}</h2>
                 <p className="song-card-composer">{song.composer || 'Unknown Composer'}</p>
                 <p className="song-card-downloads">Downloaded {song.downloads || 0} times</p>
               </div>

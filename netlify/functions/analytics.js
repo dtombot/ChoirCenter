@@ -7,10 +7,9 @@ exports.handler = async (event, context) => {
     `${process.env.SITE_URL}/.netlify/functions/auth-callback`
   );
 
-  // For simplicity, manually paste your tokens here after first auth
   oauth2Client.setCredentials({
-    access_token: 'YOUR_ACCESS_TOKEN',
-    refresh_token: 'YOUR_REFRESH_TOKEN',
+    access_token: 'ya29.a0AeXRPp5dG9flvjWbUbXD1Klm-OKk1v1ZAwuR4VuraBZ125sbE8xJ_E__fRtW4o7gUAgMnKLn95gaXR-6YRIxvkhtcIf78e-TfMHNlNUPvyv2obi_fIWGaSpZ2fAh5txSFtWN5c4l2sTmR6UFC0H47pDZjmhXkHWmf32xGnSpaCgYKAVwSARISFQHGX2MiJXox2tJIbsLReNlhiCi8PQ0175',
+    refresh_token: '1//04bOTrckPrz-dCgYIARAAGAQSNwF-L9IrhBtFOmZgkSlsl-ox2Q1Pn9td46VHUd1iAPhpE_-r716xPPHL8ppV8hIa-2Imge9U1Wo',
   });
 
   const analytics = google.analyticsdata({
@@ -23,7 +22,6 @@ exports.handler = async (event, context) => {
     auth: oauth2Client,
   });
 
-  // Fetch GA data
   const gaResponse = await analytics.properties.runReport({
     property: `properties/${process.env.GA_PROPERTY_ID}`,
     requestBody: {
@@ -35,7 +33,6 @@ exports.handler = async (event, context) => {
     },
   });
 
-  // Fetch GSC data
   const gscResponse = await searchconsole.searchanalytics.query({
     siteUrl: process.env.SITE_URL,
     requestBody: {

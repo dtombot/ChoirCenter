@@ -45,7 +45,7 @@ function Home() {
         const { data: songOfTheWeekData, error: sotwError } = await supabase
           .from('song_of_the_week')
           .select('spotify_embed_html')
-          .limit(1); // Fetch at most one row
+          .limit(1);
         if (sotwError) {
           console.error('Error fetching song of the week:', sotwError.message);
           setError('Failed to load Song of the Week: ' + sotwError.message);
@@ -88,8 +88,8 @@ function Home() {
         const today = new Date().toDateString();
         const downloadKey = `downloads_${today}`;
         const downloadCount = parseInt(localStorage.getItem(downloadKey) || '0', 10);
-        if (downloadCount >= 5) {
-          setDownloadPrompt('You’ve reached the daily limit of 5 downloads. Register to download more!');
+        if (downloadCount >= 2) {
+          setDownloadPrompt('You’ve reached the daily limit of 2 downloads. Register to download more!');
           return;
         }
         localStorage.setItem(downloadKey, downloadCount + 1);

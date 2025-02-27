@@ -2034,3 +2034,22 @@ body {
     margin: 0 0 1rem;
   }
 }
+
+/* Honeypot Field */
+.honeypot {
+  position: absolute;
+  left: -9999px;
+  height: 1px;
+  width: 1px;
+  opacity: 0;
+}
+
+/* Success Message */
+.success-message {
+  color: #2f4f2f;
+  background: #e6f4ea;
+  padding: 0.5rem;
+  border-radius: 8px;
+  text-align: center;
+  font-weight: 500;
+}

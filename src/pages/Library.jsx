@@ -28,6 +28,16 @@ function Library() {
     fetchSongs();
   }, [sortBy, sortOrder]);
 
+  const handleFilterSubmit = (e) => {
+    e.preventDefault();
+    const honeypot = e.target.elements.honeypot.value;
+    if (honeypot) {
+      setError('Spam detected');
+      return;
+    }
+    // Filter logic already handled by useEffect and state
+  };
+
   const handleDownload = async (songId, fileId) => {
     try {
       const { data: userData, error: userError } = await supabase.auth.getUser();
@@ -97,7 +107,7 @@ function Library() {
     <div className="library-container">
       <h1 className="library-title animate-text">Song Library</h1>
       <p className="library-description">Explore our extensive collection of free choir sheet music, available for download and sharing. Sort and search to find the perfect pieces for your choir.</p>
-      <div className="filter-bar">
+      <form onSubmit={handleFilterSubmit} className="filter-bar">
         <input
           type="text"
           placeholder="Search library..."
@@ -122,7 +132,8 @@ function Library() {
           <option value="desc">Descending</option>
           <option value="asc">Ascending</option>
         </select>
-      </div>
+        <input type="text" name="honeypot" className="honeypot" />
+      </form>
       {error && <p className="error-message">{error}</p>}
       {songs.length === 0 && !error ? (
         <p>No songs available.</p>

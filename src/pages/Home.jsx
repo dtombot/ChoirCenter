@@ -15,38 +15,47 @@ function Home() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const { data: songData, error: songError } = await supabase
-        .from('songs')
-        .select('id, title, composer, google_drive_file_id, permalink, is_public, downloads')
-        .order('created_at', { ascending: false })
-        .limit(10);
-      if (songError) {
-        console.error('Error fetching songs:', songError.message);
-        setError('Failed to load songs: ' + songError.message);
-      } else {
-        setSongs(songData || []);
-      }
+      try {
+        const { data: songData, error: songError } = await supabase
+          .from('songs')
+          .select('id, title, composer, google_drive_file_id, permalink, is_public, downloads')
+          .order('created_at', { ascending: false })
+          .limit(10);
+        if (songError) {
+          console.error('Error fetching songs:', songError.message);
+          setError('Failed to load songs: ' + songError.message);
+        } else {
+          console.log('Songs fetched:', songData);
+          setSongs(songData || []);
+        }
 
-      const { data: postData, error: postError } = await supabase
-        .from('blog_posts')
-        .select('id, title, permalink')
-        .order('created_at', { ascending: false })
-        .limit(10);
-      if (postError) {
-        console.error('Error fetching posts:', postError.message);
-        setError('Failed to load posts: ' + postError.message);
-      } else {
-        setPosts(postData || []);
-      }
+        const { data: postData, error: postError } = await supabase
+          .from('blog_posts')
+          .select('id, title, permalink')
+          .order('created_at', { ascending: false })
+          .limit(10);
+        if (postError) {
+          console.error('Error fetching posts:', postError.message);
+          setError('Failed to load posts: ' + postError.message);
+        } else {
+          console.log('Posts fetched:', postData);
+          setPosts(postData || []);
+        }
 
-      const { data: songOfTheWeekData, error: sotwError } = await supabase
-        .from('song_of_the_week')
-        .select('spotify_embed_html')
-        .single();
-      if (sotwError) {
-        console.error('Error fetching song of the week:', sotwError.message);
-      } else {
-        setSongOfTheWeek(songOfTheWeekData?.spotify_embed_html || null);
+        const { data: songOfTheWeekData, error: sotwError } = await supabase
+          .from('song_of_the_week')
+          .select('spotify_embed_html')
+          .single();
+        if (sotwError) {
+          console.error('Error fetching song of the week:', sotwError.message);
+          setError('Failed to load Song of the Week: ' + sotwError.message);
+        } else {
+          console.log('Song of the Week fetched:', songOfTheWeekData);
+          setSongOfTheWeek(songOfTheWeekData?.spotify_embed_html || null);
+        }
+      } catch (err) {
+        console.error('Unexpected error in fetchData:', err);
+        setError('Unexpected error: ' + err.message);
       }
     };
     fetchData();

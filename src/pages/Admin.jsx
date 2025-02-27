@@ -544,66 +544,87 @@ function Admin() {
         )}
         {activeTab === 'analytics' && (
           <div className="admin-analytics-grid">
-            <div className="admin-analytics-item">
-              <h3 className="admin-analytics-title">Total Songs</h3>
-              <p className="admin-analytics-value">{songs.length}</p>
+            <div className="analytics-section local-data">
+              <h3 className="analytics-section-title">Local Data</h3>
+              <div className="admin-analytics-item">
+                <h4 className="admin-analytics-title">Total Songs</h4>
+                <p className="admin-analytics-value">{songs.length}</p>
+              </div>
+              <div className="admin-analytics-item">
+                <h4 className="admin-analytics-title">Total Downloads</h4>
+                <p className="admin-analytics-value">{totalDownloads}</p>
+              </div>
+              <div className="admin-analytics-item">
+                <h4 className="admin-analytics-title">Public Songs</h4>
+                <p className="admin-analytics-value">{publicSongs}</p>
+              </div>
+              <div className="admin-analytics-item">
+                <h4 className="admin-analytics-title">Private Songs</h4>
+                <p className="admin-analytics-value">{privateSongs}</p>
+              </div>
+              <div className="admin-analytics-item">
+                <h4 className="admin-analytics-title">Total Blog Posts</h4>
+                <p className="admin-analytics-value">{posts.length}</p>
+              </div>
+              <div className="admin-analytics-item">
+                <h4 className="admin-analytics-title">Total Users</h4>
+                <p className="admin-analytics-value">{users.length}</p>
+              </div>
             </div>
-            <div className="admin-analytics-item">
-              <h3 className="admin-analytics-title">Total Downloads</h3>
-              <p className="admin-analytics-value">{totalDownloads}</p>
-            </div>
-            <div className="admin-analytics-item">
-              <h3 className="admin-analytics-title">Public Songs</h3>
-              <p className="admin-analytics-value">{publicSongs}</p>
-            </div>
-            <div className="admin-analytics-item">
-              <h3 className="admin-analytics-title">Private Songs</h3>
-              <p className="admin-analytics-value">{privateSongs}</p>
-            </div>
-            <div className="admin-analytics-item">
-              <h3 className="admin-analytics-title">Total Blog Posts</h3>
-              <p className="admin-analytics-value">{posts.length}</p>
-            </div>
-            <div className="admin-analytics-item">
-              <h3 className="admin-analytics-title">Total Users</h3>
-              <p className="admin-analytics-value">{users.length}</p>
-            </div>
-            {analyticsData.ga ? (
-              <>
+            <div className="analytics-section google-data">
+              <h3 className="analytics-section-title">Google Analytics (Last 30 Days)</h3>
+              {analyticsData.ga ? (
+                <>
+                  <div className="admin-analytics-item">
+                    <h4 className="admin-analytics-title">Active Users</h4>
+                    <p className="admin-analytics-value">{analyticsData.ga.rows?.[0]?.metricValues?.[0]?.value || 'N/A'}</p>
+                  </div>
+                  <div className="admin-analytics-item">
+                    <h4 className="admin-analytics-title">Page Views</h4>
+                    <p className="admin-analytics-value">{analyticsData.ga.rows?.[0]?.metricValues?.[1]?.value || 'N/A'}</p>
+                  </div>
+                  <div className="admin-analytics-item">
+                    <h4 className="admin-analytics-title">Sessions</h4>
+                    <p className="admin-analytics-value">{analyticsData.ga.rows?.[0]?.metricValues?.[2]?.value || 'N/A'}</p>
+                  </div>
+                  <div className="admin-analytics-item">
+                    <h4 className="admin-analytics-title">Bounce Rate</h4>
+                    <p className="admin-analytics-value">{analyticsData.ga.rows?.[0]?.metricValues?.[3]?.value ? `${(parseFloat(analyticsData.ga.rows[0].metricValues[3].value) * 100).toFixed(1)}%` : 'N/A'}</p>
+                  </div>
+                  <div className="admin-analytics-item">
+                    <h4 className="admin-analytics-title">Avg. Session Duration</h4>
+                    <p className="admin-analytics-value">{analyticsData.ga.rows?.[0]?.metricValues?.[4]?.value ? `${Math.round(analyticsData.ga.rows[0].metricValues[4].value)}s` : 'N/A'}</p>
+                  </div>
+                </>
+              ) : (
                 <div className="admin-analytics-item">
-                  <h3 className="admin-analytics-title">Active Users (30 Days)</h3>
-                  <p className="admin-analytics-value">{analyticsData.ga.rows?.[0]?.metricValues?.[0]?.value || 'N/A'}</p>
+                  <h4 className="admin-analytics-title">Loading...</h4>
+                  <p className="admin-analytics-value">Awaiting data</p>
                 </div>
+              )}
+            </div>
+            <div className="analytics-section google-data">
+              <h3 className="analytics-section-title">Google Search Console (Last 30 Days)</h3>
+              {analyticsData.gsc ? (
                 <div className="admin-analytics-item">
-                  <h3 className="admin-analytics-title">Page Views (30 Days)</h3>
-                  <p className="admin-analytics-value">{analyticsData.ga.rows?.[0]?.metricValues?.[1]?.value || 'N/A'}</p>
+                  <h4 className="admin-analytics-title">Top Search Queries</h4>
+                  {analyticsData.gsc.rows && analyticsData.gsc.rows.length > 0 ? (
+                    <ul className="search-queries">
+                      {analyticsData.gsc.rows.map((row, index) => (
+                        <li key={index}>{row.keys[0]}: {row.clicks} clicks</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="admin-analytics-value">No data available</p>
+                  )}
                 </div>
-              </>
-            ) : (
-              <div className="admin-analytics-item">
-                <h3 className="admin-analytics-title">Google Analytics</h3>
-                <p className="admin-analytics-value">Loading...</p>
-              </div>
-            )}
-            {analyticsData.gsc ? (
-              <div className="admin-analytics-item">
-                <h3 className="admin-analytics-title">Top Search Queries (30 Days)</h3>
-                {analyticsData.gsc.rows && analyticsData.gsc.rows.length > 0 ? (
-                  <ul>
-                    {analyticsData.gsc.rows.map((row, index) => (
-                      <li key={index}>{row.keys[0]}: {row.clicks} clicks</li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="admin-analytics-value">No data available</p>
-                )}
-              </div>
-            ) : (
-              <div className="admin-analytics-item">
-                <h3 className="admin-analytics-title">Search Console</h3>
-                <p className="admin-analytics-value">Loading...</p>
-              </div>
-            )}
+              ) : (
+                <div className="admin-analytics-item">
+                  <h4 className="admin-analytics-title">Loading...</h4>
+                  <p className="admin-analytics-value">Awaiting data</p>
+                </div>
+              )}
+            </div>
           </div>
         )}
         {activeTab === 'users' && (

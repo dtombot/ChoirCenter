@@ -39,9 +39,9 @@ function Song() {
     const updateScale = () => {
       const width = window.innerWidth;
       if (width <= 480) {
-        setScale(0.65); // Mobile
+        setScale(0.5); // Mobile
       } else if (width <= 768) {
-        setScale(0.85); // Tablet
+        setScale(0.7); // Tablet
       } else {
         setScale(1.0); // Desktop
       }

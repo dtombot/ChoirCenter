@@ -30,6 +30,8 @@ function Admin() {
     focus_keyword: '' 
   });
   const [analyticsData, setAnalyticsData] = useState({ ga: null, gsc: null });
+  const [topSongs, setTopSongs] = useState([]);
+  const [topPosts, setTopPosts] = useState([]);
   const [editingSongId, setEditingSongId] = useState(null);
   const [editingPostId, setEditingPostId] = useState(null);
   const [error, setError] = useState(null);
@@ -82,12 +84,35 @@ function Admin() {
           const response = await fetch('/.netlify/functions/analytics');
           if (!response.ok) throw new Error('Failed to fetch analytics data');
           const data = await response.json();
+          if (data.error) throw new Error(data.error);
           setAnalyticsData(data);
         } catch (err) {
           setError('Analytics fetch failed: ' + err.message);
         }
       };
       fetchAnalytics();
+
+      const fetchTopSongs = async () => {
+        const { data, error } = await supabase
+          .from('songs')
+          .select('title, downloads')
+          .order('downloads', { ascending: false })
+          .limit(5);
+        if (error) setError('Failed to load top songs: ' + error.message);
+        else setTopSongs(data || []);
+      };
+      fetchTopSongs();
+
+      const fetchTopPosts = async () => {
+        const { data, error } = await supabase
+          .from('blog_posts')
+          .select('title, views')
+          .order('views', { ascending: false })
+          .limit(5);
+        if (error) setError('Failed to load top posts: ' + error.message);
+        else setTopPosts(data || []);
+      };
+      fetchTopPosts();
     };
     fetchUser();
   }, [navigate]);
@@ -152,7 +177,8 @@ function Admin() {
         meta_description: postForm.meta_description || null,
         tags: postForm.tags || null,
         category: postForm.category || null,
-        focus_keyword: postForm.focus_keyword || null
+        focus_keyword: postForm.focus_keyword || null,
+        views: 0 // Initialize views for new posts
       };
 
       if (editingPostId) {
@@ -251,7 +277,7 @@ function Admin() {
     }
     if (window.confirm('Are you sure you want to delete this user?')) {
       const { error } = await supabase.from('profiles').delete().eq('id', id);
-      if (error) setError('Failed to delete user: ' + err.message);
+      if (error) setError('Failed to delete user: ' + error.message);
       else setUsers(users.filter(u => u.id !== id));
     }
   };
@@ -570,6 +596,30 @@ function Admin() {
                 <h4 className="admin-analytics-title">Total Users</h4>
                 <p className="admin-analytics-value">{users.length}</p>
               </div>
+              <div className="admin-analytics-item">
+                <h4 className="admin-analytics-title">Top Downloaded Songs</h4>
+                {topSongs.length > 0 ? (
+                  <ul className="top-items">
+                    {topSongs.map((song, index) => (
+                      <li key={index}>{song.title}: {song.downloads || 0} downloads</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="admin-analytics-value">No data available</p>
+                )}
+              </div>
+              <div className="admin-analytics-item">
+                <h4 className="admin-analytics-title">Top Viewed Blog Posts</h4>
+                {topPosts.length > 0 ? (
+                  <ul className="top-items">
+                    {topPosts.map((post, index) => (
+                      <li key={index}>{post.title}: {post.views || 0} views</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="admin-analytics-value">No data available</p>
+                )}
+              </div>
             </div>
             <div className="analytics-section google-data">
               <h3 className="analytics-section-title">Google Analytics (Last 30 Days)</h3>
@@ -595,6 +645,14 @@ function Admin() {
                     <h4 className="admin-analytics-title">Avg. Session Duration</h4>
                     <p className="admin-analytics-value">{analyticsData.ga.rows?.[0]?.metricValues?.[4]?.value ? `${Math.round(analyticsData.ga.rows[0].metricValues[4].value)}s` : 'N/A'}</p>
                   </div>
+                  <div className="admin-analytics-item">
+                    <h4 className="admin-analytics-title">Event Count</h4>
+                    <p className="admin-analytics-value">{analyticsData.ga.rows?.[0]?.metricValues?.[5]?.value || 'N/A'}</p>
+                  </div>
+                  <div className="admin-analytics-item">
+                    <h4 className="admin-analytics-title">New Users</h4>
+                    <p className="admin-analytics-value">{analyticsData.ga.rows?.[0]?.metricValues?.[6]?.value || 'N/A'}</p>
+                  </div>
                 </>
               ) : (
                 <div className="admin-analytics-item">
@@ -611,7 +669,10 @@ function Admin() {
                   {analyticsData.gsc.rows && analyticsData.gsc.rows.length > 0 ? (
                     <ul className="search-queries">
                       {analyticsData.gsc.rows.map((row, index) => (
-                        <li key={index}>{row.keys[0]}: {row.clicks} clicks</li>
+                        <li key={index}>
+                          {row.keys[0]}: {row.clicks} clicks, {row.impressions} impressions, 
+                          {(row.ctr * 100).toFixed(1)}% CTR, {row.position.toFixed(1)} avg. position
+                        </li>
                       ))}
                     </ul>
                   ) : (

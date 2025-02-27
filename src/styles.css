@@ -1585,6 +1585,24 @@ body {
   margin: 0;
 }
 
+/* Song Page Preview */
+.song-preview {
+  margin: 1.5rem 0;
+  text-align: center;
+}
+
+.song-preview .react-pdf__Page {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.preview-note {
+  font-size: 0.9rem;
+  color: #666;
+  margin-top: 0.5rem;
+}
+
 /* Responsive Adjustments */
 @media (max-width: 768px) {
   .header {
@@ -1841,24 +1859,4 @@ body {
   .admin-form-title {
     font-size: 1.25rem;
   }
-
- /* Song of the Week */
-.song-of-the-week {
-  padding: 1rem 0;
-  background: #f9fafb;
-  border-bottom: 1px solid #e0e0e0;
-  text-align: center;
-}
-
-.audio-player {
-  max-width: 600px;
-  margin: 0 auto;
-}
-
-.audio-player iframe {
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  width: 100%;
-  height: 352px;
-}
 }

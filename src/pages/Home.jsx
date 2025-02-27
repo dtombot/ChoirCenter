@@ -188,9 +188,43 @@ function Home() {
               to={`/blog/${post.permalink || `post-${post.id}`}`}
               className="blog-item animate-card"
             >
-              <h3 className="blog-title">{post.title}</h3>
+              <h3 className="blog-title small-text">{post.title}</h3>
             </Link>
           ))}
+        </div>
+      </section>
+      <hr className="section-separator" />
+      <section className="faq-section">
+        <h2 className="section-title animate-text">Frequently Asked Questions</h2>
+        <div className="faq-grid">
+          <div className="faq-item animate-card">
+            <h3 className="faq-question">Why should I join a choir?</h3>
+            <p className="faq-answer">Joining a choir boosts your confidence, builds community, and enhances your musical skills—pure joy in every note!</p>
+          </div>
+          <div className="faq-item animate-card">
+            <h3 className="faq-question">Does singing in a choir enhance spirituality?</h3>
+            <p className="faq-answer">Yes, it uplifts your spirit, fosters peace, and connects you deeply through harmonious expression.</p>
+          </div>
+          <div className="faq-item animate-card">
+            <h3 className="faq-question">What are the key qualities of a good chorister?</h3>
+            <p className="faq-answer">Dedication, teamwork, a strong ear, and a passion for singing make an exceptional chorister.</p>
+          </div>
+          <div className="faq-item animate-card">
+            <h3 className="faq-question">Which vocal tips can improve my singing?</h3>
+            <p className="faq-answer">Practice breathing, warm up daily, hydrate, and focus on posture for a clearer, stronger voice.</p>
+          </div>
+          <div className="faq-item animate-card">
+            <h3 className="faq-question">How can I find choirs near me?</h3>
+            <p className="faq-answer">Search online, check local churches, or join Choir Center to connect with nearby groups easily!</p>
+          </div>
+          <div className="faq-item animate-card">
+            <h3 className="faq-question">Where can I find choir songs in solfa notation?</h3>
+            <p className="faq-answer">Choir Center offers free solfa notation downloads—perfect for learning and singing!</p>
+          </div>
+          <div className="faq-item animate-card">
+            <h3 className="faq-question">How can I improve my sight-singing skills?</h3>
+            <p className="faq-answer">Practice scales, use solfa, and sing along with sheet music from Choir Center to master it quickly.</p>
+          </div>
         </div>
       </section>
       {downloadPrompt && (

@@ -25,4 +25,4 @@
 [build]
   functions = "netlify/functions"
   [build.environment]
-    NODE_VERSION = "16"
+    NODE_VERSION = "18"

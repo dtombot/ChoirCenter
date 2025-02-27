@@ -35,6 +35,8 @@ exports.handler = async (event, context) => {
             { name: 'sessions' },
             { name: 'bounceRate' },
             { name: 'averageSessionDuration' },
+            { name: 'eventCount' },
+            { name: 'newUsers' },
           ],
         },
       });

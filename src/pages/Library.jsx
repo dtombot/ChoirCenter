@@ -53,6 +53,25 @@ function Library() {
           return;
         }
         localStorage.setItem(downloadKey, downloadCount + 1);
+      } else {
+        // Check if user has donated
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('has_donated')
+          .eq('id', userData.user.id)
+          .single();
+        if (profileError) throw profileError;
+
+        if (!profileData?.has_donated) {
+          const today = new Date().toDateString();
+          const downloadKey = `downloads_${today}`;
+          const downloadCount = parseInt(localStorage.getItem(downloadKey) || '0', 10);
+          if (downloadCount >= 5) { // Higher limit for signed-up users
+            setDownloadPrompt('Download Limit Reached.\nWant to keep downloading? Buy us a Meat Pie☕ to help sustain the site and enjoy unlimited access. Every little bit helps keep the site running! 🤗');
+            return;
+          }
+          localStorage.setItem(downloadKey, downloadCount + 1);
+        }
       }
 
       const url = `https://drive.google.com/uc?export=download&id=${fileId}`;
@@ -74,7 +93,7 @@ function Library() {
       setSongs(updatedSongs || []);
     } catch (err) {
       console.error('Download error:', err.message);
-      setError('Failed to update download count.');
+      setError('Failed to update download count or check profile.');
     }
   };
 

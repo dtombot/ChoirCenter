@@ -15,7 +15,7 @@ function Song() {
   const [error, setError] = useState(null);
   const [downloadPrompt, setDownloadPrompt] = useState(null);
   const [numPages, setNumPages] = useState(null);
-  const [scale, setScale] = useState(0.8);
+  const [scale, setScale] = useState(1.0);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -44,11 +44,11 @@ function Song() {
     const updateScale = () => {
       const width = window.innerWidth;
       if (width <= 480) {
-        setScale(0.4); // Mobile
+        setScale(0.5); // Mobile
       } else if (width <= 768) {
-        setScale(0.6); // Tablet
+        setScale(0.75); // Tablet
       } else {
-        setScale(0.8); // Desktop
+        setScale(1.0); // Desktop
       }
     };
     updateScale();

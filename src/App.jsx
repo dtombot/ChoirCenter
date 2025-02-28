@@ -6,6 +6,7 @@ import Home from './pages/Home';
 import Library from './pages/Library';
 import Admin from './pages/Admin';
 import Signup from './pages/Signup';
+import SignupDonate from './pages/SignupDonate'; // New import
 import Login from './pages/Login';
 import About from './pages/About';
 import Contact from './pages/Contact';
@@ -128,13 +129,14 @@ function App() {
         <Route path="/library" element={<Library />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/signup-donate" element={<SignupDonate />} /> {/* New route */}
         <Route path="/login" element={<Login />} />
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/blog" element={<Blog />} />
-        <Route path="/blog/:permalink" element={<BlogPost />} /> {/* Changed to :permalink */}
+        <Route path="/blog/:permalink" element={<BlogPost />} />
         <Route path="/song/:id" element={<Song />} />
         <Route path="/search" element={<div>Search Placeholder</div>} />
       </Routes>

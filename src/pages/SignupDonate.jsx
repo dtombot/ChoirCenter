@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '../supabase';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import '../styles.css';
 
 function SignupDonate() {
@@ -9,7 +9,12 @@ function SignupDonate() {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [userId, setUserId] = useState(null); // To store user ID after signup
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams(); // To check redirect params
+
+  // Check if redirected from Paystack with success
+  const paymentSuccess = searchParams.get('trxref') && searchParams.get('reference');
 
   const handleSignup = async (e) => {
     e.preventDefault();
@@ -18,13 +23,14 @@ function SignupDonate() {
     setSuccess(null);
 
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
       });
 
       if (error) throw error;
 
+      setUserId(data.user.id); // Store user ID for donation tracking
       setSuccess('Signup successful! Please check your email to confirm, then consider supporting us with a donation.');
       setEmail('');
       setPassword('');
@@ -36,10 +42,25 @@ function SignupDonate() {
   };
 
   const handleDonate = () => {
-    // Placeholder for Paystack integration
-    alert('Paystack donation integration coming soon!');
-    // After successful donation, you can update user status in Supabase to grant unlimited downloads
+    // Redirect to Paystack donation page
+    window.location.href = 'https://paystack.com/pay/choircenterdonation';
   };
+
+  // Handle successful payment redirect
+  if (paymentSuccess && userId) {
+    const updateProfile = async () => {
+      try {
+        const { error } = await supabase
+          .from('profiles')
+          .upsert({ id: userId, has_donated: true, updated_at: new Date().toISOString() });
+        if (error) throw error;
+        setSuccess('Thank you for your donation! You now have unlimited downloads.');
+      } catch (err) {
+        setError('Donation recorded, but failed to update profile: ' + err.message);
+      }
+    };
+    updateProfile();
+  }
 
   return (
     <div className="auth-container">
@@ -50,10 +71,14 @@ function SignupDonate() {
         {success && (
           <div>
             <p className="success-message">{success}</p>
-            <p className="auth-subtitle">Want unlimited downloads? Support us with a Meat Pie ☕!</p>
-            <button onClick={handleDonate} className="meatpie-button" disabled={loading}>
-              Donate Now
-            </button>
+            {!paymentSuccess && (
+              <>
+                <p className="auth-subtitle">Want unlimited downloads? Support us with a Meat Pie ☕!</p>
+                <button onClick={handleDonate} className="meatpie-button" disabled={loading}>
+                  Donate Now
+                </button>
+              </>
+            )}
           </div>
         )}
         {!success && (

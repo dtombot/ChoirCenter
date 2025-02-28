@@ -80,8 +80,9 @@ function Home() {
     setSearchQuery('');
   };
 
-  const handleSongClick = (id) => {
-    navigate(`/song/${id}`);
+  const handleSongClick = (song) => {
+    const songPath = song.permalink || song.id;
+    navigate(`/song/${songPath}`);
   };
 
   const handleDownload = async (songId, fileId) => {
@@ -189,7 +190,7 @@ function Home() {
             <div
               key={song.id}
               className="song-card animate-card"
-              onClick={() => handleSongClick(song.id)}
+              onClick={() => handleSongClick(song)}
             >
               <div className="song-card-content">
                 <h3 className="song-card-title">{song.title}</h3>

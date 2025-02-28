@@ -15,6 +15,7 @@ function Home() {
 
   useEffect(() => {
     const fetchData = async () => {
+      console.log('Starting fetchData...');
       // Fetch songs
       const { data: songData, error: songError } = await supabase
         .from('songs')
@@ -117,7 +118,7 @@ function Home() {
         }
       }
 
-      const url = `https://drive.google.com/uc?export=download&id=${fileId}`;
+      const url = `https://drive.google.com/uc?export=download&id=${fileId || 'dummy-id'}`;
       const link = document.createElement('a');
       link.href = url;
       link.download = `choircenter.com-${songId}.pdf`;
@@ -143,10 +144,10 @@ function Home() {
 
   const handleShare = (songTitle, songId) => {
     const shareUrl = `${window.location.origin}/song/${songId}`;
-    const shareText = `Check out "${songTitle}" on Choir Center!`;
+    const shareText = `Check out "${songTitle || 'Untitled'}" on Choir Center!`;
     if (navigator.share) {
       navigator.share({
-        title: songTitle,
+        title: songTitle || 'Untitled',
         text: shareText,
         url: shareUrl,
       }).catch(err => console.error('Share error:', err));

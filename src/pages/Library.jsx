@@ -77,8 +77,8 @@ function Library() {
     }
   };
 
-  const handleShare = (songTitle, songId) => {
-    const shareUrl = `${window.location.origin}/song/${songId}`;
+  const handleShare = (songTitle, songPermalink) => {
+    const shareUrl = `${window.location.origin}/song/${songPermalink}`;
     const shareText = `Check out "${songTitle}" on Choir Center!`;
     
     if (navigator.share) {
@@ -95,8 +95,7 @@ function Library() {
   };
 
   const handleSongClick = (song) => {
-    // Use permalink if it exists, otherwise fall back to id
-    const songPath = song.permalink ? song.permalink : song.id;
+    const songPath = song.permalink || song.id;
     navigate(`/song/${songPath}`);
   };
 
@@ -165,7 +164,7 @@ function Library() {
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleShare(song.title, song.id);
+                    handleShare(song.title, song.permalink || song.id);
                   }}
                   className="share-button"
                 >

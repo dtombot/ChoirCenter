@@ -15,49 +15,44 @@ function Home() {
 
   useEffect(() => {
     const fetchData = async () => {
-      try {
-        const { data: songData, error: songError } = await supabase
-          .from('songs')
-          .select('id, title, composer, google_drive_file_id, permalink, is_public, downloads')
-          .order('created_at', { ascending: false })
-          .limit(10);
-        if (songError) {
-          console.error('Error fetching songs:', songError.message);
-          setError('Failed to load songs: ' + songError.message);
-        } else {
-          console.log('Songs fetched:', songData);
-          setSongs(songData || []);
-        }
+      const { data: songData, error: songError } = await supabase
+        .from('songs')
+        .select('id, title, composer, google_drive_file_id, permalink, is_public, downloads')
+        .order('created_at', { ascending: false })
+        .limit(10);
+      if (songError) {
+        console.error('Error fetching songs:', songError.message);
+        setError('Failed to load songs: ' + songError.message);
+      } else {
+        console.log('Songs fetched:', songData);
+        setSongs(songData || []);
+      }
 
-        const { data: postData, error: postError } = await supabase
-          .from('blog_posts')
-          .select('id, title, permalink')
-          .order('created_at', { ascending: false })
-          .limit(10);
-        if (postError) {
-          console.error('Error fetching posts:', postError.message);
-          setError('Failed to load posts: ' + postError.message);
-        } else {
-          console.log('Posts fetched:', postData);
-          setPosts(postData || []);
-        }
+      const { data: postData, error: postError } = await supabase
+        .from('blog_posts')
+        .select('id, title, permalink')
+        .order('created_at', { ascending: false })
+        .limit(10);
+      if (postError) {
+        console.error('Error fetching posts:', postError.message);
+        setError('Failed to load posts: ' + postError.message);
+      } else {
+        console.log('Posts fetched:', postData);
+        setPosts(postData || []);
+      }
 
-        const { data: songOfTheWeekData, error: sotwError } = await supabase
-          .from('song_of_the_week')
-          .select('spotify_embed_html')
-          .limit(1);
-        if (sotwError) {
-          console.error('Error fetching song of the week:', sotwError.message);
-          setError('Failed to load Song of the Week: ' + sotwError.message);
-        } else {
-          console.log('Song of the Week raw data:', songOfTheWeekData);
-          const embedHtml = songOfTheWeekData && songOfTheWeekData.length > 0 ? songOfTheWeekData[0].spotify_embed_html : null;
-          console.log('Song of the Week embed HTML:', embedHtml);
-          setSongOfTheWeek(embedHtml);
-        }
-      } catch (err) {
-        console.error('Unexpected error in fetchData:', err);
-        setError('Unexpected error: ' + err.message);
+      const { data: songOfTheWeekData, error: sotwError } = await supabase
+        .from('song_of_the_week')
+        .select('spotify_embed_html')
+        .limit(1);
+      if (sotwError) {
+        console.error('Error fetching song of the week:', sotwError.message);
+        setError('Failed to load Song of the Week: ' + sotwError.message);
+      } else {
+        console.log('Song of the Week raw data:', songOfTheWeekData);
+        const embedHtml = songOfTheWeekData && songOfTheWeekData.length > 0 ? songOfTheWeekData[0].spotify_embed_html : null;
+        console.log('Song of the Week embed HTML:', embedHtml);
+        setSongOfTheWeek(embedHtml);
       }
     };
     fetchData();
@@ -95,10 +90,29 @@ function Home() {
         const downloadKey = `downloads_${today}`;
         const downloadCount = parseInt(localStorage.getItem(downloadKey) || '0', 10);
         if (downloadCount >= 2) {
-          setDownloadPrompt('You’ve reached the daily limit of 2 downloads. Register to download more!');
+          setDownloadPrompt('Download Limit Reached.\nWant to keep downloading? Buy us a Meat Pie☕ to help sustain the site and enjoy unlimited access, or Just Sign up for additional downloads. Every little bit helps keep the site running! 🤗');
           return;
         }
         localStorage.setItem(downloadKey, downloadCount + 1);
+      } else {
+        // Check if user has donated
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('has_donated')
+          .eq('id', userData.user.id)
+          .single();
+        if (profileError) throw profileError;
+
+        if (!profileData?.has_donated) {
+          const today = new Date().toDateString();
+          const downloadKey = `downloads_${today}`;
+          const downloadCount = parseInt(localStorage.getItem(downloadKey) || '0', 10);
+          if (downloadCount >= 5) { // Higher limit for signed-up users
+            setDownloadPrompt('Download Limit Reached.\nWant to keep downloading? Buy us a Meat Pie☕ to help sustain the site and enjoy unlimited access. Every little bit helps keep the site running! 🤗');
+            return;
+          }
+          localStorage.setItem(downloadKey, downloadCount + 1);
+        }
       }
 
       const url = `https://drive.google.com/uc?export=download&id=${fileId}`;
@@ -121,7 +135,7 @@ function Home() {
       setSongs(updatedSongs || []);
     } catch (err) {
       console.error('Download error:', err.message);
-      setError('Failed to update download count.');
+      setError('Failed to update download count or check profile.');
     }
   };
 
@@ -269,7 +283,15 @@ function Home() {
           <div className="modal-content download-modal">
             <h3 className="modal-title">Download Limit Reached</h3>
             <p className="modal-text">
-              {downloadPrompt} <Link to="/signup" className="modal-link">Sign up here</Link> to enjoy unlimited downloads!
+              Want to keep downloading?{' '}
+              <button className="meatpie-button">
+                <Link to="/signup-donate" className="modal-link">Buy us a Meat Pie ☕</Link>
+              </button>{' '}
+              to help sustain the site and enjoy unlimited access, or{' '}
+              <button className="signup-button">
+                <Link to="/signup" className="modal-link">Just Sign up</Link>
+              </button>{' '}
+              for additional downloads. Every little bit helps keep the site running! 🤗
             </p>
             <button onClick={() => setDownloadPrompt(null)} className="cancel-button">Close</button>
           </div>

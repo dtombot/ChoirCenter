@@ -113,7 +113,7 @@ function SignupDonate() {
               />
             </div>
             <button type="submit" className="auth-button" disabled={loading}>
-              {loading ? 'Processing...' : 'Sign Up and Donate'}
+              {loading ? 'Processing...' : 'Sign Up and Buy us a Meat Pie'}
             </button>
           </form>
         )}

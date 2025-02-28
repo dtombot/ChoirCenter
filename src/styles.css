@@ -1651,23 +1651,25 @@ body {
 .song-preview-modern {
   margin: 0 0 2rem;
   text-align: center;
-  width: 100%; /* Match container width */
-  overflow-x: auto; /* Allow horizontal scroll if needed */
-  overflow-y: hidden; /* Prevent vertical overflow */
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: auto;
 }
 
 .song-preview-modern .react-pdf__Document {
   width: 100%;
-  display: inline-block; /* Respect scale */
+  max-width: 100%;
 }
 
 .song-preview-modern .react-pdf__Page {
   border-radius: 8px;
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
   transition: transform 0.3s ease;
-  max-width: 100%; /* Stay within container */
-  width: auto; /* Adjust to scaled content */
-  height: auto; /* Maintain aspect ratio */
+  max-width: 100%;
+  width: auto;
+  height: auto;
+  margin: 0 auto;
 }
 
 .song-preview-modern:hover .react-pdf__Page {

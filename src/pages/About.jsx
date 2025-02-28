@@ -1,4 +1,23 @@
+import { useEffect } from 'react';
+import '../styles.css'; // Assuming this exists; we'll add styles below
+
 function About() {
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+          }
+        });
+      },
+      { threshold: 0.1 }
+    );
+
+    document.querySelectorAll('.about-content p').forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <div className="about-container">
       <h1 className="about-title">About Choir Center</h1>

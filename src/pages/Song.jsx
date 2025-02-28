@@ -141,7 +141,11 @@ function Song() {
             onLoadSuccess={onDocumentLoadSuccess}
             onLoadError={(err) => setError('Failed to load PDF preview: ' + err.message)}
           >
-            <Page pageNumber={1} scale={scale} />
+            <Page 
+              pageNumber={1} 
+              scale={scale} 
+              width={Math.min(window.innerWidth * 0.9 / scale, 700)} // Dynamic width to fit container
+            />
           </Document>
           {numPages > 1 && (
             <p className="preview-note-modern">Previewing page 1 of {numPages}. Download to view the full song.</p>

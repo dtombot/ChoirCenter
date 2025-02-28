@@ -191,7 +191,6 @@ function Home() {
           </div>
         </div>
       </section>
-      {/*
       <section className="song-of-the-week">
         <h2 className="section-title animate-text">Song of the Week</h2>
         {songOfTheWeek ? (
@@ -200,7 +199,6 @@ function Home() {
           <p className="animate-text">No song selected for this week.</p>
         )}
       </section>
-      */}
       {error && <p className="error-message">{error}</p>}
       <section className="latest-additions">
         <h2 className="section-title animate-text">Latest Additions</h2>

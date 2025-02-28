@@ -15,7 +15,7 @@ function Song() {
   const [error, setError] = useState(null);
   const [downloadPrompt, setDownloadPrompt] = useState(null);
   const [numPages, setNumPages] = useState(null);
-  const [scale, setScale] = useState(1.0);
+  const [scale, setScale] = useState(0.9); // Default slightly reduced
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -44,11 +44,11 @@ function Song() {
     const updateScale = () => {
       const width = window.innerWidth;
       if (width <= 480) {
-        setScale(0.5); // Mobile
+        setScale(0.45); // Mobile: Reduced from 0.5
       } else if (width <= 768) {
-        setScale(0.7); // Tablet
+        setScale(0.65); // Tablet: Reduced from 0.7
       } else {
-        setScale(1.0); // Desktop
+        setScale(0.9); // Desktop: Reduced from 1.0
       }
     };
     updateScale();
@@ -141,11 +141,7 @@ function Song() {
             onLoadSuccess={onDocumentLoadSuccess}
             onLoadError={(err) => setError('Failed to load PDF preview: ' + err.message)}
           >
-            <Page 
-              pageNumber={1} 
-              scale={scale} 
-              width={Math.min(window.innerWidth * 0.9 / scale, 700)} // Dynamic width to fit container
-            />
+            <Page pageNumber={1} scale={scale} />
           </Document>
           {numPages > 1 && (
             <p className="preview-note-modern">Previewing page 1 of {numPages}. Download to view the full song.</p>

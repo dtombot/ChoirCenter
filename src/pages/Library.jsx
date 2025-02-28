@@ -10,6 +10,8 @@ function Library() {
   const [sortOrder, setSortOrder] = useState('desc');
   const [error, setError] = useState(null);
   const [downloadPrompt, setDownloadPrompt] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(25);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -35,7 +37,6 @@ function Library() {
       setError('Spam detected');
       return;
     }
-    // Filter logic already handled by useEffect and state
   };
 
   const handleDownload = async (songId, fileId) => {
@@ -104,6 +105,24 @@ function Library() {
     (song.composer && song.composer.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
+  // Pagination logic
+  const totalItems = filteredSongs.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedSongs = filteredSongs.slice(startIndex, endIndex);
+
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
+  const handleItemsPerPageChange = (e) => {
+    setItemsPerPage(parseInt(e.target.value));
+    setCurrentPage(1); // Reset to first page when changing items per page
+  };
+
   return (
     <div className="library-container">
       <h1 className="library-title animate-text">Song Library</h1>
@@ -135,12 +154,26 @@ function Library() {
         </select>
         <input type="text" name="honeypot" className="honeypot" />
       </form>
+      <div className="pagination-controls">
+        <label htmlFor="itemsPerPage">Items per page:</label>
+        <select
+          id="itemsPerPage"
+          value={itemsPerPage}
+          onChange={handleItemsPerPageChange}
+          className="pagination-select"
+        >
+          <option value={25}>25</option>
+          <option value={50}>50</option>
+          <option value={100}>100</option>
+          <option value={200}>200</option>
+        </select>
+      </div>
       {error && <p className="error-message">{error}</p>}
       {songs.length === 0 && !error ? (
         <p>No songs available.</p>
       ) : (
         <div className="song-grid">
-          {filteredSongs.map((song) => (
+          {paginatedSongs.map((song) => (
             <div
               key={song.id}
               className="song-card animate-card"
@@ -173,6 +206,33 @@ function Library() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+      {totalItems > itemsPerPage && (
+        <div className="pagination">
+          <button
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="pagination-button"
+          >
+            Previous
+          </button>
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+            <button
+              key={page}
+              onClick={() => handlePageChange(page)}
+              className={`pagination-button ${currentPage === page ? 'active' : ''}`}
+            >
+              {page}
+            </button>
+          ))}
+          <button
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className="pagination-button"
+          >
+            Next
+          </button>
         </div>
       )}
       {downloadPrompt && (

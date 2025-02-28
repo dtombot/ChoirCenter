@@ -15,6 +15,7 @@ function Home() {
 
   useEffect(() => {
     const fetchData = async () => {
+      // Fetch songs
       const { data: songData, error: songError } = await supabase
         .from('songs')
         .select('id, title, composer, google_drive_file_id, permalink, is_public, downloads')
@@ -24,10 +25,11 @@ function Home() {
         console.error('Error fetching songs:', songError.message);
         setError('Failed to load songs: ' + songError.message);
       } else {
-        console.log('Songs fetched:', songData);
+        console.log('Fetched songs:', JSON.stringify(songData, null, 2));
         setSongs(songData || []);
       }
 
+      // Fetch blog posts
       const { data: postData, error: postError } = await supabase
         .from('blog_posts')
         .select('id, title, permalink')
@@ -37,10 +39,11 @@ function Home() {
         console.error('Error fetching posts:', postError.message);
         setError('Failed to load posts: ' + postError.message);
       } else {
-        console.log('Posts fetched:', postData);
+        console.log('Fetched posts:', JSON.stringify(postData, null, 2));
         setPosts(postData || []);
       }
 
+      // Fetch song of the week
       const { data: songOfTheWeekData, error: sotwError } = await supabase
         .from('song_of_the_week')
         .select('spotify_embed_html')
@@ -49,7 +52,7 @@ function Home() {
         console.error('Error fetching song of the week:', sotwError.message);
         setError('Failed to load Song of the Week: ' + sotwError.message);
       } else {
-        console.log('Song of the Week raw data:', songOfTheWeekData);
+        console.log('Song of the Week raw data:', JSON.stringify(songOfTheWeekData, null, 2));
         const embedHtml = songOfTheWeekData && songOfTheWeekData.length > 0 ? songOfTheWeekData[0].spotify_embed_html : null;
         console.log('Song of the Week embed HTML:', embedHtml);
         setSongOfTheWeek(embedHtml);
@@ -95,7 +98,6 @@ function Home() {
         }
         localStorage.setItem(downloadKey, downloadCount + 1);
       } else {
-        // Check if user has donated
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('has_donated')
@@ -107,7 +109,7 @@ function Home() {
           const today = new Date().toDateString();
           const downloadKey = `downloads_${today}`;
           const downloadCount = parseInt(localStorage.getItem(downloadKey) || '0', 10);
-          if (downloadCount >= 5) { // Higher limit for signed-up users
+          if (downloadCount >= 5) {
             setDownloadPrompt('Download Limit Reached.\nWant to keep downloading? Buy us a Meat Pie☕ to help sustain the site and enjoy unlimited access. Every little bit helps keep the site running! 🤗');
             return;
           }
@@ -200,48 +202,56 @@ function Home() {
       <section className="latest-additions">
         <h2 className="section-title animate-text">Latest Additions</h2>
         <div className="song-grid">
-          {songs.map(song => (
-            <div
-              key={song.id}
-              className="song-card animate-card"
-              onClick={() => handleSongClick(song)}
-            >
-              <div className="song-card-content">
-                <h3 className="song-card-title">{song.title}</h3>
-                <p className="song-card-composer">{song.composer}</p>
-                <p className="song-card-downloads">Downloaded {song.downloads || 0} times</p>
+          {songs.length > 0 ? (
+            songs.map(song => (
+              <div
+                key={song.id}
+                className="song-card animate-card"
+                onClick={() => handleSongClick(song)}
+              >
+                <div className="song-card-content">
+                  <h3 className="song-card-title">{song.title}</h3>
+                  <p className="song-card-composer">{song.composer}</p>
+                  <p className="song-card-downloads">Downloaded {song.downloads || 0} times</p>
+                </div>
+                <div className="song-card-actions">
+                  <button
+                    className="download-button"
+                    onClick={(e) => { e.stopPropagation(); handleDownload(song.id, song.google_drive_file_id); }}
+                  >
+                    Download
+                  </button>
+                  <button
+                    className="share-button"
+                    onClick={(e) => { e.stopPropagation(); handleShare(song.title, song.id); }}
+                  >
+                    Share
+                  </button>
+                </div>
               </div>
-              <div className="song-card-actions">
-                <button
-                  className="download-button"
-                  onClick={(e) => { e.stopPropagation(); handleDownload(song.id, song.google_drive_file_id); }}
-                >
-                  Download
-                </button>
-                <button
-                  className="share-button"
-                  onClick={(e) => { e.stopPropagation(); handleShare(song.title, song.id); }}
-                >
-                  Share
-                </button>
-              </div>
-            </div>
-          ))}
+            ))
+          ) : (
+            <p>No songs available.</p>
+          )}
         </div>
       </section>
       <hr className="section-separator" />
       <section className="blog-list-container">
         <h2 className="section-title animate-text">Latest Insights</h2>
         <div className="blog-list">
-          {posts.map(post => (
-            <Link
-              key={post.id}
-              to={`/blog/${post.permalink || `post-${post.id}`}`}
-              className="blog-item animate-card"
-            >
-              <h3 className="blog-title small-text">{post.title}</h3>
-            </Link>
-          ))}
+          {posts.length > 0 ? (
+            posts.map(post => (
+              <Link
+                key={post.id}
+                to={`/blog/${post.permalink || `post-${post.id}`}`}
+                className="blog-item animate-card"
+              >
+                <h3 className="blog-title small-text">{post.title}</h3>
+              </Link>
+            ))
+          ) : (
+            <p>No blog posts available.</p>
+          )}
         </div>
       </section>
       <hr className="section-separator" />

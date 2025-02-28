@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '../supabase';
-import { useNavigate, useSearchParams, Link } from 'react-router-dom'; // Added Link import
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import '../styles.css';
 
 function SignupDonate() {
@@ -31,9 +31,14 @@ function SignupDonate() {
       if (error) throw error;
 
       setUserId(data.user.id); // Store user ID for donation tracking
-      setSuccess('Signup successful! Please check your email to confirm, then consider supporting us with a donation.');
+      setSuccess('Signup successful! Redirecting to donation page...');
       setEmail('');
       setPassword('');
+
+      // Redirect to Paystack donation page after signup
+      setTimeout(() => {
+        window.location.href = 'https://paystack.com/pay/choircenterdonation';
+      }, 1000); // Brief delay to show success message
     } catch (err) {
       setError(err.message);
     } finally {
@@ -108,7 +113,7 @@ function SignupDonate() {
               />
             </div>
             <button type="submit" className="auth-button" disabled={loading}>
-              {loading ? 'Signing Up...' : 'Sign Up'}
+              {loading ? 'Processing...' : 'Sign Up and Donate'}
             </button>
           </form>
         )}

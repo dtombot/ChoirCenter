@@ -577,6 +577,53 @@ body {
   cursor: not-allowed;
 }
 
+/* Modal Buttons */
+.meatpie-button {
+  padding: 0.5rem 1rem;
+  background: linear-gradient(135deg, #ff9800, #f57c00);
+  color: #fff;
+  border: none;
+  border-radius: 25px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+}
+
+.meatpie-button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  background: linear-gradient(135deg, #f57c00, #ff9800);
+}
+
+.meatpie-button .modal-link {
+  color: #fff;
+  text-decoration: none;
+}
+
+.signup-button {
+  padding: 0.5rem 1rem;
+  background: linear-gradient(135deg, #3cb371, #2f9e5e);
+  color: #fff;
+  border: none;
+  border-radius: 25px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+}
+
+.signup-button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  background: linear-gradient(135deg, #2f9e5e, #3cb371);
+}
+
+.signup-button .modal-link {
+  color: #fff;
+  text-decoration: none;
+}
+
 /* Blog Page */
 .blog-container {
   max-width: 1200px;

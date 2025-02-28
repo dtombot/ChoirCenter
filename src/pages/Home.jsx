@@ -190,6 +190,7 @@ function Home() {
           </div>
         </div>
       </section>
+      {/*
       <section className="song-of-the-week">
         <h2 className="section-title animate-text">Song of the Week</h2>
         {songOfTheWeek ? (
@@ -198,6 +199,7 @@ function Home() {
           <p className="animate-text">No song selected for this week.</p>
         )}
       </section>
+      */}
       {error && <p className="error-message">{error}</p>}
       <section className="latest-additions">
         <h2 className="section-title animate-text">Latest Additions</h2>
@@ -210,20 +212,20 @@ function Home() {
                 onClick={() => handleSongClick(song)}
               >
                 <div className="song-card-content">
-                  <h3 className="song-card-title">{song.title}</h3>
-                  <p className="song-card-composer">{song.composer}</p>
+                  <h3 className="song-card-title">{song.title || 'Untitled'}</h3>
+                  <p className="song-card-composer">{song.composer || 'Unknown'}</p>
                   <p className="song-card-downloads">Downloaded {song.downloads || 0} times</p>
                 </div>
                 <div className="song-card-actions">
                   <button
                     className="download-button"
-                    onClick={(e) => { e.stopPropagation(); handleDownload(song.id, song.google_drive_file_id); }}
+                    onClick={(e) => { e.stopPropagation(); handleDownload(song.id, song.google_drive_file_id || ''); }}
                   >
                     Download
                   </button>
                   <button
                     className="share-button"
-                    onClick={(e) => { e.stopPropagation(); handleShare(song.title, song.id); }}
+                    onClick={(e) => { e.stopPropagation(); handleShare(song.title || 'Untitled', song.id); }}
                   >
                     Share
                   </button>
@@ -246,7 +248,7 @@ function Home() {
                 to={`/blog/${post.permalink || `post-${post.id}`}`}
                 className="blog-item animate-card"
               >
-                <h3 className="blog-title small-text">{post.title}</h3>
+                <h3 className="blog-title small-text">{post.title || 'Untitled'}</h3>
               </Link>
             ))
           ) : (

@@ -10,26 +10,21 @@ import '../styles.css';
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
 
 function Song() {
-  const { id } = useParams(); // 'id' can be permalink or numeric ID
+  const { id } = useParams();
   const [song, setSong] = useState(null);
   const [error, setError] = useState(null);
   const [downloadPrompt, setDownloadPrompt] = useState(null);
   const [numPages, setNumPages] = useState(null);
-  const [scale] = useState(0.8); // Fixed scale, adjusted by CSS
+  const [scale, setScale] = useState(1.0);
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchSong = async () => {
-      let query = supabase.from('songs').select('id, title, composer, google_drive_file_id, downloads, is_public, permalink');
-      
-      // Check if 'id' is numeric (ID) or a string (permalink)
-      if (/^\d+$/.test(id)) {
-        query = query.eq('id', parseInt(id, 10));
-      } else {
-        query = query.eq('permalink', id);
-      }
-
-      const { data, error } = await query.single();
+      const { data, error } = await supabase
+        .from('songs')
+        .select('id, title, composer, google_drive_file_id, downloads, is_public')
+        .eq('id', id)
+        .single();
       if (error) {
         setError('Failed to load song: ' + error.message);
       } else if (!data.is_public) {
@@ -39,7 +34,22 @@ function Song() {
       }
     };
     fetchSong();
-  }, [id]);
+
+    // Adjust scale based on viewport width
+    const updateScale = () => {
+      const width = window.innerWidth;
+      if (width <= 480) {
+        setScale(0.5); // Mobile
+      } else if (width <= 768) {
+        setScale(0.7); // Tablet
+      } else {
+        setScale(1.0); // Desktop
+      }
+    };
+    updateScale();
+    window.addEventListener('resize', updateScale);
+    return () => window.removeEventListener('resize', updateScale);
+  }, [id, navigate]);
 
   const handleDownload = async () => {
     if (!song) return;
@@ -79,7 +89,7 @@ function Song() {
   };
 
   const handleShare = () => {
-    const shareUrl = `${window.location.origin}/song/${song.permalink || song.id}`;
+    const shareUrl = `${window.location.origin}/song/${song.id}`;
     const shareText = `Check out "${song.title}" on Choir Center!`;
     
     if (navigator.share) {

@@ -94,8 +94,10 @@ function Library() {
     }
   };
 
-  const handleSongClick = (id) => {
-    navigate(`/song/${id}`);
+  const handleSongClick = (song) => {
+    // Use permalink if it exists, otherwise fall back to id
+    const songPath = song.permalink ? song.permalink : song.id;
+    navigate(`/song/${songPath}`);
   };
 
   const filteredSongs = songs.filter(song =>
@@ -143,7 +145,7 @@ function Library() {
             <div
               key={song.id}
               className="song-card animate-card"
-              onClick={() => handleSongClick(song.id)}
+              onClick={() => handleSongClick(song)}
             >
               <div className="song-card-content">
                 <h2 className="song-card-title">{song.title}</h2>

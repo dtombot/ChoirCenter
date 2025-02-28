@@ -68,7 +68,7 @@ function Song() {
         const downloadKey = `downloads_${today}`;
         const downloadCount = parseInt(localStorage.getItem(downloadKey) || '0', 10);
         if (downloadCount >= 2) {
-          setDownloadPrompt('You’ve reached the daily limit of 2 downloads. Register to download more!');
+          setDownloadPrompt('Download Limit Reached.\nWant to keep downloading? Buy us a Meat Pie☕ to help sustain the site and enjoy unlimited access, or Just Sign up for additional downloads. Every little bit helps keep the site running! 🤗');
           return;
         }
         localStorage.setItem(downloadKey, downloadCount + 1);
@@ -158,7 +158,15 @@ function Song() {
           <div className="modal-content download-modal">
             <h3 className="modal-title">Download Limit Reached</h3>
             <p className="modal-text">
-              {downloadPrompt} <Link to="/signup" className="modal-link">Sign up here</Link> to enjoy unlimited downloads!
+              Want to keep downloading?{' '}
+              <button className="meatpie-button">
+                <Link to="/signup-donate" className="modal-link">Buy us a Meat Pie ☕</Link>
+              </button>{' '}
+              to help sustain the site and enjoy unlimited access, or{' '}
+              <button className="signup-button">
+                <Link to="/signup" className="modal-link">Just Sign up</Link>
+              </button>{' '}
+              for additional downloads. Every little bit helps keep the site running! 🤗
             </p>
             <button onClick={() => setDownloadPrompt(null)} className="cancel-button">Close</button>
           </div>

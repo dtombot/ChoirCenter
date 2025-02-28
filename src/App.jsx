@@ -6,7 +6,7 @@ import Home from './pages/Home';
 import Library from './pages/Library';
 import Admin from './pages/Admin';
 import Signup from './pages/Signup';
-import SignupDonate from './pages/SignupDonate'; // New import
+import SignupDonate from './pages/SignupDonate';
 import Login from './pages/Login';
 import About from './pages/About';
 import Contact from './pages/Contact';
@@ -43,7 +43,7 @@ function App() {
             console.error('Profile fetch error:', profileError.message, profileError.details);
             setIsAdmin(false);
           } else {
-            console.log('Profile data:', profileData);
+            console.log('Profile data:', JSON.stringify(profileData, null, 2));
             setIsAdmin(profileData?.is_admin || false);
           }
         } catch (err) {
@@ -70,7 +70,7 @@ function App() {
               console.error('Profile fetch error on auth change:', error.message, error.details);
               setIsAdmin(false);
             } else {
-              console.log('Profile data on auth change:', data);
+              console.log('Profile data on auth change:', JSON.stringify(data, null, 2));
               setIsAdmin(data?.is_admin || false);
             }
           });
@@ -129,7 +129,7 @@ function App() {
         <Route path="/library" element={<Library />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/signup" element={<Signup />} />
-        <Route path="/signup-donate" element={<SignupDonate />} /> {/* New route */}
+        <Route path="/signup-donate" element={<SignupDonate />} />
         <Route path="/login" element={<Login />} />
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />

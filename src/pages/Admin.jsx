@@ -50,17 +50,22 @@ function Admin() {
 
   useEffect(() => {
     const fetchUser = async () => {
-      const { data: { user }, error } = await supabase.auth.getUser();
-      if (error || !user) {
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !sessionData.session) {
         navigate('/login');
         return;
       }
-      setUser(user);
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError || !userData.user) {
+        navigate('/login');
+        return;
+      }
+      setUser(userData.user);
 
       const { data: adminData, error: adminError } = await supabase
         .from('admins')
         .select('user_id')
-        .eq('user_id', user.id)
+        .eq('user_id', userData.user.id)
         .single();
       if (adminError || !adminData) {
         navigate('/');

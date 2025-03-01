@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../supabase';
 import { Link, useNavigate } from 'react-router-dom';
 import '../styles.css';
@@ -11,6 +11,7 @@ function Signup() {
   const [recaptchaToken, setRecaptchaToken] = useState(null);
   const [loading, setLoading] = useState(false);
   const [recaptchaLoaded, setRecaptchaLoaded] = useState(false);
+  const recaptchaRef = useRef(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -22,7 +23,7 @@ function Signup() {
           return;
         }
         const script = document.createElement('script');
-        script.src = 'https://www.google.com/recaptcha/api.js';
+        script.src = 'https://www.google.com/recaptcha/api.js?render=explicit';
         script.async = true;
         script.defer = true;
         script.onload = () => {
@@ -34,15 +35,25 @@ function Signup() {
       });
     };
 
-    loadRecaptcha().catch(err => console.error(err));
+    loadRecaptcha()
+      .then(() => {
+        if (window.grecaptcha && recaptchaRef.current) {
+          window.grecaptcha.render(recaptchaRef.current, {
+            sitekey: '6LczEuYqAAAAANYh6VG8jSj1Fmt6LKMK7Ee1OcfU',
+            callback: handleRecaptcha,
+          });
+        }
+      })
+      .catch(err => console.error(err));
 
     return () => {
-      const script = document.querySelector('script[src="https://www.google.com/recaptcha/api.js"]');
+      const script = document.querySelector('script[src^="https://www.google.com/recaptcha/api.js"]');
       if (script) document.body.removeChild(script);
     };
   }, []);
 
   const handleRecaptcha = (token) => {
+    console.log('reCAPTCHA token received:', token);
     setRecaptchaToken(token);
   };
 
@@ -53,6 +64,7 @@ function Signup() {
         body: JSON.stringify({ token }),
       });
       const result = await response.json();
+      console.log('reCAPTCHA verification result:', result);
       return result.success;
     } catch (err) {
       console.error('reCAPTCHA verification error:', err);
@@ -143,13 +155,7 @@ function Signup() {
               />
             </div>
             <input type="text" name="honeypot" className="honeypot" />
-            {recaptchaLoaded && (
-              <div
-                className="g-recaptcha"
-                data-sitekey="6LczEuYqAAAAANYh6VG8jSj1Fmt6LKMK7Ee1OcfU"
-                data-callback="handleRecaptcha"
-              ></div>
-            )}
+            <div ref={recaptchaRef} className="g-recaptcha"></div>
             <button type="submit" className="auth-button" disabled={loading || !recaptchaLoaded}>
               {loading ? 'Signing Up...' : 'Sign Up'}
             </button>
@@ -163,12 +169,5 @@ function Signup() {
     </div>
   );
 }
-
-window.handleRecaptcha = (token) => {
-  const signupComponent = document.querySelector('form');
-  if (signupComponent) {
-    signupComponent.dispatchEvent(new CustomEvent('recaptchaVerified', { detail: token }));
-  }
-};
 
 export default Signup;

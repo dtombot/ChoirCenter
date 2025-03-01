@@ -161,14 +161,18 @@ function BlogPost() {
 
   if (!post && !error) return (
     <div className="blog-post-container">
-      <AdBanner position="other_pages_below_header" />
+      <section className="ad-section">
+        <AdBanner position="other_pages_below_header" />
+      </section>
       <div className="loading">Loading...</div>
     </div>
   );
 
   return (
     <div className="blog-post-container">
-      <AdBanner position="other_pages_below_header" />
+      <section className="ad-section">
+        <AdBanner position="other_pages_below_header" />
+      </section>
       {error ? (
         <div className="error-card">
           <h1 className="error-title">Error</h1>

@@ -11,6 +11,7 @@ function Admin() {
   const [songs, setSongs] = useState([]);
   const [posts, setPosts] = useState([]);
   const [users, setUsers] = useState([]);
+  const [ads, setAds] = useState([]); // New state for ads
   const [songForm, setSongForm] = useState({ 
     title: '', 
     composer: '', 
@@ -29,12 +30,19 @@ function Admin() {
     category: '', 
     focus_keyword: '' 
   });
+  const [adForm, setAdForm] = useState({ // New state for ad form
+    name: '',
+    code: '',
+    position: 'home_above_sotw', // Default position
+    is_active: true
+  });
   const [analyticsData, setAnalyticsData] = useState({ ga: null, gsc: null });
   const [topSongs, setTopSongs] = useState([]);
   const [topPosts, setTopPosts] = useState([]);
   const [songOfTheWeekHtml, setSongOfTheWeekHtml] = useState('');
   const [editingSongId, setEditingSongId] = useState(null);
   const [editingPostId, setEditingPostId] = useState(null);
+  const [editingAdId, setEditingAdId] = useState(null); // New state for editing ad
   const [error, setError] = useState(null);
   const [songSearch, setSongSearch] = useState('');
   const [songFilter, setSongFilter] = useState('all');
@@ -79,6 +87,13 @@ function Admin() {
         else setUsers(data || []);
       };
       fetchUsers();
+
+      const fetchAds = async () => { // New fetch for ads
+        const { data, error } = await supabase.from('advertisements').select('*');
+        if (error) setError('Failed to load ads: ' + error.message);
+        else setAds(data || []);
+      };
+      fetchAds();
 
       const fetchAnalytics = async () => {
         try {
@@ -213,6 +228,41 @@ function Admin() {
     }
   };
 
+  const handleAdSubmit = async (e) => { // New function for ad submission
+    e.preventDefault();
+    try {
+      if (editingAdId) {
+        const { error } = await supabase
+          .from('advertisements')
+          .update({ 
+            name: adForm.name, 
+            code: adForm.code, 
+            position: adForm.position, 
+            is_active: adForm.is_active 
+          })
+          .eq('id', editingAdId);
+        if (error) throw error;
+        setEditingAdId(null);
+      } else {
+        const { error } = await supabase
+          .from('advertisements')
+          .insert([{ 
+            name: adForm.name, 
+            code: adForm.code, 
+            position: adForm.position, 
+            is_active: adForm.is_active 
+          }]);
+        if (error) throw error;
+      }
+      setAdForm({ name: '', code: '', position: 'home_above_sotw', is_active: true });
+      const { data } = await supabase.from('advertisements').select('*');
+      setAds(data || []);
+      setError('Advertisement saved successfully!');
+    } catch (err) {
+      setError('Failed to save advertisement: ' + err.message);
+    }
+  };
+
   const handleSongOfTheWeekSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -266,6 +316,16 @@ function Admin() {
     setEditingPostId(post.id);
   };
 
+  const editAd = (ad) => { // New function to edit ad
+    setAdForm({ 
+      name: ad.name, 
+      code: ad.code, 
+      position: ad.position, 
+      is_active: ad.is_active 
+    });
+    setEditingAdId(ad.id);
+  };
+
   const deleteSong = async (id) => {
     if (window.confirm('Are you sure you want to delete this song?')) {
       const { error } = await supabase.from('songs').delete().eq('id', id);
@@ -282,10 +342,24 @@ function Admin() {
     }
   };
 
+  const deleteAd = async (id) => { // New function to delete ad
+    if (window.confirm('Are you sure you want to delete this advertisement?')) {
+      const { error } = await supabase.from('advertisements').delete().eq('id', id);
+      if (error) setError('Failed to delete ad: ' + error.message);
+      else setAds(ads.filter(ad => ad.id !== id));
+    }
+  };
+
   const toggleSongPublic = async (id, isPublic) => {
     const { error } = await supabase.from('songs').update({ is_public: !isPublic }).eq('id', id);
     if (error) setError('Failed to update song status: ' + error.message);
     else setSongs(songs.map(song => song.id === id ? { ...song, is_public: !isPublic } : song));
+  };
+
+  const toggleAdActive = async (id, isActive) => { // New function to toggle ad status
+    const { error } = await supabase.from('advertisements').update({ is_active: !isActive }).eq('id', id);
+    if (error) setError('Failed to update ad status: ' + error.message);
+    else setAds(ads.map(ad => ad.id === id ? { ...ad, is_active: !isActive } : ad));
   };
 
   const toggleUserAdmin = async (id, isAdmin) => {
@@ -365,6 +439,7 @@ function Admin() {
         <button className={`tab-button ${activeTab === 'analytics' ? 'active' : ''}`} onClick={() => setActiveTab('analytics')}>Analytics</button>
         <button className={`tab-button ${activeTab === 'users' ? 'active' : ''}`} onClick={() => setActiveTab('users')}>Manage Users</button>
         <button className={`tab-button ${activeTab === 'songOfTheWeek' ? 'active' : ''}`} onClick={() => setActiveTab('songOfTheWeek')}>Song of the Week</button>
+        <button className={`tab-button ${activeTab === 'advert' ? 'active' : ''}`} onClick={() => setActiveTab('advert')}>Advert</button>
       </div>
       <div className="admin-content">
         {error && <p className="error-message">{error}</p>}
@@ -781,7 +856,104 @@ function Admin() {
               </div>
               <button type="submit" className="admin-form-submit">Update Song of the Week</button>
             </form>
-            <p className="admin-note">Paste the full Spotify iframe embed code (e.g., from 'Share &gt; Copy Embed Code' on Spotify). Leave blank to remove the player.</p>
+            <p className="admin-note">Paste the full Spotify iframe embed code (e.g., from 'Share > Copy Embed Code' on Spotify). Leave blank to remove the player.</p>
+          </div>
+        )}
+        {activeTab === 'advert' && (
+          <div className="admin-advert-tab">
+            <div className="admin-form-card">
+              <h3 className="admin-form-title">{editingAdId ? 'Edit Advertisement' : 'Add New Advertisement'}</h3>
+              <form onSubmit={handleAdSubmit} className="admin-form-grid">
+                <div className="admin-form-group">
+                  <label htmlFor="adName">Ad Name *</label>
+                  <input
+                    id="adName"
+                    type="text"
+                    placeholder="e.g., Home Banner"
+                    value={adForm.name}
+                    onChange={(e) => setAdForm({ ...adForm, name: e.target.value })}
+                    className="admin-form-input"
+                    required
+                  />
+                </div>
+                <div className="admin-form-group full-width">
+                  <label htmlFor="adCode">Ad Code *</label>
+                  <textarea
+                    id="adCode"
+                    placeholder="Paste your ad script here (e.g., Google AdSense code)"
+                    value={adForm.code}
+                    onChange={(e) => setAdForm({ ...adForm, code: e.target.value })}
+                    className="admin-form-input"
+                    rows="4"
+                    required
+                  />
+                </div>
+                <div className="admin-form-group">
+                  <label htmlFor="adPosition">Position</label>
+                  <select
+                    id="adPosition"
+                    value={adForm.position}
+                    onChange={(e) => setAdForm({ ...adForm, position: e.target.value })}
+                    className="admin-form-input"
+                  >
+                    <option value="home_above_sotw">Home - Above Song of the Week</option>
+                    <option value="other_pages_below_header">Other Pages - Below Header</option>
+                  </select>
+                </div>
+                <label className="admin-checkbox">
+                  <input
+                    type="checkbox"
+                    checked={adForm.is_active}
+                    onChange={(e) => setAdForm({ ...adForm, is_active: e.target.checked })}
+                  />
+                  Active
+                </label>
+                <div className="admin-form-actions">
+                  <button type="submit" className="admin-form-submit">{editingAdId ? 'Update Ad' : 'Add Ad'}</button>
+                  {editingAdId && (
+                    <button
+                      type="button"
+                      className="admin-cancel-button"
+                      onClick={() => { setAdForm({ name: '', code: '', position: 'home_above_sotw', is_active: true }); setEditingAdId(null); }}
+                    >
+                      Cancel
+                    </button>
+                  )}
+                </div>
+              </form>
+            </div>
+            <div className="admin-table-container">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Position</th>
+                    <th>Active</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ads.map(ad => (
+                    <tr key={ad.id}>
+                      <td>{ad.name}</td>
+                      <td>{ad.position === 'home_above_sotw' ? 'Home - Above SOTW' : 'Other Pages - Below Header'}</td>
+                      <td>
+                        <button
+                          onClick={() => toggleAdActive(ad.id, ad.is_active)}
+                          className={`admin-toggle-button ${ad.is_active ? 'active' : ''}`}
+                        >
+                          {ad.is_active ? 'Yes' : 'No'}
+                        </button>
+                      </td>
+                      <td>
+                        <button onClick={() => editAd(ad)} className="admin-edit-button">Edit</button>
+                        <button onClick={() => deleteAd(ad.id)} className="admin-delete-button">Delete</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>

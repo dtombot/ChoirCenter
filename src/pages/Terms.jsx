@@ -13,21 +13,21 @@ function Terms() {
           Choir Center provides resources such as music scripts (staff and solfa notation), audio recordings, and blog content for choristers, choir leaders, and music enthusiasts. You may:
         </p>
         <ul>
-          <li>Access and download publicly available resources for personal or choir use.</li>
+          <li>Access and download resources, all of which are in the public domain unless otherwise stated.</li>
           <li>Create an account to enjoy additional features like increased download limits.</li>
           <li>Donate to support our mission and unlock unlimited access.</li>
         </ul>
         <p>
-          You agree to use our services responsibly, respecting applicable laws and not engaging in unauthorized distribution or misuse of content.
+          You agree to use our services responsibly, respecting applicable laws and not engaging in unauthorized misuse of content.
         </p>
 
-        <h3>2. Intellectual Property</h3>
+        <h3>2. Intellectual Property and Content</h3>
         <p>
-          All content on Choir Center, including music scripts, recordings, and text, is either owned by us or licensed from contributors. You may use these materials for personal or choir-related purposes only. You may not:
+          All downloadable content on Choir Center, including music scripts and recordings, is provided under the understanding that it is in the public domain. If any content is not in the public domain, it is included in good faith. Content owners who do not wish their work to be listed may contact us at <a href="mailto:admin@choircenter.com">admin@choircenter.com</a>, and we will remove it immediately upon verification. Website content (e.g., text, design) is owned by Choir Center unless otherwise noted. You may not:
         </p>
         <ul>
-          <li>Reproduce, sell, or distribute our content commercially without permission.</li>
-          <li>Modify or claim ownership of any materials provided.</li>
+          <li>Claim ownership of public domain content downloaded from our site.</li>
+          <li>Reproduce or distribute our website content commercially without permission.</li>
         </ul>
         <p>
           If you submit content (e.g., via contact forms), you grant us a non-exclusive, royalty-free license to use it to improve our services.
@@ -53,7 +53,7 @@ function Terms() {
           Choir Center is provided "as is." We strive to ensure accuracy and availability but are not liable for:
         </p>
         <ul>
-          <li>Errors in content or service interruptions.</li>
+          <li>Errors in public domain content or service interruptions.</li>
           <li>Losses from third-party links (e.g., Google Drive, Spotify).</li>
           <li>Damages from misuse of our resources.</li>
         </ul>
@@ -78,7 +78,7 @@ function Terms() {
 
         <h3>9. Contact Us</h3>
         <p>
-          For questions or concerns about these Terms, reach out to:
+          For questions, concerns, or content removal requests, reach out to:
         </p>
         <p>
           Choir Center<br />

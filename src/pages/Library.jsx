@@ -197,24 +197,24 @@ function Library() {
         <p>No songs available.</p>
       ) : (
         <div className="song-grid">
-          {paginatedSongs.map((song) => (
+          {paginatedSongs.map((song, index) => (
             <div
               key={song.id}
-              className="song-card animate-card"
+              className={`song-card-modern ${index % 2 === 0 ? 'variant-1' : 'variant-2'}`}
               onClick={() => handleSongClick(song)}
             >
               <div className="song-card-content">
-                <h2 className="song-card-title">{song.title}</h2>
-                <p className="song-card-composer">{song.composer || 'Unknown Composer'}</p>
-                <p className="song-card-downloads">Downloaded {song.downloads || 0} times</p>
+                <h2 className="song-card-title-modern">{song.title}</h2>
+                <p className="song-card-composer-modern">{song.composer || 'Unknown Composer'}</p>
+                <p className="song-card-downloads-modern">Downloaded {song.downloads || 0} times</p>
               </div>
-              <div className="song-card-actions">
+              <div className="song-card-actions-modern">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     handleDownload(song.id, song.google_drive_file_id);
                   }}
-                  className="download-button"
+                  className="download-button-modern"
                 >
                   Download
                 </button>
@@ -223,7 +223,7 @@ function Library() {
                     e.stopPropagation();
                     handleShare(song.title, song.permalink || song.id);
                   }}
-                  className="share-button"
+                  className="share-button-modern"
                 >
                   Share
                 </button>

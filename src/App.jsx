@@ -53,8 +53,25 @@ function App() {
   const [user, setUser] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [cookiesAccepted, setCookiesAccepted] = useState(false);
+  const [recaptchaLoaded, setRecaptchaLoaded] = useState(false);
 
   useEffect(() => {
+    const loadRecaptcha = () => {
+      if (document.querySelector('script[src="https://www.google.com/recaptcha/api.js"]')) {
+        setRecaptchaLoaded(true);
+        return;
+      }
+      const script = document.createElement('script');
+      script.src = 'https://www.google.com/recaptcha/api.js';
+      script.async = true;
+      script.defer = true;
+      script.onload = () => setRecaptchaLoaded(true);
+      script.onerror = () => console.error('Failed to load reCAPTCHA script');
+      document.body.appendChild(script);
+    };
+
+    loadRecaptcha();
+
     const fetchUserAndProfile = async () => {
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       if (sessionError || !sessionData.session) {
@@ -145,7 +162,6 @@ function App() {
 
   const handleCookiesAccepted = () => {
     setCookiesAccepted(true);
-    // Add analytics initialization here if applicable (e.g., Google Analytics)
   };
 
   return (
@@ -181,9 +197,9 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/library" element={<Library />} />
         <Route path="/admin" element={<Admin />} />
-        <Route path="/signup" element={<Signup />} />
+        <Route path="/signup" element={<Signup recaptchaLoaded={recaptchaLoaded} />} />
         <Route path="/signup-donate" element={<SignupDonate />} />
-        <Route path="/login" element={<Login />} />
+        <Route path="/login" element={<Login recaptchaLoaded={recaptchaLoaded} />} />
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/privacy" element={<Privacy />} />

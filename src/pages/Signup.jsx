@@ -8,10 +8,9 @@ function Signup() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
-  const [recaptchaToken, setRecaptchaToken] = useState(null); // For debugging
   const [loading, setLoading] = useState(false);
   const [recaptchaLoaded, setRecaptchaLoaded] = useState(false);
-  const recaptchaTokenRef = useRef(null);
+  const recaptchaRef = useRef(null);
   const recaptchaWidgetIdRef = useRef(null);
   const navigate = useNavigate();
 
@@ -19,7 +18,7 @@ function Signup() {
     const loadRecaptcha = () => {
       return new Promise((resolve, reject) => {
         if (window.grecaptcha) {
-          setRecaptchaLoaded(true);
+          initializeRecaptcha();
           resolve();
           return;
         }
@@ -28,7 +27,7 @@ function Signup() {
         script.async = true;
         script.defer = true;
         script.onload = () => {
-          setRecaptchaLoaded(true);
+          initializeRecaptcha();
           resolve();
         };
         script.onerror = () => reject(new Error('Failed to load reCAPTCHA script'));
@@ -36,18 +35,28 @@ function Signup() {
       });
     };
 
-    loadRecaptcha().catch(err => console.error(err));
-
-    window.handleRecaptcha = (token) => {
-      console.log('reCAPTCHA token received:', token);
-      recaptchaTokenRef.current = token;
-      setRecaptchaToken(token); // For logging
+    const initializeRecaptcha = () => {
+      if (window.grecaptcha && recaptchaRef.current && !recaptchaWidgetIdRef.current) {
+        const widgetId = window.grecaptcha.render(recaptchaRef.current, {
+          sitekey: '6LczEuYqAAAAANYh6VG8jSj1Fmt6LKMK7Ee1OcfU',
+          callback: (token) => {
+            console.log('reCAPTCHA token received:', token);
+          },
+        });
+        recaptchaWidgetIdRef.current = widgetId;
+        setRecaptchaLoaded(true);
+      }
     };
+
+    loadRecaptcha().catch(err => console.error(err));
 
     return () => {
       const script = document.querySelector('script[src="https://www.google.com/recaptcha/api.js"]');
       if (script) document.body.removeChild(script);
-      delete window.handleRecaptcha;
+      if (window.grecaptcha && recaptchaWidgetIdRef.current !== null) {
+        window.grecaptcha.reset(recaptchaWidgetIdRef.current);
+      }
+      recaptchaWidgetIdRef.current = null;
     };
   }, []);
 
@@ -85,11 +94,10 @@ function Signup() {
       return;
     }
 
-    let token = recaptchaTokenRef.current;
-    if (!token && window.grecaptcha) {
-      token = window.grecaptcha.getResponse();
-      recaptchaTokenRef.current = token;
-      console.log('Fallback token retrieved:', token);
+    let token;
+    if (window.grecaptcha && recaptchaWidgetIdRef.current !== null) {
+      token = window.grecaptcha.getResponse(recaptchaWidgetIdRef.current);
+      console.log('Token retrieved on submit:', token);
     }
 
     if (!token) {
@@ -102,7 +110,7 @@ function Signup() {
     if (!isRecaptchaValid) {
       setError('reCAPTCHA verification failed. Please try again.');
       setLoading(false);
-      if (window.grecaptcha) window.grecaptcha.reset();
+      if (window.grecaptcha) window.grecaptcha.reset(recaptchaWidgetIdRef.current);
       return;
     }
 
@@ -120,7 +128,7 @@ function Signup() {
       setError(err.message);
     } finally {
       setLoading(false);
-      if (window.grecaptcha) window.grecaptcha.reset();
+      if (window.grecaptcha) window.grecaptcha.reset(recaptchaWidgetIdRef.current);
     }
   };
 
@@ -156,13 +164,7 @@ function Signup() {
               />
             </div>
             <input type="text" name="honeypot" className="honeypot" />
-            {recaptchaLoaded && (
-              <div
-                className="g-recaptcha"
-                data-sitekey="6LczEuYqAAAAANYh6VG8jSj1Fmt6LKMK7Ee1OcfU"
-                data-callback="handleRecaptcha"
-              ></div>
-            )}
+            <div ref={recaptchaRef} className="g-recaptcha"></div>
             <button type="submit" className="auth-button" disabled={loading || !recaptchaLoaded}>
               {loading ? 'Signing Up...' : 'Sign Up'}
             </button>

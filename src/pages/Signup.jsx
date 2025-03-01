@@ -146,7 +146,7 @@ function Signup() {
             {recaptchaLoaded && (
               <div
                 className="g-recaptcha"
-                data-sitekey="6Le-B-YqAAAAAPDlPSrl2BLhd4TdUoPuwee2TO8s"
+                data-sitekey="6LczEuYqAAAAANYh6VG8jSj1Fmt6LKMK7Ee1OcfU"
                 data-callback="handleRecaptcha"
               ></div>
             )}

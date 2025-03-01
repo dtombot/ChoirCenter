@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../supabase';
 import { Link, useNavigate } from 'react-router-dom';
 import '../styles.css';
@@ -7,10 +7,62 @@ function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
+  const [recaptchaToken, setRecaptchaToken] = useState(null);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://www.google.com/recaptcha/api.js';
+    script.async = true;
+    script.defer = true;
+    document.body.appendChild(script);
+
+    return () => {
+      document.body.removeChild(script);
+      if (window.grecaptcha) {
+        window.grecaptcha.reset();
+      }
+    };
+  }, []);
+
+  const handleRecaptcha = (token) => {
+    setRecaptchaToken(token);
+  };
+
+  const verifyRecaptcha = async (token) => {
+    try {
+      const response = await fetch('/.netlify/functions/verify-recaptcha', {
+        method: 'POST',
+        body: JSON.stringify({ token }),
+      });
+      const result = await response.json();
+      return result.success;
+    } catch (err) {
+      console.error('reCAPTCHA verification error:', err);
+      return false;
+    }
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    setError(null);
+    setLoading(true);
+
+    if (!recaptchaToken) {
+      setError('Please complete the reCAPTCHA.');
+      setLoading(false);
+      return;
+    }
+
+    const isRecaptchaValid = await verifyRecaptcha(recaptchaToken);
+    if (!isRecaptchaValid) {
+      setError('reCAPTCHA verification failed. Please try again.');
+      setLoading(false);
+      window.grecaptcha.reset();
+      return;
+    }
+
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email,
@@ -20,6 +72,9 @@ function Login() {
       navigate('/');
     } catch (err) {
       setError(err.message);
+    } finally {
+      setLoading(false);
+      window.grecaptcha.reset();
     }
   };
 
@@ -40,6 +95,7 @@ function Login() {
               placeholder="Enter your email"
               className="auth-input"
               required
+              disabled={loading}
             />
           </div>
           <div className="form-group">
@@ -52,9 +108,17 @@ function Login() {
               placeholder="Enter your password"
               className="auth-input"
               required
+              disabled={loading}
             />
           </div>
-          <button type="submit" className="auth-button">Log In</button>
+          <div
+            className="g-recaptcha"
+            data-sitekey="YOUR_RECAPTCHA_SITE_KEY"
+            data-callback="handleRecaptcha"
+          ></div>
+          <button type="submit" className="auth-button" disabled={loading}>
+            {loading ? 'Logging In...' : 'Log In'}
+          </button>
         </form>
         <p className="auth-link">
           Don’t have an account? <Link to="/signup">Sign up</Link>
@@ -63,5 +127,12 @@ function Login() {
     </div>
   );
 }
+
+window.handleRecaptcha = (token) => {
+  const loginComponent = document.querySelector('form');
+  if (loginComponent) {
+    loginComponent.dispatchEvent(new CustomEvent('recaptchaVerified', { detail: token }));
+  }
+};
 
 export default Login;

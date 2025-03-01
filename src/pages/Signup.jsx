@@ -1,64 +1,15 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { supabase } from '../supabase';
 import { Link, useNavigate } from 'react-router-dom';
 import '../styles.css';
 
-function Signup() {
+function Signup({ recaptchaLoaded }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [recaptchaLoaded, setRecaptchaLoaded] = useState(false);
-  const recaptchaRef = useRef(null);
-  const recaptchaWidgetIdRef = useRef(null);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const loadRecaptcha = () => {
-      return new Promise((resolve, reject) => {
-        if (window.grecaptcha) {
-          initializeRecaptcha();
-          resolve();
-          return;
-        }
-        const script = document.createElement('script');
-        script.src = 'https://www.google.com/recaptcha/api.js';
-        script.async = true;
-        script.defer = true;
-        script.onload = () => {
-          initializeRecaptcha();
-          resolve();
-        };
-        script.onerror = () => reject(new Error('Failed to load reCAPTCHA script'));
-        document.body.appendChild(script);
-      });
-    };
-
-    const initializeRecaptcha = () => {
-      if (window.grecaptcha && recaptchaRef.current && !recaptchaWidgetIdRef.current) {
-        const widgetId = window.grecaptcha.render(recaptchaRef.current, {
-          sitekey: '6LczEuYqAAAAANYh6VG8jSj1Fmt6LKMK7Ee1OcfU',
-          callback: (token) => {
-            console.log('reCAPTCHA token received:', token);
-          },
-        });
-        recaptchaWidgetIdRef.current = widgetId;
-        setRecaptchaLoaded(true);
-      }
-    };
-
-    loadRecaptcha().catch(err => console.error(err));
-
-    return () => {
-      const script = document.querySelector('script[src="https://www.google.com/recaptcha/api.js"]');
-      if (script) document.body.removeChild(script);
-      if (window.grecaptcha && recaptchaWidgetIdRef.current !== null) {
-        window.grecaptcha.reset(recaptchaWidgetIdRef.current);
-      }
-      recaptchaWidgetIdRef.current = null;
-    };
-  }, []);
 
   const verifyRecaptcha = async (token) => {
     try {
@@ -88,17 +39,14 @@ function Signup() {
       return;
     }
 
-    if (!recaptchaLoaded) {
+    if (!recaptchaLoaded || !window.grecaptcha) {
       setError('reCAPTCHA is not loaded yet. Please wait.');
       setLoading(false);
       return;
     }
 
-    let token;
-    if (window.grecaptcha && recaptchaWidgetIdRef.current !== null) {
-      token = window.grecaptcha.getResponse(recaptchaWidgetIdRef.current);
-      console.log('Token retrieved on submit:', token);
-    }
+    const token = window.grecaptcha.getResponse();
+    console.log('Token retrieved on submit:', token);
 
     if (!token) {
       setError('Please complete the reCAPTCHA.');
@@ -110,7 +58,7 @@ function Signup() {
     if (!isRecaptchaValid) {
       setError('reCAPTCHA verification failed. Please try again.');
       setLoading(false);
-      if (window.grecaptcha) window.grecaptcha.reset(recaptchaWidgetIdRef.current);
+      if (window.grecaptcha) window.grecaptcha.reset();
       return;
     }
 
@@ -128,7 +76,7 @@ function Signup() {
       setError(err.message);
     } finally {
       setLoading(false);
-      if (window.grecaptcha) window.grecaptcha.reset(recaptchaWidgetIdRef.current);
+      if (window.grecaptcha) window.grecaptcha.reset();
     }
   };
 
@@ -164,7 +112,13 @@ function Signup() {
               />
             </div>
             <input type="text" name="honeypot" className="honeypot" />
-            <div ref={recaptchaRef} className="g-recaptcha"></div>
+            {recaptchaLoaded && (
+              <div
+                className="g-recaptcha"
+                data-sitekey="6LczEuYqAAAAANYh6VG8jSj1Fmt6LKMK7Ee1OcfU"
+                data-callback={(token) => console.log('reCAPTCHA token received:', token)}
+              ></div>
+            )}
             <button type="submit" className="auth-button" disabled={loading || !recaptchaLoaded}>
               {loading ? 'Signing Up...' : 'Sign Up'}
             </button>

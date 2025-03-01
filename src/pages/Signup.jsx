@@ -80,11 +80,8 @@ function Signup() {
 
       if (error) throw error;
 
-      // Ensure session is set (though signUp typically doesn’t set a session until email confirmation)
-      if (data.user) {
-        setSuccess(true);
-        setTimeout(() => navigate('/login'), 2000); // Redirect to login instead of home
-      }
+      setSuccess(true);
+      setTimeout(() => navigate('/login'), 2000); // Redirect to login instead of home
     } catch (err) {
       setError(err.message);
     } finally {

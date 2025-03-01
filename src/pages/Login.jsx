@@ -10,7 +10,7 @@ function Login() {
   const [recaptchaToken, setRecaptchaToken] = useState(null); // For debugging
   const [loading, setLoading] = useState(false);
   const [recaptchaLoaded, setRecaptchaLoaded] = useState(false);
-  const recaptchaTokenRef = useRef(null); // Synchronous token storage
+  const recaptchaTokenRef = useRef(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -38,8 +38,8 @@ function Login() {
 
     window.handleRecaptcha = (token) => {
       console.log('reCAPTCHA token received:', token);
-      recaptchaTokenRef.current = token; // Synchronous update
-      setRecaptchaToken(token); // Async state update for logging
+      recaptchaTokenRef.current = token;
+      setRecaptchaToken(token); // For logging
     };
 
     return () => {
@@ -75,16 +75,20 @@ function Login() {
       return;
     }
 
-    // Add a slight delay to ensure token is set
-    await new Promise(resolve => setTimeout(resolve, 100));
+    let token = recaptchaTokenRef.current;
+    if (!token && window.grecaptcha) {
+      token = window.grecaptcha.getResponse();
+      recaptchaTokenRef.current = token;
+      console.log('Fallback token retrieved:', token);
+    }
 
-    if (!recaptchaTokenRef.current) {
+    if (!token) {
       setError('Please complete the reCAPTCHA.');
       setLoading(false);
       return;
     }
 
-    const isRecaptchaValid = await verifyRecaptcha(recaptchaTokenRef.current);
+    const isRecaptchaValid = await verifyRecaptcha(token);
     if (!isRecaptchaValid) {
       setError('reCAPTCHA verification failed. Please try again.');
       setLoading(false);

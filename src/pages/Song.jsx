@@ -6,11 +6,10 @@ import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/TextLayer.css';
 import '../styles.css';
 
-// Set up pdfjs worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
 
 function Song() {
-  const { id } = useParams(); // 'id' can be permalink or numeric ID
+  const { id } = useParams();
   const [song, setSong] = useState(null);
   const [error, setError] = useState(null);
   const [downloadPrompt, setDownloadPrompt] = useState(null);
@@ -22,7 +21,6 @@ function Song() {
     const fetchSong = async () => {
       let query = supabase.from('songs').select('id, title, composer, google_drive_file_id, downloads, is_public, permalink');
       
-      // Check if 'id' is numeric (ID) or a string (permalink)
       if (/^\d+$/.test(id)) {
         query = query.eq('id', parseInt(id, 10));
       } else {
@@ -40,15 +38,14 @@ function Song() {
     };
     fetchSong();
 
-    // Adjust scale based on viewport width
     const updateScale = () => {
       const width = window.innerWidth;
       if (width <= 480) {
-        setScale(0.5); // Mobile
+        setScale(0.5);
       } else if (width <= 768) {
-        setScale(0.75); // Tablet
+        setScale(0.75);
       } else {
-        setScale(1.0); // Desktop
+        setScale(1.0);
       }
     };
     updateScale();
@@ -73,7 +70,6 @@ function Song() {
         }
         localStorage.setItem(downloadKey, downloadCount + 1);
       } else {
-        // Check if user has donated
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('has_donated')
@@ -85,7 +81,7 @@ function Song() {
           const today = new Date().toDateString();
           const downloadKey = `downloads_${today}`;
           const downloadCount = parseInt(localStorage.getItem(downloadKey) || '0', 10);
-          if (downloadCount >= 5) { // Higher limit for signed-up users
+          if (downloadCount >= 5) {
             setDownloadPrompt('Download Limit Reached.\nWant to keep downloading? Buy us a Meat Pie☕ to help sustain the site and enjoy unlimited access. Every little bit helps keep the site running! 🤗');
             return;
           }
@@ -150,6 +146,16 @@ function Song() {
 
   return (
     <div className="song-container">
+      <aside className="ad-space">
+        <div className="ad-sample">
+          <span className="ad-text">Place your Ad here. Advertise on ChoirCenter.com</span>
+          <svg className="ad-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path fill="#3cb371" d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 18a8 8 0 110-16 8 8 0 010 16z"/>
+            <path fill="#fff" d="M12 6l4 6h-8l4-6zm0 6v6h-2v-6h2z"/>
+          </svg>
+          <a href="mailto:admin@choircenter.com" className="ad-link">Contact Us</a>
+        </div>
+      </aside>
       <div className="song-card-modern">
         <h1 className="song-title-modern">{song.title}</h1>
         <p className="song-composer-modern">{song.composer || 'Unknown Composer'}</p>

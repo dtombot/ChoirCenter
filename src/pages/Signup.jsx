@@ -48,7 +48,8 @@ function Signup({ recaptchaLoaded }) {
     const token = window.grecaptcha.getResponse();
     console.log('Token retrieved on submit:', token);
 
-    if (!token) {
+    if (!token || token === '') {
+      console.log('No token received, reCAPTCHA not completed');
       setError('Please complete the reCAPTCHA.');
       setLoading(false);
       return;
@@ -56,6 +57,7 @@ function Signup({ recaptchaLoaded }) {
 
     const isRecaptchaValid = await verifyRecaptcha(token);
     if (!isRecaptchaValid) {
+      console.log('reCAPTCHA verification failed');
       setError('reCAPTCHA verification failed. Please try again.');
       setLoading(false);
       if (window.grecaptcha) window.grecaptcha.reset();
@@ -70,9 +72,22 @@ function Signup({ recaptchaLoaded }) {
 
       if (error) throw error;
 
+      // Create profile entry
+      if (data.user) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .upsert({
+            id: data.user.id,
+            email: data.user.email,
+            is_admin: false,
+          });
+        if (profileError) throw profileError;
+      }
+
       setSuccess(true);
       setTimeout(() => navigate('/login'), 2000);
     } catch (err) {
+      console.error('Signup error:', err.message);
       setError(err.message);
     } finally {
       setLoading(false);

@@ -207,26 +207,26 @@ function Home() {
         <h2 className="section-title animate-text">Latest Additions</h2>
         <div className="song-grid">
           {songs.length > 0 ? (
-            songs.map(song => (
+            songs.map((song, index) => (
               <div
                 key={song.id}
-                className="song-card animate-card"
+                className={`song-card-modern ${index % 2 === 0 ? 'variant-1' : 'variant-2'}`}
                 onClick={() => handleSongClick(song)}
               >
                 <div className="song-card-content">
-                  <h3 className="song-card-title">{song.title}</h3>
-                  <p className="song-card-composer">{song.composer}</p>
-                  <p className="song-card-downloads">Downloaded {song.downloads || 0} times</p>
+                  <h3 className="song-card-title-modern">{song.title}</h3>
+                  <p className="song-card-composer-modern">{song.composer || 'Unknown Composer'}</p>
+                  <p className="song-card-downloads-modern">Downloaded {song.downloads || 0} times</p>
                 </div>
-                <div className="song-card-actions">
+                <div className="song-card-actions-modern">
                   <button
-                    className="download-button"
+                    className="download-button-modern"
                     onClick={(e) => { e.stopPropagation(); handleDownload(song.id, song.google_drive_file_id); }}
                   >
                     Download
                   </button>
                   <button
-                    className="share-button"
+                    className="share-button-modern"
                     onClick={(e) => { e.stopPropagation(); handleShare(song.title, song.id); }}
                   >
                     Share

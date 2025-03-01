@@ -28,7 +28,8 @@ function Admin() {
     meta_description: '', 
     tags: '', 
     category: '', 
-    focus_keyword: '' 
+    focus_keyword: '',
+    featured_image_url: '' // Added featured_image_url field
   });
   const [adForm, setAdForm] = useState({
     name: '',
@@ -217,6 +218,7 @@ function Admin() {
         tags: postForm.tags || null,
         category: postForm.category || null,
         focus_keyword: postForm.focus_keyword || null,
+        featured_image_url: postForm.featured_image_url || null, // Added featured_image_url to post data
         views: 0
       };
 
@@ -233,7 +235,7 @@ function Admin() {
           .insert([postData]);
         if (error) throw error;
       }
-      setPostForm({ title: '', content: '', permalink: '', meta_description: '', tags: '', category: '', focus_keyword: '' });
+      setPostForm({ title: '', content: '', permalink: '', meta_description: '', tags: '', category: '', focus_keyword: '', featured_image_url: '' });
       const { data } = await supabase.from('blog_posts').select('*');
       setPosts(data || []);
     } catch (err) {
@@ -324,7 +326,8 @@ function Admin() {
       meta_description: post.meta_description || '', 
       tags: post.tags || '', 
       category: post.category || '', 
-      focus_keyword: post.focus_keyword || '' 
+      focus_keyword: post.focus_keyword || '',
+      featured_image_url: post.featured_image_url || '' // Added featured_image_url to edit
     });
     setEditingPostId(post.id);
   };
@@ -620,6 +623,17 @@ function Admin() {
                     className="admin-form-input"
                   />
                 </div>
+                <div className="admin-form-group">
+                  <label htmlFor="featured_image_url">Featured Image URL</label>
+                  <input
+                    id="featured_image_url"
+                    type="text"
+                    placeholder="e.g., https://storage.googleapis.com/your-bucket/image.jpg"
+                    value={postForm.featured_image_url}
+                    onChange={(e) => setPostForm({ ...postForm, featured_image_url: e.target.value })}
+                    className="admin-form-input"
+                  />
+                </div>
                 <div className="admin-form-group full-width">
                   <label htmlFor="content">Content</label>
                   <ReactQuill
@@ -678,7 +692,7 @@ function Admin() {
                 <div className="admin-form-actions">
                   <button type="submit" className="admin-form-submit">{editingPostId ? 'Update Post' : 'Add Post'}</button>
                   {editingPostId && (
-                    <button type="button" className="admin-cancel-button" onClick={() => { setPostForm({ title: '', content: '', permalink: '', meta_description: '', tags: '', category: '', focus_keyword: '' }); setEditingPostId(null); }}>Cancel</button>
+                    <button type="button" className="admin-cancel-button" onClick={() => { setPostForm({ title: '', content: '', permalink: '', meta_description: '', tags: '', category: '', focus_keyword: '', featured_image_url: '' }); setEditingPostId(null); }}>Cancel</button>
                   )}
                 </div>
               </form>

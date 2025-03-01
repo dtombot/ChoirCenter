@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../supabase';
 import { Link, useNavigate } from 'react-router-dom';
 import '../styles.css';
@@ -11,7 +11,6 @@ function Signup() {
   const [recaptchaToken, setRecaptchaToken] = useState(null);
   const [loading, setLoading] = useState(false);
   const [recaptchaLoaded, setRecaptchaLoaded] = useState(false);
-  const recaptchaRef = useRef(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -23,7 +22,7 @@ function Signup() {
           return;
         }
         const script = document.createElement('script');
-        script.src = 'https://www.google.com/recaptcha/api.js?render=explicit';
+        script.src = 'https://www.google.com/recaptcha/api.js';
         script.async = true;
         script.defer = true;
         script.onload = () => {
@@ -35,27 +34,20 @@ function Signup() {
       });
     };
 
-    loadRecaptcha()
-      .then(() => {
-        if (window.grecaptcha && recaptchaRef.current) {
-          window.grecaptcha.render(recaptchaRef.current, {
-            sitekey: '6LczEuYqAAAAANYh6VG8jSj1Fmt6LKMK7Ee1OcfU',
-            callback: handleRecaptcha,
-          });
-        }
-      })
-      .catch(err => console.error(err));
+    loadRecaptcha().catch(err => console.error(err));
+
+    // Set the callback globally with a stable reference
+    window.handleRecaptcha = (token) => {
+      console.log('reCAPTCHA token received:', token);
+      setRecaptchaToken(token);
+    };
 
     return () => {
-      const script = document.querySelector('script[src^="https://www.google.com/recaptcha/api.js"]');
+      const script = document.querySelector('script[src="https://www.google.com/recaptcha/api.js"]');
       if (script) document.body.removeChild(script);
+      delete window.handleRecaptcha;
     };
   }, []);
-
-  const handleRecaptcha = (token) => {
-    console.log('reCAPTCHA token received:', token);
-    setRecaptchaToken(token);
-  };
 
   const verifyRecaptcha = async (token) => {
     try {
@@ -155,7 +147,13 @@ function Signup() {
               />
             </div>
             <input type="text" name="honeypot" className="honeypot" />
-            <div ref={recaptchaRef} className="g-recaptcha"></div>
+            {recaptchaLoaded && (
+              <div
+                className="g-recaptcha"
+                data-sitekey="6LczEuYqAAAAANYh6VG8jSj1Fmt6LKMK7Ee1OcfU"
+                data-callback="handleRecaptcha"
+              ></div>
+            )}
             <button type="submit" className="auth-button" disabled={loading || !recaptchaLoaded}>
               {loading ? 'Signing Up...' : 'Sign Up'}
             </button>

@@ -187,11 +187,11 @@ function App() {
         </nav>
       </header>
       <div className="background-notes">
-        <div className="note" style={{ left: '10%', animationDelay: '0s' }}></div>
-        <div className="note" style={{ left: '30%', animationDelay: '2s' }}></div>
-        <div className="note" style={{ left: '50%', animationDelay: '4s' }}></div>
-        <div className="note" style={{ left: '70%', animationDelay: '6s' }}></div>
-        <div className="note" style={{ left: '90%', animationDelay: '8s' }}></div>
+        <svg className="note" style={{ left: '10%', animationDelay: '0s' }} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#98fb98"><path d="M9 21h3v-9H9v9zm3-18v9h3V3h-3zm-1 16h2v2h-2v-2z"/></svg>
+        <svg className="note" style={{ left: '30%', animationDelay: '2s' }} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#98fb98"><path d="M9 21h3v-9H9v9zm3-18v9h3V3h-3zm-1 16h2v2h-2v-2z"/></svg>
+        <svg className="note" style={{ left: '50%', animationDelay: '4s' }} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#98fb98"><path d="M9 21h3v-9H9v9zm3-18v9h3V3h-3zm-1 16h2v2h-2v-2z"/></svg>
+        <svg className="note" style={{ left: '70%', animationDelay: '6s' }} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#98fb98"><path d="M9 21h3v-9H9v9zm3-18v9h3V3h-3zm-1 16h2v2h-2v-2z"/></svg>
+        <svg className="note" style={{ left: '90%', animationDelay: '8s' }} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#98fb98"><path d="M9 21h3v-9H9v9zm3-18v9h3V3h-3zm-1 16h2v2h-2v-2z"/></svg>
       </div>
       <Routes>
         <Route path="/" element={<Home />} />

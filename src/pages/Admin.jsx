@@ -87,9 +87,29 @@ function Admin() {
       fetchPosts();
 
       const fetchUsers = async () => {
-        const { data, error } = await supabase.from('profiles').select('id, email, is_admin');
-        if (error) setError('Failed to load users: ' + error.message);
-        else setUsers(data || []);
+        const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
+        if (authError) {
+          setError('Failed to load users: ' + authError.message);
+          return;
+        }
+
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('id, email, is_admin');
+
+        if (profileError) {
+          console.error('Profile fetch error:', profileError.message);
+        }
+
+        const usersWithProfiles = authUsers.users.map(authUser => {
+          const profile = profileData?.find(p => p.id === authUser.id) || {};
+          return {
+            id: authUser.id,
+            email: authUser.email,
+            is_admin: profile.is_admin || false,
+          };
+        });
+        setUsers(usersWithProfiles || []);
       };
       fetchUsers();
 
@@ -380,8 +400,17 @@ function Admin() {
         const { error } = await supabase.from('admins').insert([{ user_id: id }]);
         if (error) throw error;
       }
-      const { data } = await supabase.from('profiles').select('id, email, is_admin');
-      setUsers(data || []);
+      const { data: authUsers } = await supabase.auth.admin.listUsers();
+      const { data: profileData } = await supabase.from('profiles').select('id, email, is_admin');
+      const usersWithProfiles = authUsers.users.map(authUser => {
+        const profile = profileData?.find(p => p.id === authUser.id) || {};
+        return {
+          id: authUser.id,
+          email: authUser.email,
+          is_admin: profile.is_admin || false,
+        };
+      });
+      setUsers(usersWithProfiles || []);
     } catch (err) {
       setError('Failed to update user status: ' + err.message);
     }
@@ -393,9 +422,14 @@ function Admin() {
       return;
     }
     if (window.confirm('Are you sure you want to delete this user?')) {
-      const { error } = await supabase.from('profiles').delete().eq('id', id);
-      if (error) setError('Failed to delete user: ' + error.message);
-      else setUsers(users.filter(u => u.id !== id));
+      const { error: authError } = await supabase.auth.admin.deleteUser(id);
+      if (authError) {
+        setError('Failed to delete user from auth: ' + authError.message);
+        return;
+      }
+      const { error: profileError } = await supabase.from('profiles').delete().eq('id', id);
+      if (profileError) console.warn('Profile delete warning: ' + profileError.message);
+      setUsers(users.filter(u => u.id !== id));
     }
   };
 

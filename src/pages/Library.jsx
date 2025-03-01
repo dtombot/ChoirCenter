@@ -146,7 +146,9 @@ function Library() {
 
   return (
     <div className="library-container">
-      <AdBanner position="other_pages_below_header" />
+      <section className="ad-section">
+        <AdBanner position="other_pages_below_header" />
+      </section>
       <h1 className="library-title animate-text">Song Library</h1>
       <p className="library-description">Explore our extensive collection of free choir sheet music, available for download and sharing. Sort and search to find the perfect pieces for your choir.</p>
       <form onSubmit={handleFilterSubmit} className="filter-bar">

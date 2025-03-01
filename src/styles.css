@@ -2519,3 +2519,111 @@ body {
     font-size: 0.8rem;
   }
 }
+
+/* Advertisement Space Styles */
+.ad-space {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0.5rem 1rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #f9fafb;
+}
+
+.ad-sample {
+  width: 728px; /* Standard leaderboard size for AdSense */
+  height: 90px;
+  background: linear-gradient(135deg, #3cb371, #2f9e5e);
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  position: relative;
+}
+
+.ad-text {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #fff;
+  animation: slideText 5s infinite;
+}
+
+@keyframes slideText {
+  0% { transform: translateX(-100%); }
+  20% { transform: translateX(0); }
+  80% { transform: translateX(0); }
+  100% { transform: translateX(100%); }
+}
+
+.ad-icon {
+  width: 40px;
+  height: 40px;
+  animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.ad-link {
+  font-size: 0.9rem;
+  color: #fff;
+  text-decoration: none;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  transition: background 0.3s ease, transform 0.3s ease;
+}
+
+.ad-link:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.05);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .ad-sample {
+    width: 100%;
+    height: 60px; /* Slimmer for smaller screens */
+    padding: 0 0.75rem;
+  }
+
+  .ad-text {
+    font-size: 1rem;
+  }
+
+  .ad-icon {
+    width: 30px;
+    height: 30px;
+  }
+
+  .ad-link {
+    font-size: 0.85rem;
+    padding: 0.4rem 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .ad-sample {
+    flex-direction: column;
+    height: auto;
+    padding: 0.5rem;
+    gap: 0.5rem;
+  }
+
+  .ad-text {
+    font-size: 0.9rem;
+  }
+
+  .ad-icon {
+    width: 25px;
+    height: 25px;
+  }
+}

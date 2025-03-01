@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Link, Navigate } from 'react-router-dom';
 import { supabase } from './supabase';
 import './styles.css';
 import Home from './pages/Home';
@@ -197,9 +197,15 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/library" element={<Library />} />
         <Route path="/admin" element={<Admin />} />
-        <Route path="/signup" element={<Signup recaptchaLoaded={recaptchaLoaded} />} />
+        <Route
+          path="/signup"
+          element={user ? <Navigate to="/" /> : <Signup recaptchaLoaded={recaptchaLoaded} />}
+        />
         <Route path="/signup-donate" element={<SignupDonate />} />
-        <Route path="/login" element={<Login recaptchaLoaded={recaptchaLoaded} />} />
+        <Route
+          path="/login"
+          element={user ? <Navigate to="/" /> : <Login recaptchaLoaded={recaptchaLoaded} />}
+        />
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/privacy" element={<Privacy />} />

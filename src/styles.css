@@ -1593,12 +1593,12 @@ body {
 }
 
 .analytics-section.local-data {
-  background: #ebedef; /* Stronger gray */
+  background: #ebedef;
   border: 1px solid #d1d5db;
 }
 
 .analytics-section.google-data {
-  background: #d1fae5; /* Stronger green */
+  background: #d1fae5;
   border: 1px solid #34d399;
 }
 
@@ -1919,9 +1919,9 @@ body {
 /* Advertisement Section */
 .ad-section {
   width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 1rem;
+  max-width: 900px;
+  margin: 1rem auto;
+  padding: 0.5rem 1rem;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -1931,7 +1931,7 @@ body {
 
 .ad-banner {
   width: 100%;
-  max-width: 728px; /* Standard leaderboard size */
+  max-width: 728px;
   height: auto;
   min-height: 90px;
   border-radius: 8px;
@@ -1953,7 +1953,7 @@ body {
 .audio-player iframe {
   width: 100%;
   max-width: 600px;
-  height: 380px; /* Default Spotify embed height */
+  height: 380px;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
@@ -2134,7 +2134,7 @@ body {
   }
 
   .ad-banner {
-    max-width: 468px; /* Medium banner size for tablets */
+    max-width: 468px;
     min-height: 60px;
   }
 
@@ -2293,12 +2293,12 @@ body {
   }
 
   .ad-banner {
-    max-width: 100%; /* Full width for small screens */
+    max-width: 300px;
     min-height: 50px;
   }
 
   .audio-player iframe {
-    height: 200px; /* Smaller height for mobile */
+    height: 200px;
   }
 }
 
@@ -2601,7 +2601,7 @@ body {
 }
 
 .ad-sample {
-  width: 728px; /* Standard leaderboard size for AdSense */
+  width: 728px;
   height: 90px;
   background: linear-gradient(135deg, #3cb371, #2f9e5e);
   border-radius: 8px;

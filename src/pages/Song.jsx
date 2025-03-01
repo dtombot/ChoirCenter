@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../supabase';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { Document, Page, pdfjs } from 'react-pdf';
+import AdBanner from '../components/AdBanner';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/TextLayer.css';
 import '../styles.css';
@@ -132,16 +133,7 @@ function Song() {
   if (error) {
     return (
       <>
-        <aside className="ad-space">
-          <div className="ad-sample">
-            <span className="ad-text">Place your Ad here. Advertise on ChoirCenter.com</span>
-            <svg className="ad-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-              <path fill="#3cb371" d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 18a8 8 0 110-16 8 8 0 010 16z"/>
-              <path fill="#fff" d="M12 6l4 6h-8l4-6zm0 6v6h-2v-6h2z"/>
-            </svg>
-            <a href="mailto:admin@choircenter.com" className="ad-link">Contact Us</a>
-          </div>
-        </aside>
+        <AdBanner position="other_pages_below_header" />
         <div className="song-container">
           <p className="error-message">{error}</p>
           <Link to="/library" className="action-button">Back to Library</Link>
@@ -153,16 +145,7 @@ function Song() {
   if (!song) {
     return (
       <>
-        <aside className="ad-space">
-          <div className="ad-sample">
-            <span className="ad-text">Place your Ad here. Advertise on ChoirCenter.com</span>
-            <svg className="ad-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-              <path fill="#3cb371" d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 18a8 8 0 110-16 8 8 0 010 16z"/>
-              <path fill="#fff" d="M12 6l4 6h-8l4-6zm0 6v6h-2v-6h2z"/>
-            </svg>
-            <a href="mailto:admin@choircenter.com" className="ad-link">Contact Us</a>
-          </div>
-        </aside>
+        <AdBanner position="other_pages_below_header" />
         <div className="song-container">
           <div>Loading...</div>
         </div>
@@ -174,16 +157,7 @@ function Song() {
 
   return (
     <>
-      <aside className="ad-space">
-        <div className="ad-sample">
-          <span className="ad-text">Place your Ad here. Advertise on ChoirCenter.com</span>
-          <svg className="ad-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-            <path fill="#3cb371" d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 18a8 8 0 110-16 8 8 0 010 16z"/>
-            <path fill="#fff" d="M12 6l4 6h-8l4-6zm0 6v6h-2v-6h2z"/>
-          </svg>
-          <a href="mailto:admin@choircenter.com" className="ad-link">Contact Us</a>
-        </div>
-      </aside>
+      <AdBanner position="other_pages_below_header" />
       <div className="song-container">
         <div className="song-card-modern">
           <h1 className="song-title-modern">{song.title}</h1>

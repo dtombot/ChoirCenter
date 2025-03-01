@@ -83,8 +83,8 @@ function Home() {
 
   const handleDownload = async (songId, fileId) => {
     try {
-      const { data: userData, error: userError } = await supabase.auth.getUser();
-      const isAuthenticated = userData?.user && !userError;
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      const isAuthenticated = sessionData?.session && !sessionError;
 
       if (!isAuthenticated) {
         const today = new Date().toDateString();
@@ -96,6 +96,9 @@ function Home() {
         }
         localStorage.setItem(downloadKey, downloadCount + 1);
       } else {
+        const { data: userData, error: userError } = await supabase.auth.getUser();
+        if (userError) throw userError;
+
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('has_donated')

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../supabase';
 import { Link, useNavigate } from 'react-router-dom';
 import '../styles.css';
@@ -7,9 +7,10 @@ function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
-  const [recaptchaToken, setRecaptchaToken] = useState(null);
+  const [recaptchaToken, setRecaptchaToken] = useState(null); // For debugging
   const [loading, setLoading] = useState(false);
   const [recaptchaLoaded, setRecaptchaLoaded] = useState(false);
+  const recaptchaTokenRef = useRef(null); // Synchronous token storage
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -35,10 +36,10 @@ function Login() {
 
     loadRecaptcha().catch(err => console.error(err));
 
-    // Set the callback globally with a stable reference
     window.handleRecaptcha = (token) => {
       console.log('reCAPTCHA token received:', token);
-      setRecaptchaToken(token);
+      recaptchaTokenRef.current = token; // Synchronous update
+      setRecaptchaToken(token); // Async state update for logging
     };
 
     return () => {
@@ -74,13 +75,13 @@ function Login() {
       return;
     }
 
-    if (!recaptchaToken) {
+    if (!recaptchaTokenRef.current) {
       setError('Please complete the reCAPTCHA.');
       setLoading(false);
       return;
     }
 
-    const isRecaptchaValid = await verifyRecaptcha(recaptchaToken);
+    const isRecaptchaValid = await verifyRecaptcha(recaptchaTokenRef.current);
     if (!isRecaptchaValid) {
       setError('reCAPTCHA verification failed. Please try again.');
       setLoading(false);

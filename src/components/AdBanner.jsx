@@ -14,14 +14,12 @@ function AdBanner({ position }) {
           .select('code')
           .eq('position', position)
           .eq('is_active', true)
-          .order('created_at', { ascending: false }) // Latest active ad
-          .limit(1)
-          .single();
+          .order('created_at', { ascending: false })
+          .limit(1);
 
         if (error) throw error;
-        if (data && data.code) {
-          setAdCode(data.code);
-          // Push ad to render if script-based (e.g., AdSense)
+        if (data && data.length > 0 && data[0].code) {
+          setAdCode(data[0].code);
           if (window.adsbygoogle) {
             setTimeout(() => {
               try {
@@ -29,7 +27,7 @@ function AdBanner({ position }) {
               } catch (e) {
                 console.error('Ad push error:', e);
               }
-            }, 100); // Small delay to ensure DOM is ready
+            }, 100);
           }
         } else {
           setAdCode(null); // No active ad found
@@ -49,7 +47,6 @@ function AdBanner({ position }) {
   }
 
   if (!adCode) {
-    // Fallback to sample ad if no live ad is available
     return (
       <aside className="ad-space">
         <div className="ad-sample">

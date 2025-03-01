@@ -40,16 +40,18 @@ function Blog() {
         </div>
       ) : (
         <div className="blog-grid">
-          {posts.map(post => (
+          {posts.map((post, index) => (
             <Link
               key={post.id}
               to={`/blog/${post.permalink || `post-${post.id}`}`}
-              className="blog-card animate-card"
+              className={`blog-card-modern ${index % 2 === 0 ? 'variant-1' : 'variant-2'}`}
             >
-              <h2 className="blog-card-title">{post.title}</h2>
-              <p className="blog-card-excerpt">{getExcerpt(post.content)}</p>
-              <span className="blog-card-date">{new Date(post.created_at).toLocaleDateString()}</span>
-              <span className="blog-card-readmore">Read More</span>
+              <div className="blog-card-content">
+                <h2 className="blog-card-title-modern">{post.title}</h2>
+                <p className="blog-card-excerpt-modern">{getExcerpt(post.content)}</p>
+                <span className="blog-card-date-modern">{new Date(post.created_at).toLocaleDateString()}</span>
+                <span className="blog-card-readmore-modern">Read More</span>
+              </div>
             </Link>
           ))}
         </div>

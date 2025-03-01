@@ -133,7 +133,7 @@ function Song() {
   if (error) {
     return (
       <>
-        <AdBanner position="other_pages_below_header" />
+        <AdBanner position="song_page_below_header" />
         <div className="song-container">
           <p className="error-message">{error}</p>
           <Link to="/library" className="action-button">Back to Library</Link>
@@ -145,7 +145,7 @@ function Song() {
   if (!song) {
     return (
       <>
-        <AdBanner position="other_pages_below_header" />
+        <AdBanner position="song_page_below_header" />
         <div className="song-container">
           <div>Loading...</div>
         </div>
@@ -157,9 +157,9 @@ function Song() {
 
   return (
     <>
-      <AdBanner position="other_pages_below_header" />
+      <AdBanner position="song_page_below_header" />
       <div className="song-container">
-        <div className="song-card-modern">
+        <div className<|control209|>="song-card-modern">
           <h1 className="song-title-modern">{song.title}</h1>
           <p className="song-composer-modern">{song.composer || 'Unknown Composer'}</p>
           <p className="song-downloads-modern">Downloaded {song.downloads || 0} times</p>

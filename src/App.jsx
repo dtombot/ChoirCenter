@@ -65,7 +65,7 @@ function App() {
 
       const { data: authData, error: authError } = await supabase.auth.getUser();
       if (authError) {
-        console.error('Auth error:', authError);
+        console.error('Auth error:', authError.message);
         setUser(null);
         setIsAdmin(false);
         return;
@@ -100,7 +100,7 @@ function App() {
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       const currentUser = session?.user || null;
       setUser(currentUser);
-      if (currentUser) {
+      if (event === 'SIGNED_IN' && currentUser && session?.user?.email_confirmed_at) {
         supabase
           .from('profiles')
           .select('is_admin')

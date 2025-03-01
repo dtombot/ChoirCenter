@@ -159,7 +159,7 @@ function Song() {
     <>
       <AdBanner position="song_page_below_header" />
       <div className="song-container">
-        <div className<|control209|>="song-card-modern">
+        <div className="song-card-modern">
           <h1 className="song-title-modern">{song.title}</h1>
           <p className="song-composer-modern">{song.composer || 'Unknown Composer'}</p>
           <p className="song-downloads-modern">Downloaded {song.downloads || 0} times</p>

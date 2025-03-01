@@ -15,8 +15,6 @@ function Home() {
 
   useEffect(() => {
     const fetchData = async () => {
-      console.log('Starting fetchData...');
-      // Fetch songs
       const { data: songData, error: songError } = await supabase
         .from('songs')
         .select('id, title, composer, google_drive_file_id, permalink, is_public, downloads')
@@ -30,7 +28,6 @@ function Home() {
         setSongs(songData || []);
       }
 
-      // Fetch blog posts
       const { data: postData, error: postError } = await supabase
         .from('blog_posts')
         .select('id, title, permalink')
@@ -44,7 +41,6 @@ function Home() {
         setPosts(postData || []);
       }
 
-      // Fetch song of the week
       const { data: songOfTheWeekData, error: sotwError } = await supabase
         .from('song_of_the_week')
         .select('spotify_embed_html')
@@ -118,7 +114,7 @@ function Home() {
         }
       }
 
-      const url = `https://drive.google.com/uc?export=download&id=${fileId || 'dummy-id'}`;
+      const url = `https://drive.google.com/uc?export=download&id=${fileId}`;
       const link = document.createElement('a');
       link.href = url;
       link.download = `choircenter.com-${songId}.pdf`;
@@ -144,10 +140,10 @@ function Home() {
 
   const handleShare = (songTitle, songId) => {
     const shareUrl = `${window.location.origin}/song/${songId}`;
-    const shareText = `Check out "${songTitle || 'Untitled'}" on Choir Center!`;
+    const shareText = `Check out "${songTitle}" on Choir Center!`;
     if (navigator.share) {
       navigator.share({
-        title: songTitle || 'Untitled',
+        title: songTitle,
         text: shareText,
         url: shareUrl,
       }).catch(err => console.error('Share error:', err));
@@ -191,6 +187,16 @@ function Home() {
           </div>
         </div>
       </section>
+      <aside className="ad-space">
+        <div className="ad-sample">
+          <span className="ad-text">Advertise with Choir Center!</span>
+          <svg className="ad-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path fill="#3cb371" d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 18a8 8 0 110-16 8 8 0 010 16z"/>
+            <path fill="#fff" d="M12 6l4 6h-8l4-6zm0 6v6h-2v-6h2z"/>
+          </svg>
+          <a href="mailto:admin@choircenter.com" className="ad-link">Contact Us</a>
+        </div>
+      </aside>
       <section className="song-of-the-week">
         <h2 className="section-title animate-text">Song of the Week</h2>
         {songOfTheWeek ? (
@@ -211,20 +217,20 @@ function Home() {
                 onClick={() => handleSongClick(song)}
               >
                 <div className="song-card-content">
-                  <h3 className="song-card-title">{song.title || 'Untitled'}</h3>
-                  <p className="song-card-composer">{song.composer || 'Unknown'}</p>
+                  <h3 className="song-card-title">{song.title}</h3>
+                  <p className="song-card-composer">{song.composer}</p>
                   <p className="song-card-downloads">Downloaded {song.downloads || 0} times</p>
                 </div>
                 <div className="song-card-actions">
                   <button
                     className="download-button"
-                    onClick={(e) => { e.stopPropagation(); handleDownload(song.id, song.google_drive_file_id || ''); }}
+                    onClick={(e) => { e.stopPropagation(); handleDownload(song.id, song.google_drive_file_id); }}
                   >
                     Download
                   </button>
                   <button
                     className="share-button"
-                    onClick={(e) => { e.stopPropagation(); handleShare(song.title || 'Untitled', song.id); }}
+                    onClick={(e) => { e.stopPropagation(); handleShare(song.title, song.id); }}
                   >
                     Share
                   </button>
@@ -247,7 +253,7 @@ function Home() {
                 to={`/blog/${post.permalink || `post-${post.id}`}`}
                 className="blog-item animate-card"
               >
-                <h3 className="blog-title small-text">{post.title || 'Untitled'}</h3>
+                <h3 className="blog-title small-text">{post.title}</h3>
               </Link>
             ))
           ) : (

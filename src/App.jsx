@@ -16,9 +16,44 @@ import Blog from './pages/Blog';
 import BlogPost from './pages/BlogPost';
 import Song from './pages/Song';
 
+function CookieConsent({ onAccept }) {
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const consent = localStorage.getItem('cookieConsent');
+    if (!consent) {
+      setIsVisible(true);
+    }
+  }, []);
+
+  const handleAccept = () => {
+    localStorage.setItem('cookieConsent', 'accepted');
+    setIsVisible(false);
+    onAccept();
+  };
+
+  if (!isVisible) return null;
+
+  return (
+    <div className="cookie-consent-overlay">
+      <div className="cookie-consent">
+        <h3 className="cookie-title">We Use Cookies</h3>
+        <p className="cookie-text">
+          Choir Center uses cookies to enhance your experience and analyze site usage. By continuing, you agree to our use of cookies as described in our <Link to="/privacy" className="cookie-link">Privacy Policy</Link>.
+        </p>
+        <div className="cookie-actions">
+          <button className="cookie-accept" onClick={handleAccept}>Accept</button>
+          <Link to="/privacy" className="cookie-learn-more">Learn More</Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function App() {
   const [user, setUser] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [cookiesAccepted, setCookiesAccepted] = useState(false);
 
   useEffect(() => {
     const fetchUserAndProfile = async () => {
@@ -84,6 +119,11 @@ function App() {
     link.rel = 'stylesheet';
     document.head.appendChild(link);
 
+    const consent = localStorage.getItem('cookieConsent');
+    if (consent === 'accepted') {
+      setCookiesAccepted(true);
+    }
+
     return () => {
       authListener.subscription.unsubscribe();
     };
@@ -93,6 +133,11 @@ function App() {
     await supabase.auth.signOut();
     setUser(null);
     setIsAdmin(false);
+  };
+
+  const handleCookiesAccepted = () => {
+    setCookiesAccepted(true);
+    // Add analytics initialization here if applicable (e.g., Google Analytics)
   };
 
   return (
@@ -140,6 +185,7 @@ function App() {
         <Route path="/song/:id" element={<Song />} />
         <Route path="/search" element={<div>Search Placeholder</div>} />
       </Routes>
+      <CookieConsent onAccept={handleCookiesAccepted} />
       <footer className="footer">
         <div className="footer-text">
           <p>About Us: Choir Center is a platform for choristers to access music resources.</p>

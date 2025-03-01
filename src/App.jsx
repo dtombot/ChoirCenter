@@ -39,7 +39,7 @@ function CookieConsent({ onAccept }) {
       <div className="cookie-consent">
         <h3 className="cookie-title">We Use Cookies</h3>
         <p className="cookie-text">
-          Choir Center uses cookies to enhance your experience and analyze site usage. By continuing, you agree to our use of cookies as described in our <Link to="/privacy" className="cookie-link">Privacy Policy</Link>.
+          Choir Center uses cookies to enhance your experience and analyze usage. See our <Link to="/privacy" className="cookie-link">Privacy Policy</Link>.
         </p>
         <div className="cookie-actions">
           <button className="cookie-accept" onClick={handleAccept}>Accept</button>

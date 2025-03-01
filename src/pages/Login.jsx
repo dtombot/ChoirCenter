@@ -35,15 +35,18 @@ function Login() {
 
     loadRecaptcha().catch(err => console.error(err));
 
+    // Set the callback globally with a stable reference
+    window.handleRecaptcha = (token) => {
+      console.log('reCAPTCHA token received:', token);
+      setRecaptchaToken(token);
+    };
+
     return () => {
       const script = document.querySelector('script[src="https://www.google.com/recaptcha/api.js"]');
       if (script) document.body.removeChild(script);
+      delete window.handleRecaptcha;
     };
   }, []);
-
-  const handleRecaptcha = (token) => {
-    setRecaptchaToken(token);
-  };
 
   const verifyRecaptcha = async (token) => {
     try {
@@ -52,6 +55,7 @@ function Login() {
         body: JSON.stringify({ token }),
       });
       const result = await response.json();
+      console.log('reCAPTCHA verification result:', result);
       return result.success;
     } catch (err) {
       console.error('reCAPTCHA verification error:', err);
@@ -153,12 +157,5 @@ function Login() {
     </div>
   );
 }
-
-window.handleRecaptcha = (token) => {
-  const loginComponent = document.querySelector('form');
-  if (loginComponent) {
-    loginComponent.dispatchEvent(new CustomEvent('recaptchaVerified', { detail: token }));
-  }
-};
 
 export default Login;

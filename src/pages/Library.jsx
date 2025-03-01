@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../supabase';
 import { Link, useNavigate } from 'react-router-dom';
+import AdBanner from '../components/AdBanner';
 import '../styles.css';
 
 function Library() {
@@ -142,16 +143,7 @@ function Library() {
 
   return (
     <div className="library-container">
-      <aside className="ad-space">
-        <div className="ad-sample">
-          <span className="ad-text">Place your Ad here. Advertise on ChoirCenter.com</span>
-          <svg className="ad-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-            <path fill="#3cb371" d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 18a8 8 0 110-16 8 8 0 010 16z"/>
-            <path fill="#fff" d="M12 6l4 6h-8l4-6zm0 6v6h-2v-6h2z"/>
-          </svg>
-          <a href="mailto:admin@choircenter.com" className="ad-link">Contact Us</a>
-        </div>
-      </aside>
+      <AdBanner position="other_pages_below_header" />
       <h1 className="library-title animate-text">Song Library</h1>
       <p className="library-description">Explore our extensive collection of free choir sheet music, available for download and sharing. Sort and search to find the perfect pieces for your choir.</p>
       <form onSubmit={handleFilterSubmit} className="filter-bar">

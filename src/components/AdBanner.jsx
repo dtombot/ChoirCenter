@@ -17,15 +17,15 @@ function AdBanner({ position }) {
           .select('code')
           .eq('position', position)
           .eq('is_active', true)
-          .single();
+          .limit(1); // Ensure only one row is returned
 
         console.log(`Fetching ad for position: ${position}`, { data, error });
 
         if (error) {
           setError('Failed to fetch ad: ' + error.message);
           setAdHtml(null);
-        } else if (data && data.code) {
-          setAdHtml(data.code);
+        } else if (data && data.length > 0 && data[0].code) {
+          setAdHtml(data[0].code); // Use the first result
         } else {
           setError('No active ad found for this position');
           setAdHtml(null);

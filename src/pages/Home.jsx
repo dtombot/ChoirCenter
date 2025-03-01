@@ -191,7 +191,9 @@ function Home() {
           </div>
         </div>
       </section>
-      <AdBanner position="home_above_sotw" />
+      <section className="ad-section">
+        <AdBanner position="home_above_sotw" />
+      </section>
       <section className="song-of-the-week">
         <h2 className="section-title animate-text">Song of the Week</h2>
         {songOfTheWeek ? (

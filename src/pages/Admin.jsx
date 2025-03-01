@@ -11,7 +11,7 @@ function Admin() {
   const [songs, setSongs] = useState([]);
   const [posts, setPosts] = useState([]);
   const [users, setUsers] = useState([]);
-  const [ads, setAds] = useState([]); // New state for ads
+  const [ads, setAds] = useState([]);
   const [songForm, setSongForm] = useState({ 
     title: '', 
     composer: '', 
@@ -30,10 +30,10 @@ function Admin() {
     category: '', 
     focus_keyword: '' 
   });
-  const [adForm, setAdForm] = useState({ // New state for ad form
+  const [adForm, setAdForm] = useState({
     name: '',
     code: '',
-    position: 'home_above_sotw', // Default position
+    position: 'home_above_sotw',
     is_active: true
   });
   const [analyticsData, setAnalyticsData] = useState({ ga: null, gsc: null });
@@ -42,7 +42,7 @@ function Admin() {
   const [songOfTheWeekHtml, setSongOfTheWeekHtml] = useState('');
   const [editingSongId, setEditingSongId] = useState(null);
   const [editingPostId, setEditingPostId] = useState(null);
-  const [editingAdId, setEditingAdId] = useState(null); // New state for editing ad
+  const [editingAdId, setEditingAdId] = useState(null);
   const [error, setError] = useState(null);
   const [songSearch, setSongSearch] = useState('');
   const [songFilter, setSongFilter] = useState('all');
@@ -88,7 +88,7 @@ function Admin() {
       };
       fetchUsers();
 
-      const fetchAds = async () => { // New fetch for ads
+      const fetchAds = async () => {
         const { data, error } = await supabase.from('advertisements').select('*');
         if (error) setError('Failed to load ads: ' + error.message);
         else setAds(data || []);
@@ -228,7 +228,7 @@ function Admin() {
     }
   };
 
-  const handleAdSubmit = async (e) => { // New function for ad submission
+  const handleAdSubmit = async (e) => {
     e.preventDefault();
     try {
       if (editingAdId) {
@@ -316,7 +316,7 @@ function Admin() {
     setEditingPostId(post.id);
   };
 
-  const editAd = (ad) => { // New function to edit ad
+  const editAd = (ad) => {
     setAdForm({ 
       name: ad.name, 
       code: ad.code, 
@@ -342,7 +342,7 @@ function Admin() {
     }
   };
 
-  const deleteAd = async (id) => { // New function to delete ad
+  const deleteAd = async (id) => {
     if (window.confirm('Are you sure you want to delete this advertisement?')) {
       const { error } = await supabase.from('advertisements').delete().eq('id', id);
       if (error) setError('Failed to delete ad: ' + error.message);
@@ -356,7 +356,7 @@ function Admin() {
     else setSongs(songs.map(song => song.id === id ? { ...song, is_public: !isPublic } : song));
   };
 
-  const toggleAdActive = async (id, isActive) => { // New function to toggle ad status
+  const toggleAdActive = async (id, isActive) => {
     const { error } = await supabase.from('advertisements').update({ is_active: !isActive }).eq('id', id);
     if (error) setError('Failed to update ad status: ' + error.message);
     else setAds(ads.map(ad => ad.id === id ? { ...ad, is_active: !isActive } : ad));
@@ -898,6 +898,7 @@ function Admin() {
                   >
                     <option value="home_above_sotw">Home - Above Song of the Week</option>
                     <option value="other_pages_below_header">Other Pages - Below Header</option>
+                    <option value="song_page_below_header">Song Pages - Below Header</option>
                   </select>
                 </div>
                 <label className="admin-checkbox">
@@ -936,7 +937,7 @@ function Admin() {
                   {ads.map(ad => (
                     <tr key={ad.id}>
                       <td>{ad.name}</td>
-                      <td>{ad.position === 'home_above_sotw' ? 'Home - Above SOTW' : 'Other Pages - Below Header'}</td>
+                      <td>{ad.position === 'home_above_sotw' ? 'Home - Above SOTW' : ad.position === 'other_pages_below_header' ? 'Other Pages - Below Header' : 'Song Pages - Below Header'}</td>
                       <td>
                         <button
                           onClick={() => toggleAdActive(ad.id, ad.is_active)}

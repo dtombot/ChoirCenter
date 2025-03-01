@@ -30,7 +30,9 @@ function Blog() {
 
   return (
     <div className="blog-container">
-      <AdBanner position="other_pages_below_header" />
+      <section className="ad-section">
+        <AdBanner position="other_pages_below_header" />
+      </section>
       <h1 className="blog-title animate-text">Blog</h1>
       {error ? (
         <div className="error-card">

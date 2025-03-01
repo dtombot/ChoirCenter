@@ -87,29 +87,17 @@ function Admin() {
       fetchPosts();
 
       const fetchUsers = async () => {
-        const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
-        if (authError) {
-          setError('Failed to load users: ' + authError.message);
-          return;
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+          const response = await fetch('/.netlify/functions/fetch-users', { signal: controller.signal });
+          clearTimeout(timeoutId);
+          if (!response.ok) throw new Error('Failed to fetch users');
+          const users = await response.json();
+          setUsers(users || []);
+        } catch (err) {
+          setError('Failed to load users: ' + (err.name === 'AbortError' ? 'Request timed out' : err.message));
         }
-
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('id, email, is_admin');
-
-        if (profileError) {
-          console.error('Profile fetch error:', profileError.message);
-        }
-
-        const usersWithProfiles = authUsers.users.map(authUser => {
-          const profile = profileData?.find(p => p.id === authUser.id) || {};
-          return {
-            id: authUser.id,
-            email: authUser.email,
-            is_admin: profile.is_admin || false,
-          };
-        });
-        setUsers(usersWithProfiles || []);
       };
       fetchUsers();
 
@@ -400,17 +388,7 @@ function Admin() {
         const { error } = await supabase.from('admins').insert([{ user_id: id }]);
         if (error) throw error;
       }
-      const { data: authUsers } = await supabase.auth.admin.listUsers();
-      const { data: profileData } = await supabase.from('profiles').select('id, email, is_admin');
-      const usersWithProfiles = authUsers.users.map(authUser => {
-        const profile = profileData?.find(p => p.id === authUser.id) || {};
-        return {
-          id: authUser.id,
-          email: authUser.email,
-          is_admin: profile.is_admin || false,
-        };
-      });
-      setUsers(usersWithProfiles || []);
+      fetchUsers(); // Refresh user list
     } catch (err) {
       setError('Failed to update user status: ' + err.message);
     }

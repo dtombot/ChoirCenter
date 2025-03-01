@@ -29,7 +29,7 @@ function Admin() {
     tags: '', 
     category: '', 
     focus_keyword: '',
-    featured_image_url: '' // Added featured_image_url field
+    featured_image_url: ''
   });
   const [adForm, setAdForm] = useState({
     name: '',
@@ -80,13 +80,11 @@ function Admin() {
       };
       fetchSongs();
 
-const fetchPosts = async () => {
-  const { data, error } = await supabase
-    .from('blog_posts')
-    .select('title, content, permalink, meta_description, tags, category, focus_keyword, featured_image_url, views');
-  if (error) setError('Failed to load posts: ' + error.message);
-  else setPosts(data || []);
-};
+      const fetchPosts = async () => {
+        const { data, error } = await supabase.from('blog_posts').select('*');
+        if (error) setError('Failed to load posts: ' + error.message);
+        else setPosts(data || []);
+      };
       fetchPosts();
 
       const fetchUsers = async () => {
@@ -220,7 +218,7 @@ const fetchPosts = async () => {
         tags: postForm.tags || null,
         category: postForm.category || null,
         focus_keyword: postForm.focus_keyword || null,
-        featured_image_url: postForm.featured_image_url || null, // Added featured_image_url to post data
+        featured_image_url: postForm.featured_image_url || null,
         views: 0
       };
 
@@ -329,7 +327,7 @@ const fetchPosts = async () => {
       tags: post.tags || '', 
       category: post.category || '', 
       focus_keyword: post.focus_keyword || '',
-      featured_image_url: post.featured_image_url || '' // Added featured_image_url to edit
+      featured_image_url: post.featured_image_url || ''
     });
     setEditingPostId(post.id);
   };

@@ -55,6 +55,13 @@ function SignupDonate() {
   if (paymentSuccess && userId) {
     const updateProfile = async () => {
       try {
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError || !sessionData.session) {
+          setError('Session missing after payment. Please log in again.');
+          navigate('/login');
+          return;
+        }
+
         const { error } = await supabase
           .from('profiles')
           .upsert({ id: userId, has_donated: true, updated_at: new Date().toISOString() });

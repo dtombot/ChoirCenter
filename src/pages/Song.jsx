@@ -113,6 +113,8 @@ function Song() {
   };
 
   const handleShare = () => {
+    if (!song) return;
+
     const shareUrl = `${window.location.origin}/song/${song.permalink || song.id}`;
     const shareText = `Check out "${song.title}" on Choir Center!`;
     
@@ -132,8 +134,6 @@ function Song() {
   const onDocumentLoadSuccess = ({ numPages }) => {
     setNumPages(numPages);
   };
-
-  const pdfUrl = `/.netlify/functions/proxy-pdf?fileId=${song.google_drive_file_id}`;
 
   return (
     <>
@@ -156,7 +156,7 @@ function Song() {
               <p className="song-downloads-modern">Downloaded {song.downloads || 0} times</p>
               <div className="song-preview-modern">
                 <Document
-                  file={pdfUrl}
+                  file={`/.netlify/functions/proxy-pdf?fileId=${song.google_drive_file_id}`}
                   onLoadSuccess={onDocumentLoadSuccess}
                   onLoadError={(err) => setError('Failed to load PDF preview: ' + err.message)}
                 >

@@ -56,9 +56,18 @@ function App() {
 
   useEffect(() => {
     const fetchUserAndProfile = async () => {
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !sessionData.session) {
+        setUser(null);
+        setIsAdmin(false);
+        return;
+      }
+
       const { data: authData, error: authError } = await supabase.auth.getUser();
       if (authError) {
         console.error('Auth error:', authError);
+        setUser(null);
+        setIsAdmin(false);
         return;
       }
       const currentUser = authData.user;

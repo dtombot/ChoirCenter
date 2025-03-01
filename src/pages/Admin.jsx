@@ -80,11 +80,13 @@ function Admin() {
       };
       fetchSongs();
 
-      const fetchPosts = async () => {
-        const { data, error } = await supabase.from('blog_posts').select('*');
-        if (error) setError('Failed to load posts: ' + error.message);
-        else setPosts(data || []);
-      };
+const fetchPosts = async () => {
+  const { data, error } = await supabase
+    .from('blog_posts')
+    .select('title, content, permalink, meta_description, tags, category, focus_keyword, featured_image_url, views');
+  if (error) setError('Failed to load posts: ' + error.message);
+  else setPosts(data || []);
+};
       fetchPosts();
 
       const fetchUsers = async () => {

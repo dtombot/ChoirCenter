@@ -84,6 +84,9 @@ function Signup() {
       return;
     }
 
+    // Add a slight delay to ensure token is set
+    await new Promise(resolve => setTimeout(resolve, 100));
+
     if (!recaptchaTokenRef.current) {
       setError('Please complete the reCAPTCHA.');
       setLoading(false);

@@ -131,7 +131,7 @@ function Song() {
 
   if (error) {
     return (
-      <div className="song-container">
+      <>
         <aside className="ad-space">
           <div className="ad-sample">
             <span className="ad-text">Place your Ad here. Advertise on ChoirCenter.com</span>
@@ -142,15 +142,17 @@ function Song() {
             <a href="mailto:admin@choircenter.com" className="ad-link">Contact Us</a>
           </div>
         </aside>
-        <p className="error-message">{error}</p>
-        <Link to="/library" className="action-button">Back to Library</Link>
-      </div>
+        <div className="song-container">
+          <p className="error-message">{error}</p>
+          <Link to="/library" className="action-button">Back to Library</Link>
+        </div>
+      </>
     );
   }
 
   if (!song) {
     return (
-      <div className="song-container">
+      <>
         <aside className="ad-space">
           <div className="ad-sample">
             <span className="ad-text">Place your Ad here. Advertise on ChoirCenter.com</span>
@@ -161,15 +163,17 @@ function Song() {
             <a href="mailto:admin@choircenter.com" className="ad-link">Contact Us</a>
           </div>
         </aside>
-        <div>Loading...</div>
-      </div>
+        <div className="song-container">
+          <div>Loading...</div>
+        </div>
+      </>
     );
   }
 
   const pdfUrl = `/.netlify/functions/proxy-pdf?fileId=${song.google_drive_file_id}`;
 
   return (
-    <div className="song-container">
+    <>
       <aside className="ad-space">
         <div className="ad-sample">
           <span className="ad-text">Place your Ad here. Advertise on ChoirCenter.com</span>
@@ -180,48 +184,50 @@ function Song() {
           <a href="mailto:admin@choircenter.com" className="ad-link">Contact Us</a>
         </div>
       </aside>
-      <div className="song-card-modern">
-        <h1 className="song-title-modern">{song.title}</h1>
-        <p className="song-composer-modern">{song.composer || 'Unknown Composer'}</p>
-        <p className="song-downloads-modern">Downloaded {song.downloads || 0} times</p>
-        <div className="song-preview-modern">
-          <Document
-            file={pdfUrl}
-            onLoadSuccess={onDocumentLoadSuccess}
-            onLoadError={(err) => setError('Failed to load PDF preview: ' + err.message)}
-          >
-            <Page pageNumber={1} scale={scale} />
-          </Document>
-          {numPages > 1 && (
-            <p className="preview-note-modern">Previewing page 1 of {numPages}. Download to view the full song.</p>
-          )}
-        </div>
-        <div className="song-actions-modern">
-          <button onClick={handleDownload} className="download-button-modern">Download</button>
-          <button onClick={handleShare} className="share-button-modern">Share</button>
-          <Link to="/library" className="back-button-modern">Back to Library</Link>
-        </div>
-      </div>
-      {downloadPrompt && (
-        <div className="modal-overlay">
-          <div className="modal-content download-modal">
-            <h3 className="modal-title">Download Limit Reached</h3>
-            <p className="modal-text">
-              Want to keep downloading?{' '}
-              <button className="meatpie-button">
-                <Link to="/signup-donate" className="modal-link">Buy us a Meat Pie ☕</Link>
-              </button>{' '}
-              to help sustain the site and enjoy unlimited access, or{' '}
-              <button className="signup-button">
-                <Link to="/signup" className="modal-link">Just Sign up</Link>
-              </button>{' '}
-              for additional downloads. Every little bit helps keep the site running! 🤗
-            </p>
-            <button onClick={() => setDownloadPrompt(null)} className="cancel-button">Close</button>
+      <div className="song-container">
+        <div className="song-card-modern">
+          <h1 className="song-title-modern">{song.title}</h1>
+          <p className="song-composer-modern">{song.composer || 'Unknown Composer'}</p>
+          <p className="song-downloads-modern">Downloaded {song.downloads || 0} times</p>
+          <div className="song-preview-modern">
+            <Document
+              file={pdfUrl}
+              onLoadSuccess={onDocumentLoadSuccess}
+              onLoadError={(err) => setError('Failed to load PDF preview: ' + err.message)}
+            >
+              <Page pageNumber={1} scale={scale} />
+            </Document>
+            {numPages > 1 && (
+              <p className="preview-note-modern">Previewing page 1 of {numPages}. Download to view the full song.</p>
+            )}
+          </div>
+          <div className="song-actions-modern">
+            <button onClick={handleDownload} className="download-button-modern">Download</button>
+            <button onClick={handleShare} className="share-button-modern">Share</button>
+            <Link to="/library" className="back-button-modern">Back to Library</Link>
           </div>
         </div>
-      )}
-    </div>
+        {downloadPrompt && (
+          <div className="modal-overlay">
+            <div className="modal-content download-modal">
+              <h3 className="modal-title">Download Limit Reached</h3>
+              <p className="modal-text">
+                Want to keep downloading?{' '}
+                <button className="meatpie-button">
+                  <Link to="/signup-donate" className="modal-link">Buy us a Meat Pie ☕</Link>
+                </button>{' '}
+                to help sustain the site and enjoy unlimited access, or{' '}
+                <button className="signup-button">
+                  <Link to="/signup" className="modal-link">Just Sign up</Link>
+                </button>{' '}
+                for additional downloads. Every little bit helps keep the site running! 🤗
+              </p>
+              <button onClick={() => setDownloadPrompt(null)} className="cancel-button">Close</button>
+            </div>
+          </div>
+        )}
+      </div>
+    </>
   );
 }
 

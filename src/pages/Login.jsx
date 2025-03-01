@@ -113,7 +113,7 @@ function Login() {
           </div>
           <div
             className="g-recaptcha"
-            data-sitekey="YOUR_RECAPTCHA_SITE_KEY"
+            data-sitekey="6Le-B-YqAAAAAPDlPSrl2BLhd4TdUoPuwee2TO8s"
             data-callback="handleRecaptcha"
           ></div>
           <button type="submit" className="auth-button" disabled={loading}>

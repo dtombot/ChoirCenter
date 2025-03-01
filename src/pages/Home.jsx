@@ -215,7 +215,7 @@ function Home() {
               >
                 <div className="song-card-content">
                   <h3 className="song-card-title-modern">{song.title}</h3>
-                  <p className="song-card-composer-modern">{song.composer || 'Unknown Composer'}</p>
+                  <p className="song-card-composer-modern">{song.composer}</p>
                   <p className="song-card-downloads-modern">Downloaded {song.downloads || 0} times</p>
                 </div>
                 <div className="song-card-actions-modern">
@@ -244,13 +244,13 @@ function Home() {
         <h2 className="section-title animate-text">Latest Insights</h2>
         <div className="blog-list">
           {posts.length > 0 ? (
-            posts.map(post => (
+            posts.map((post, index) => (
               <Link
                 key={post.id}
                 to={`/blog/${post.permalink || `post-${post.id}`}`}
-                className="blog-item animate-card"
+                className={`blog-card-modern ${index % 2 === 0 ? 'variant-1' : 'variant-2'}`}
               >
-                <h3 className="blog-title small-text">{post.title}</h3>
+                <h3 className="blog-card-title-modern">{post.title}</h3>
               </Link>
             ))
           ) : (

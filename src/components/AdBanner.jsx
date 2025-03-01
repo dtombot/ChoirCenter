@@ -5,33 +5,31 @@ import '../styles.css';
 function AdBanner({ position }) {
   const [adHtml, setAdHtml] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchAd = async () => {
       setLoading(true);
-      setError(null);
       try {
         const { data, error } = await supabase
           .from('advertisements')
           .select('code')
           .eq('position', position)
           .eq('is_active', true)
-          .limit(1); // Ensure only one row is returned
+          .limit(1);
 
-        console.log(`Fetching ad for position: ${position}`, { data, error });
+        console.log(`Ad fetch for ${position}:`, { data, error });
 
         if (error) {
-          setError('Failed to fetch ad: ' + error.message);
+          console.error('Ad fetch error:', error.message);
           setAdHtml(null);
         } else if (data && data.length > 0 && data[0].code) {
-          setAdHtml(data[0].code); // Use the first result
+          setAdHtml(data[0].code);
         } else {
-          setError('No active ad found for this position');
+          console.log(`No active ad for position: ${position}`);
           setAdHtml(null);
         }
       } catch (err) {
-        setError('Unexpected error: ' + err.message);
+        console.error('Unexpected ad fetch error:', err.message);
         setAdHtml(null);
       } finally {
         setLoading(false);
@@ -42,17 +40,11 @@ function AdBanner({ position }) {
   }, [position]);
 
   if (loading) {
-    return <div className={`ad-banner ad-${position}`}>Loading ad...</div>;
-  }
-
-  if (error) {
-    console.warn(error);
-    return <div className={`ad-banner ad-${position}`}>Ad unavailable: {error}</div>;
+    return null; // Don’t show anything while loading
   }
 
   if (!adHtml) {
-    console.log(`No ad HTML for position: ${position}`);
-    return <div className={`ad-banner ad-${position}`}>No ad configured</div>;
+    return null; // Silently skip rendering if no ad
   }
 
   return (

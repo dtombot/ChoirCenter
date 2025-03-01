@@ -73,15 +73,18 @@ function Signup() {
     }
 
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
       });
 
       if (error) throw error;
 
-      setSuccess(true);
-      setTimeout(() => navigate('/'), 2000);
+      // Ensure session is set (though signUp typically doesn’t set a session until email confirmation)
+      if (data.user) {
+        setSuccess(true);
+        setTimeout(() => navigate('/login'), 2000); // Redirect to login instead of home
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -96,7 +99,7 @@ function Signup() {
         <h2 className="auth-title">Sign Up</h2>
         <p className="auth-subtitle">Join Choir Center today!</p>
         {success ? (
-          <p className="success-message">Signup successful! Check your email for confirmation and welcome messages. Redirecting...</p>
+          <p className="success-message">Signup successful! Check your email for confirmation. Redirecting to login...</p>
         ) : (
           <form onSubmit={handleSignup} className="auth-form">
             <div className="form-group">

@@ -69,11 +69,17 @@ function BlogPost() {
     };
 
     const fetchUser = async () => {
-      const { data: { user }, error } = await supabase.auth.getUser();
-      if (error) {
-        console.error('Fetch user error:', error.message);
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !sessionData.session) {
+        setUser(null);
+        return;
+      }
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError) {
+        console.error('Fetch user error:', userError.message);
+        setUser(null);
       } else {
-        setUser(user);
+        setUser(userData.user);
       }
     };
 

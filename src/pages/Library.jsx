@@ -54,7 +54,6 @@ function Library() {
         }
         localStorage.setItem(downloadKey, downloadCount + 1);
       } else {
-        // Check if user has donated
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('has_donated')
@@ -66,7 +65,7 @@ function Library() {
           const today = new Date().toDateString();
           const downloadKey = `downloads_${today}`;
           const downloadCount = parseInt(localStorage.getItem(downloadKey) || '0', 10);
-          if (downloadCount >= 5) { // Higher limit for signed-up users
+          if (downloadCount >= 5) {
             setDownloadPrompt('Download Limit Reached.\nWant to keep downloading? Buy us a Meat Pie☕ to help sustain the site and enjoy unlimited access. Every little bit helps keep the site running! 🤗');
             return;
           }
@@ -124,7 +123,6 @@ function Library() {
     (song.composer && song.composer.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  // Pagination logic
   const totalItems = filteredSongs.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -139,11 +137,21 @@ function Library() {
 
   const handleItemsPerPageChange = (e) => {
     setItemsPerPage(parseInt(e.target.value));
-    setCurrentPage(1); // Reset to first page when changing items per page
+    setCurrentPage(1);
   };
 
   return (
     <div className="library-container">
+      <aside className="ad-space">
+        <div className="ad-sample">
+          <span className="ad-text">Place your Ad here. Advertise on ChoirCenter.com</span>
+          <svg className="ad-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path fill="#3cb371" d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 18a8 8 0 110-16 8 8 0 010 16z"/>
+            <path fill="#fff" d="M12 6l4 6h-8l4-6zm0 6v6h-2v-6h2z"/>
+          </svg>
+          <a href="mailto:admin@choircenter.com" className="ad-link">Contact Us</a>
+        </div>
+      </aside>
       <h1 className="library-title animate-text">Song Library</h1>
       <p className="library-description">Explore our extensive collection of free choir sheet music, available for download and sharing. Sort and search to find the perfect pieces for your choir.</p>
       <form onSubmit={handleFilterSubmit} className="filter-bar">

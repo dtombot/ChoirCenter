@@ -64,12 +64,16 @@ function Login() {
     }
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
       if (error) throw error;
-      navigate('/');
+
+      // Ensure session is set
+      if (data.session) {
+        navigate('/');
+      }
     } catch (err) {
       setError(err.message);
     } finally {

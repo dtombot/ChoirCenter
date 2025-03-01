@@ -1593,12 +1593,12 @@ body {
 }
 
 .analytics-section.local-data {
-  background: #ebedef;
+  background: #ebedef; /* Stronger gray */
   border: 1px solid #d1d5db;
 }
 
 .analytics-section.google-data {
-  background: #d1fae5;
+  background: #d1fae5; /* Stronger green */
   border: 1px solid #34d399;
 }
 
@@ -1940,20 +1940,22 @@ body {
 
 /* Song of the Week */
 .song-of-the-week {
-  padding: 2rem 0;
+  padding: 1rem 0; /* Reduced padding for slimness */
   text-align: center;
   background: #fff;
+  width: 100vw; /* Full viewport width */
+  margin-left: calc(-50vw + 50%); /* Center it site-wide */
 }
 
 .audio-player {
-  max-width: 100%;
+  width: 100%;
   margin: 0 auto;
 }
 
 .audio-player iframe {
-  width: 100%;
-  max-width: 600px;
-  height: 380px;
+  width: 100%; /* Full width */
+  max-width: none; /* Remove max-width constraint */
+  height: 152px; /* Slim height (Spotify mini-player height) */
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
@@ -2139,7 +2141,7 @@ body {
   }
 
   .audio-player iframe {
-    height: 300px;
+    height: 152px; /* Consistent slim height */
   }
 }
 
@@ -2298,7 +2300,7 @@ body {
   }
 
   .audio-player iframe {
-    height: 200px;
+    height: 152px; /* Consistent slim height */
   }
 }
 
@@ -2601,7 +2603,7 @@ body {
 }
 
 .ad-sample {
-  width: 728px;
+  width: 728px; /* Standard leaderboard size for AdSense */
   height: 90px;
   background: linear-gradient(135deg, #3cb371, #2f9e5e);
   border-radius: 8px;

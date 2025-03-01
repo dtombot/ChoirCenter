@@ -35,12 +35,11 @@ function CookieConsent({ onAccept }) {
   if (!isVisible) return null;
 
   return (
-    <div className="cookie-consent-overlay">
-      <div className="cookie-consent">
-        <h3 className="cookie-title">We Use Cookies</h3>
-        <p className="cookie-text">
-          Choir Center uses cookies to enhance your experience and analyze usage. See our <Link to="/privacy" className="cookie-link">Privacy Policy</Link>.
-        </p>
+    <div className="cookie-consent-bar">
+      <div className="cookie-content">
+        <span className="cookie-text">
+          We use cookies to enhance your experience. See our <Link to="/privacy" className="cookie-link">Privacy Policy</Link>.
+        </span>
         <div className="cookie-actions">
           <button className="cookie-accept" onClick={handleAccept}>Accept</button>
           <Link to="/privacy" className="cookie-learn-more">Learn More</Link>

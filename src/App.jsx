@@ -56,21 +56,15 @@ function App() {
   const [recaptchaLoaded, setRecaptchaLoaded] = useState(false);
 
   useEffect(() => {
-    const loadRecaptcha = () => {
-      if (document.querySelector('script[src="https://www.google.com/recaptcha/api.js"]')) {
+    // Check if reCAPTCHA script is loaded
+    const checkRecaptcha = () => {
+      if (window.grecaptcha) {
         setRecaptchaLoaded(true);
-        return;
+      } else {
+        setTimeout(checkRecaptcha, 100); // Poll every 100ms until loaded
       }
-      const script = document.createElement('script');
-      script.src = 'https://www.google.com/recaptcha/api.js';
-      script.async = true;
-      script.defer = true;
-      script.onload = () => setRecaptchaLoaded(true);
-      script.onerror = () => console.error('Failed to load reCAPTCHA script');
-      document.body.appendChild(script);
     };
-
-    loadRecaptcha();
+    checkRecaptcha();
 
     const fetchUserAndProfile = async () => {
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();

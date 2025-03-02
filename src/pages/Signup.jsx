@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../supabase';
 import { Link, useNavigate } from 'react-router-dom';
 import '../styles.css';
@@ -10,6 +10,18 @@ function Signup({ recaptchaLoaded }) {
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const recaptchaRef = useRef(null);
+  const [recaptchaId, setRecaptchaId] = useState(null);
+
+  useEffect(() => {
+    if (recaptchaLoaded && window.grecaptcha && recaptchaRef.current && !recaptchaId) {
+      const id = window.grecaptcha.render(recaptchaRef.current, {
+        sitekey: '6LczEuYqAAAAANYh6VG8jSj1Fmt6LKMK7Ee1OcfU',
+        callback: (token) => console.log('reCAPTCHA token received:', token),
+      });
+      setRecaptchaId(id);
+    }
+  }, [recaptchaLoaded]);
 
   const verifyRecaptcha = async (token) => {
     try {
@@ -45,7 +57,7 @@ function Signup({ recaptchaLoaded }) {
       return;
     }
 
-    const token = window.grecaptcha.getResponse();
+    const token = window.grecaptcha.getResponse(recaptchaId);
     console.log('Token retrieved on submit:', token);
 
     if (!token || token === '') {
@@ -60,7 +72,7 @@ function Signup({ recaptchaLoaded }) {
       console.log('reCAPTCHA verification failed');
       setError('reCAPTCHA verification failed. Please try again.');
       setLoading(false);
-      if (window.grecaptcha) window.grecaptcha.reset();
+      if (window.grecaptcha) window.grecaptcha.reset(recaptchaId);
       return;
     }
 
@@ -91,7 +103,7 @@ function Signup({ recaptchaLoaded }) {
       setError(err.message);
     } finally {
       setLoading(false);
-      if (window.grecaptcha) window.grecaptcha.reset();
+      if (window.grecaptcha) window.grecaptcha.reset(recaptchaId);
     }
   };
 
@@ -127,13 +139,8 @@ function Signup({ recaptchaLoaded }) {
               />
             </div>
             <input type="text" name="honeypot" className="honeypot" />
-            {recaptchaLoaded && (
-              <div
-                className="g-recaptcha"
-                data-sitekey="6LczEuYqAAAAANYh6VG8jSj1Fmt6LKMK7Ee1OcfU"
-                data-callback={(token) => console.log('reCAPTCHA token received:', token)}
-              ></div>
-            )}
+            <div ref={recaptchaRef} className="g-recaptcha"></div>
+            {recaptchaLoaded ? null : <p>Loading reCAPTCHA...</p>}
             <button type="submit" className="auth-button" disabled={loading || !recaptchaLoaded}>
               {loading ? 'Signing Up...' : 'Sign Up'}
             </button>

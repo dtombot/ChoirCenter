@@ -126,21 +126,15 @@ function Home() {
         }
       }
 
-      // Fetch song by permalink to get UUID and current downloads
-      const { data: songData, error: fetchError } = await supabase
-        .from('songs')
-        .select('id, downloads')
-        .eq('permalink', songId)
-        .single();
-      if (fetchError || !songData) throw new Error('Song not found or fetch error: ' + (fetchError?.message || 'No data'));
-
-      const songUuid = songData.id;
-      const currentDownloads = songData.downloads || 0;
+      // Find the song in local state by UUID (songId is the id here)
+      const currentSong = songs.find(s => s.id === songId);
+      if (!currentSong) throw new Error('Song not found in local state');
+      const currentDownloads = currentSong.downloads || 0;
 
       // Optimistically update the local state
       setSongs(prevSongs =>
         prevSongs.map(song =>
-          song.permalink === songId ? { ...song, downloads: currentDownloads + 1 } : song
+          song.id === songId ? { ...song, downloads: currentDownloads + 1 } : song
         )
       );
 
@@ -150,11 +144,11 @@ function Home() {
       link.download = `choircenter.com-${songId}.pdf`;
       link.click();
 
-      // Update server using the UUID
+      // Update server using the UUID (songId)
       const { data: updatedSong, error: updateError } = await supabase
         .from('songs')
         .update({ downloads: currentDownloads + 1 })
-        .eq('id', songUuid)
+        .eq('id', songId)
         .select('downloads')
         .single();
       if (updateError) throw updateError;
@@ -163,7 +157,7 @@ function Home() {
       // Update local state with server-confirmed value
       setSongs(prevSongs =>
         prevSongs.map(song =>
-          song.permalink === songId ? { ...song, downloads: updatedSong.downloads } : song
+          song.id === songId ? { ...song, downloads: updatedSong.downloads } : song
         )
       );
     } catch (err) {
@@ -253,7 +247,7 @@ function Home() {
                 <div className="song-card-actions-modern">
                   <button
                     className="download-button-modern"
-                    onClick={(e) => { e.stopPropagation(); handleDownload(song.permalink || song.id, song.google_drive_file_id); }}
+                    onClick={(e) => { e.stopPropagation(); handleDownload(song.id, song.google_drive_file_id); }}
                   >
                     Download
                   </button>

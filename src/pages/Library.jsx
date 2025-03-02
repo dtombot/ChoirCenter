@@ -85,10 +85,14 @@ function Library() {
         }
       }
 
+      // Get the current download count for the song
+      const currentSong = songs.find(s => s.id === songId);
+      const currentDownloads = currentSong?.downloads || 0;
+
       // Optimistically update the local state
       setSongs(prevSongs =>
         prevSongs.map(song =>
-          song.id === songId ? { ...song, downloads: (song.downloads || 0) + 1 } : song
+          song.id === songId ? { ...song, downloads: currentDownloads + 1 } : song
         )
       );
 
@@ -98,12 +102,11 @@ function Library() {
       link.download = `choircenter.com-${songId}.pdf`;
       link.click();
 
-      // Update server and confirm
-      const { error: updateError } = await supabase
-        .from('songs')
-        .update({ downloads: (songs.find(s => s.id === songId)?.downloads || 0) + 1 })
-        .eq('id', songId);
+      // Update server with an increment operation
+      const { data: updateData, error: updateError } = await supabase
+        .rpc('increment_downloads', { song_id: songId });
       if (updateError) throw updateError;
+      console.log('Server update response:', updateData);
 
       // Fetch updated data to ensure consistency
       const { data: updatedSongs, error: fetchError } = await supabase
@@ -111,10 +114,11 @@ function Library() {
         .select('id, title, composer, google_drive_file_id, permalink, is_public, downloads')
         .order(sortBy, { ascending: sortOrder === 'asc' });
       if (fetchError) throw fetchError;
+      console.log('Updated songs from server:', JSON.stringify(updatedSongs, null, 2));
       setSongs(updatedSongs || []);
     } catch (err) {
       console.error('Download error:', err.message);
-      setError('Failed to update download count or check profile.');
+      setError('Failed to update download count: ' + err.message);
       // Revert optimistic update on failure
       setSongs(prevSongs => prevSongs);
     }

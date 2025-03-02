@@ -83,12 +83,13 @@ function Home() {
 
   const handleDownload = async (songId, fileId) => {
     try {
-      console.log('handleDownload called with songId:', songId, 'fileId:', fileId);
+      console.log('Starting handleDownload with songId:', songId, 'fileId:', fileId);
 
       // Check download limits
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       if (sessionError) throw sessionError;
       const isAuthenticated = !!sessionData?.session;
+      console.log('User authenticated:', isAuthenticated);
 
       const now = new Date();
       const year = now.getFullYear();
@@ -104,6 +105,8 @@ function Home() {
       }
 
       const downloadCount = parseInt(localStorage.getItem(downloadKey) || '0', 10);
+      console.log('Current download count:', downloadCount);
+
       if (!isAuthenticated && downloadCount >= 3) {
         setDownloadPrompt('Download Limit Reached.\nYou’ve used your 3 free monthly downloads. Sign up for 6 monthly downloads or Buy us a Meat Pie ☕ for unlimited access! Every bit helps keep the site running! 🤗');
         return;
@@ -117,6 +120,7 @@ function Home() {
           .eq('id', userData.user.id)
           .single();
         if (profileError) throw profileError;
+        console.log('User profile:', JSON.stringify(profileData, null, 2));
 
         if (!profileData?.has_donated && downloadCount >= 6) {
           setDownloadPrompt('Download Limit Reached.\nYou’ve used your 6 free monthly downloads. Buy us a Meat Pie ☕ for unlimited access this month! Every bit helps keep the site running! 🤗');
@@ -124,56 +128,62 @@ function Home() {
         }
       }
       localStorage.setItem(downloadKey, downloadCount + 1);
+      console.log('Download count incremented to:', downloadCount + 1);
 
-      // Convert songId to integer (since id is numeric in your table)
+      // Convert songId to integer since id is numeric
       const numericSongId = parseInt(songId, 10);
       if (isNaN(numericSongId)) throw new Error('Invalid song ID: ' + songId);
+      console.log('Converted songId to numeric:', numericSongId);
 
-      // Fetch the song by numeric id to get current downloads
+      // Fetch current song data
       const { data: songData, error: fetchError } = await supabase
         .from('songs')
         .select('id, downloads')
         .eq('id', numericSongId)
         .single();
-      if (fetchError || !songData) throw new Error('Song not found: ' + (fetchError?.message || 'No data'));
+      if (fetchError || !songData) throw new Error('Fetch failed: ' + (fetchError?.message || 'No data'));
       console.log('Fetched song data:', JSON.stringify(songData, null, 2));
 
       const currentDownloads = songData.downloads || 0;
 
-      // Optimistically update local state
+      // Optimistic local update
       setSongs(prevSongs =>
         prevSongs.map(song =>
           song.id === numericSongId ? { ...song, downloads: currentDownloads + 1 } : song
         )
       );
+      console.log('Optimistically updated local state');
 
-      // Trigger the download
+      // Trigger download
       const url = `https://drive.google.com/uc?export=download&id=${fileId}`;
       const link = document.createElement('a');
       link.href = url;
       link.download = `choircenter.com-${songId}.pdf`;
       link.click();
+      console.log('Download triggered');
 
-      // Update the server with numeric id
-      const { data: updatedSong, error: updateError } = await supabase
+      // Update server (simplified like Song.jsx)
+      const { error: updateError } = await supabase
         .from('songs')
         .update({ downloads: currentDownloads + 1 })
-        .eq('id', numericSongId)
-        .select('downloads')
-        .single();
-      if (updateError) throw updateError;
-      console.log('Server updated song:', JSON.stringify(updatedSong, null, 2));
+        .eq('id', numericSongId);
+      if (updateError) {
+        console.error('Update error details:', JSON.stringify(updateError, null, 2));
+        throw updateError;
+      }
+      console.log('Server update successful');
 
-      // Confirm update in local state
+      // Update local state
       setSongs(prevSongs =>
         prevSongs.map(song =>
-          song.id === numericSongId ? { ...song, downloads: updatedSong.downloads } : song
+          song.id === numericSongId ? { ...song, downloads: currentDownloads + 1 } : song
         )
       );
+      console.log('Local state updated with new download count');
     } catch (err) {
       console.error('Download error:', err.message);
       setError('Failed to update download count: ' + err.message);
-      setSongs(prevSongs => prevSongs); // Revert on failure
+      setSongs(prevSongs => prevSongs);
     }
   };
 

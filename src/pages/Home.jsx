@@ -85,7 +85,6 @@ function Home() {
     try {
       console.log('Starting handleDownload with songId:', songId, 'fileId:', fileId);
 
-      // Check download limits
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       if (sessionError) throw sessionError;
       const isAuthenticated = !!sessionData?.session;
@@ -130,31 +129,10 @@ function Home() {
       localStorage.setItem(downloadKey, downloadCount + 1);
       console.log('Download count incremented to:', downloadCount + 1);
 
-      // Convert songId to integer since id is numeric
       const numericSongId = parseInt(songId, 10);
       if (isNaN(numericSongId)) throw new Error('Invalid song ID: ' + songId);
       console.log('Converted songId to numeric:', numericSongId);
 
-      // Fetch current song data
-      const { data: songData, error: fetchError } = await supabase
-        .from('songs')
-        .select('id, downloads')
-        .eq('id', numericSongId)
-        .single();
-      if (fetchError || !songData) throw new Error('Fetch failed: ' + (fetchError?.message || 'No data'));
-      console.log('Fetched song data:', JSON.stringify(songData, null, 2));
-
-      const currentDownloads = songData.downloads || 0;
-
-      // Optimistic local update
-      setSongs(prevSongs =>
-        prevSongs.map(song =>
-          song.id === numericSongId ? { ...song, downloads: currentDownloads + 1 } : song
-        )
-      );
-      console.log('Optimistically updated local state');
-
-      // Trigger download
       const url = `https://drive.google.com/uc?export=download&id=${fileId}`;
       const link = document.createElement('a');
       link.href = url;
@@ -162,28 +140,28 @@ function Home() {
       link.click();
       console.log('Download triggered');
 
-      // Update server (simplified like Song.jsx)
+      const currentDownloads = songs.find(s => s.id === numericSongId)?.downloads || 0;
       const { error: updateError } = await supabase
         .from('songs')
         .update({ downloads: currentDownloads + 1 })
         .eq('id', numericSongId);
       if (updateError) {
-        console.error('Update error details:', JSON.stringify(updateError, null, 2));
+        console.error('Update error:', updateError.message);
         throw updateError;
       }
       console.log('Server update successful');
 
-      // Update local state
-      setSongs(prevSongs =>
-        prevSongs.map(song =>
-          song.id === numericSongId ? { ...song, downloads: currentDownloads + 1 } : song
-        )
-      );
-      console.log('Local state updated with new download count');
+      const { data: updatedSongs, error: fetchError } = await supabase
+        .from('songs')
+        .select('id, title, composer, google_drive_file_id, permalink, is_public, downloads')
+        .order('created_at', { ascending: false })
+        .limit(10);
+      if (fetchError) throw fetchError;
+      console.log('Refetched songs:', JSON.stringify(updatedSongs, null, 2));
+      setSongs(updatedSongs || []);
     } catch (err) {
       console.error('Download error:', err.message);
       setError('Failed to update download count: ' + err.message);
-      setSongs(prevSongs => prevSongs);
     }
   };
 

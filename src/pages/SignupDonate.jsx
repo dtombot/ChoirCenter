@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../supabase';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import '../styles.css';
 
-function SignupDonate() {
+function SignupDonate({ recaptchaLoaded }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
@@ -12,14 +12,66 @@ function SignupDonate() {
   const [userId, setUserId] = useState(null);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const recaptchaRef = useRef(null);
+  const [recaptchaId, setRecaptchaId] = useState(null);
 
   const paymentSuccess = searchParams.get('trxref') && searchParams.get('reference');
+
+  useEffect(() => {
+    if (recaptchaLoaded && window.grecaptcha && recaptchaRef.current && !recaptchaId) {
+      const id = window.grecaptcha.render(recaptchaRef.current, {
+        sitekey: '6LczEuYqAAAAANYh6VG8jSj1Fmt6LKMK7Ee1OcfU',
+        callback: (token) => console.log('reCAPTCHA token received:', token),
+      });
+      setRecaptchaId(id);
+    }
+  }, [recaptchaLoaded]);
+
+  const verifyRecaptcha = async (token) => {
+    try {
+      const response = await fetch('/.netlify/functions/verify-recaptcha', {
+        method: 'POST',
+        body: JSON.stringify({ token }),
+      });
+      const result = await response.json();
+      console.log('reCAPTCHA verification result:', result);
+      return result.success;
+    } catch (err) {
+      console.error('reCAPTCHA verification error:', err);
+      return false;
+    }
+  };
 
   const handleSignup = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
     setSuccess(null);
+
+    if (!recaptchaLoaded || !window.grecaptcha) {
+      setError('reCAPTCHA is not loaded yet. Please wait.');
+      setLoading(false);
+      return;
+    }
+
+    const token = window.grecaptcha.getResponse(recaptchaId);
+    console.log('Token retrieved on submit:', token);
+
+    if (!token || token === '') {
+      console.log('No token received, reCAPTCHA not completed');
+      setError('Please complete the reCAPTCHA.');
+      setLoading(false);
+      return;
+    }
+
+    const isRecaptchaValid = await verifyRecaptcha(token);
+    if (!isRecaptchaValid) {
+      console.log('reCAPTCHA verification failed');
+      setError('reCAPTCHA verification failed. Please try again.');
+      setLoading(false);
+      if (window.grecaptcha) window.grecaptcha.reset(recaptchaId);
+      return;
+    }
 
     try {
       const { data, error } = await supabase.auth.signUp({
@@ -41,6 +93,7 @@ function SignupDonate() {
       setError(err.message);
     } finally {
       setLoading(false);
+      if (window.grecaptcha) window.grecaptcha.reset(recaptchaId);
     }
   };
 
@@ -115,7 +168,9 @@ function SignupDonate() {
                 disabled={loading}
               />
             </div>
-            <button type="submit" className="auth-button" disabled={loading}>
+            <div ref={recaptchaRef} className="g-recaptcha"></div>
+            {recaptchaLoaded ? null : <p>Loading reCAPTCHA...</p>}
+            <button type="submit" className="auth-button" disabled={loading || !recaptchaLoaded}>
               {loading ? 'Processing...' : 'Sign Up and Buy us a Meat Pie'}
             </button>
           </form>

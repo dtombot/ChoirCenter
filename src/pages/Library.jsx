@@ -42,8 +42,13 @@ function Library() {
 
   const handleDownload = async (songId, fileId) => {
     try {
+      console.log('handleDownload called with songId:', songId, 'fileId:', fileId);
+
+      // Check download limits
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      const isAuthenticated = sessionData?.session && !sessionError;
+      if (sessionError) throw sessionError;
+      const isAuthenticated = !!sessionData?.session;
+
       const now = new Date();
       const year = now.getFullYear();
       const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -57,14 +62,11 @@ function Library() {
         localStorage.setItem(lastResetKey, currentMonthStart);
       }
 
-      if (!isAuthenticated) {
-        const downloadCount = parseInt(localStorage.getItem(downloadKey) || '0', 10);
-        if (downloadCount >= 3) {
-          setDownloadPrompt('Download Limit Reached.\nYou’ve used your 3 free monthly downloads. Sign up for 6 monthly downloads or Buy us a Meat Pie ☕ for unlimited access! Every bit helps keep the site running! 🤗');
-          return;
-        }
-        localStorage.setItem(downloadKey, downloadCount + 1);
-      } else {
+      const downloadCount = parseInt(localStorage.getItem(downloadKey) || '0', 10);
+      if (!isAuthenticated && downloadCount >= 3) {
+        setDownloadPrompt('Download Limit Reached.\nYou’ve used your 3 free monthly downloads. Sign up for 6 monthly downloads or Buy us a Meat Pie ☕ for unlimited access! Every bit helps keep the site running! 🤗');
+        return;
+      } else if (isAuthenticated) {
         const { data: userData, error: userError } = await supabase.auth.getUser();
         if (userError) throw userError;
 
@@ -75,35 +77,39 @@ function Library() {
           .single();
         if (profileError) throw profileError;
 
-        if (!profileData?.has_donated) {
-          const downloadCount = parseInt(localStorage.getItem(downloadKey) || '0', 10);
-          if (downloadCount >= 6) {
-            setDownloadPrompt('Download Limit Reached.\nYou’ve used your 6 free monthly downloads. Buy us a Meat Pie ☕ for unlimited access this month! Every bit helps keep the site running! 🤗');
-            return;
-          }
-          localStorage.setItem(downloadKey, downloadCount + 1);
+        if (!profileData?.has_donated && downloadCount >= 6) {
+          setDownloadPrompt('Download Limit Reached.\nYou’ve used your 6 free monthly downloads. Buy us a Meat Pie ☕ for unlimited access this month! Every bit helps keep the site running! 🤗');
+          return;
         }
       }
+      localStorage.setItem(downloadKey, downloadCount + 1);
 
-      // Find the song in local state by UUID (songId is the id here)
-      const currentSong = songs.find(s => s.id === songId);
-      if (!currentSong) throw new Error('Song not found in local state');
-      const currentDownloads = currentSong.downloads || 0;
+      // Fetch the song by UUID to get current downloads
+      const { data: songData, error: fetchError } = await supabase
+        .from('songs')
+        .select('id, downloads')
+        .eq('id', songId)
+        .single();
+      if (fetchError || !songData) throw new Error('Song not found: ' + (fetchError?.message || 'No data'));
+      console.log('Fetched song data:', JSON.stringify(songData, null, 2));
 
-      // Optimistically update the local state
+      const currentDownloads = songData.downloads || 0;
+
+      // Optimistically update local state
       setSongs(prevSongs =>
         prevSongs.map(song =>
           song.id === songId ? { ...song, downloads: currentDownloads + 1 } : song
         )
       );
 
+      // Trigger the download
       const url = `https://drive.google.com/uc?export=download&id=${fileId}`;
       const link = document.createElement('a');
       link.href = url;
       link.download = `choircenter.com-${songId}.pdf`;
       link.click();
 
-      // Update server using the UUID (songId)
+      // Update the server
       const { data: updatedSong, error: updateError } = await supabase
         .from('songs')
         .update({ downloads: currentDownloads + 1 })
@@ -113,7 +119,7 @@ function Library() {
       if (updateError) throw updateError;
       console.log('Server updated song:', JSON.stringify(updatedSong, null, 2));
 
-      // Update local state with server-confirmed value
+      // Confirm update in local state
       setSongs(prevSongs =>
         prevSongs.map(song =>
           song.id === songId ? { ...song, downloads: updatedSong.downloads } : song
@@ -122,8 +128,7 @@ function Library() {
     } catch (err) {
       console.error('Download error:', err.message);
       setError('Failed to update download count: ' + err.message);
-      // Revert optimistic update on failure
-      setSongs(prevSongs => prevSongs);
+      setSongs(prevSongs => prevSongs); // Revert on failure
     }
   };
 

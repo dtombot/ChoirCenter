@@ -84,11 +84,15 @@ function Library() {
       }
       localStorage.setItem(downloadKey, downloadCount + 1);
 
-      // Fetch the song by UUID to get current downloads
+      // Convert songId to integer (since id is numeric in your table)
+      const numericSongId = parseInt(songId, 10);
+      if (isNaN(numericSongId)) throw new Error('Invalid song ID: ' + songId);
+
+      // Fetch the song by numeric id to get current downloads
       const { data: songData, error: fetchError } = await supabase
         .from('songs')
         .select('id, downloads')
-        .eq('id', songId)
+        .eq('id', numericSongId)
         .single();
       if (fetchError || !songData) throw new Error('Song not found: ' + (fetchError?.message || 'No data'));
       console.log('Fetched song data:', JSON.stringify(songData, null, 2));
@@ -98,7 +102,7 @@ function Library() {
       // Optimistically update local state
       setSongs(prevSongs =>
         prevSongs.map(song =>
-          song.id === songId ? { ...song, downloads: currentDownloads + 1 } : song
+          song.id === numericSongId ? { ...song, downloads: currentDownloads + 1 } : song
         )
       );
 
@@ -109,11 +113,11 @@ function Library() {
       link.download = `choircenter.com-${songId}.pdf`;
       link.click();
 
-      // Update the server
+      // Update the server with numeric id
       const { data: updatedSong, error: updateError } = await supabase
         .from('songs')
         .update({ downloads: currentDownloads + 1 })
-        .eq('id', songId)
+        .eq('id', numericSongId)
         .select('downloads')
         .single();
       if (updateError) throw updateError;
@@ -122,7 +126,7 @@ function Library() {
       // Confirm update in local state
       setSongs(prevSongs =>
         prevSongs.map(song =>
-          song.id === songId ? { ...song, downloads: updatedSong.downloads } : song
+          song.id === numericSongId ? { ...song, downloads: updatedSong.downloads } : song
         )
       );
     } catch (err) {

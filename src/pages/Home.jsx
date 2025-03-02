@@ -126,7 +126,7 @@ function Home() {
         }
       }
 
-      // Treat songId as permalink and fetch the song's UUID and current downloads
+      // Fetch song by permalink to get UUID and current downloads
       const { data: songData, error: fetchError } = await supabase
         .from('songs')
         .select('id, downloads')

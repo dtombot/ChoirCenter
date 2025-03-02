@@ -126,14 +126,21 @@ function Home() {
         }
       }
 
-      // Get the current download count for the song
-      const currentSong = songs.find(s => s.id === songId);
-      const currentDownloads = currentSong?.downloads || 0;
+      // Treat songId as permalink and fetch the song's UUID and current downloads
+      const { data: songData, error: fetchError } = await supabase
+        .from('songs')
+        .select('id, downloads')
+        .eq('permalink', songId)
+        .single();
+      if (fetchError || !songData) throw new Error('Song not found or fetch error: ' + (fetchError?.message || 'No data'));
+
+      const songUuid = songData.id;
+      const currentDownloads = songData.downloads || 0;
 
       // Optimistically update the local state
       setSongs(prevSongs =>
         prevSongs.map(song =>
-          song.id === songId ? { ...song, downloads: currentDownloads + 1 } : song
+          song.permalink === songId ? { ...song, downloads: currentDownloads + 1 } : song
         )
       );
 
@@ -143,21 +150,22 @@ function Home() {
       link.download = `choircenter.com-${songId}.pdf`;
       link.click();
 
-      // Update server with an increment operation
-      const { data: updateData, error: updateError } = await supabase
-        .rpc('increment_downloads', { song_id: songId });
-      if (updateError) throw updateError;
-      console.log('Server update response:', updateData);
-
-      // Fetch updated data to ensure consistency
-      const { data: updatedSongs, error: fetchError } = await supabase
+      // Update server using the UUID
+      const { data: updatedSong, error: updateError } = await supabase
         .from('songs')
-        .select('id, title, composer, google_drive_file_id, permalink, is_public, downloads')
-        .order('created_at', { ascending: false })
-        .limit(10);
-      if (fetchError) throw fetchError;
-      console.log('Updated songs from server:', JSON.stringify(updatedSongs, null, 2));
-      setSongs(updatedSongs || []);
+        .update({ downloads: currentDownloads + 1 })
+        .eq('id', songUuid)
+        .select('downloads')
+        .single();
+      if (updateError) throw updateError;
+      console.log('Server updated song:', JSON.stringify(updatedSong, null, 2));
+
+      // Update local state with server-confirmed value
+      setSongs(prevSongs =>
+        prevSongs.map(song =>
+          song.permalink === songId ? { ...song, downloads: updatedSong.downloads } : song
+        )
+      );
     } catch (err) {
       console.error('Download error:', err.message);
       setError('Failed to update download count: ' + err.message);
@@ -245,13 +253,13 @@ function Home() {
                 <div className="song-card-actions-modern">
                   <button
                     className="download-button-modern"
-                    onClick={(e) => { e.stopPropagation(); handleDownload(song.id, song.google_drive_file_id); }}
+                    onClick={(e) => { e.stopPropagation(); handleDownload(song.permalink || song.id, song.google_drive_file_id); }}
                   >
                     Download
                   </button>
                   <button
                     className="share-button-modern"
-                    onClick={(e) => { e.stopPropagation(); handleShare(song.title, song.id); }}
+                    onClick={(e) => { e.stopPropagation(); handleShare(song.title, song.permalink || song.id); }}
                   >
                     Share
                   </button>

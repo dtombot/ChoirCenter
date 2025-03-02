@@ -60,16 +60,13 @@ function Song() {
     if (!song) return;
 
     try {
-      console.log('handleDownload initiated - songId:', song.id, 'fileId:', song.google_drive_file_id);
+      console.log('New handleDownload started - songId:', song.id, 'fileId:', song.google_drive_file_id);
 
-      // Step 1: Check download limits
+      // Step 1: Download limits check
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError) {
-        console.error('Session fetch error:', sessionError.message);
-        throw sessionError;
-      }
+      if (sessionError) throw sessionError;
       const isAuthenticated = !!sessionData?.session;
-      console.log('Authentication status:', isAuthenticated);
+      console.log('Is authenticated:', isAuthenticated);
 
       const now = new Date();
       const year = now.getFullYear();
@@ -85,90 +82,79 @@ function Song() {
       }
 
       const downloadCount = parseInt(localStorage.getItem(downloadKey) || '0', 10);
-      console.log('Download count before:', downloadCount);
+      console.log('Download count:', downloadCount);
 
       if (!isAuthenticated && downloadCount >= 3) {
         setDownloadPrompt('Download Limit Reached.\nYou’ve used your 3 free monthly downloads. Sign up for 6 monthly downloads or Buy us a Meat Pie ☕ for unlimited access! Every bit helps keep the site running! 🤗');
-        console.log('Download limit reached for non-authenticated user');
         return;
       } else if (isAuthenticated) {
         const { data: userData, error: userError } = await supabase.auth.getUser();
-        if (userError) {
-          console.error('User fetch error:', userError.message);
-          throw userError;
-        }
+        if (userError) throw userError;
 
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('has_donated')
           .eq('id', userData.user.id)
           .single();
-        if (profileError) {
-          console.error('Profile fetch error:', profileError.message);
-          throw profileError;
-        }
+        if (profileError) throw profileError;
         console.log('User profile:', JSON.stringify(profileData, null, 2));
 
         if (!profileData?.has_donated && downloadCount >= 6) {
           setDownloadPrompt('Download Limit Reached.\nYou’ve used your 6 free monthly downloads. Buy us a Meat Pie ☕ for unlimited access this month! Every bit helps keep the site running! 🤗');
-          console.log('Download limit reached for authenticated non-donor');
           return;
         }
       }
       localStorage.setItem(downloadKey, downloadCount + 1);
-      console.log('Download count incremented to:', downloadCount + 1);
+      console.log('New download count:', downloadCount + 1);
 
       // Step 2: Trigger download
       const numericSongId = parseInt(song.id, 10);
-      if (isNaN(numericSongId)) throw new Error('Invalid song ID: ' + song.id);
-      console.log('Numeric song ID:', numericSongId);
+      if (isNaN(numericSongId)) throw new Error('Invalid song ID');
+      console.log('Song ID parsed:', numericSongId);
 
       const url = `https://drive.google.com/uc?export=download&id=${song.google_drive_file_id}`;
       const link = document.createElement('a');
       link.href = url;
       link.download = `choircenter.com-${song.id}.pdf`;
+      document.body.appendChild(link);
       link.click();
-      console.log('Download triggered');
+      document.body.removeChild(link);
+      console.log('Download initiated');
 
-      // Step 3: Fetch current downloads before update
-      const { data: currentSong, error: fetchError } = await supabase
+      // Step 3: Get current downloads
+      const { data: songData, error: fetchError } = await supabase
         .from('songs')
         .select('downloads')
         .eq('id', numericSongId)
         .single();
-      if (fetchError) {
-        console.error('Pre-update fetch error:', fetchError.message);
-        throw fetchError;
-      }
-      const currentDownloads = currentSong.downloads || 0;
-      console.log('Current downloads before update:', currentDownloads);
+      if (fetchError) throw fetchError;
+      const currentDownloads = songData.downloads || 0;
+      console.log('Downloads before update:', currentDownloads);
 
-      // Step 4: Update downloads
-      const { error: updateError } = await supabase
+      // Step 4: Upsert to increment downloads
+      const { data: upsertData, error: upsertError } = await supabase
         .from('songs')
-        .update({ downloads: currentDownloads + 1 })
-        .eq('id', numericSongId);
-      if (updateError) {
-        console.error('Update error:', JSON.stringify(updateError, null, 2));
-        throw updateError;
+        .upsert({ id: numericSongId, downloads: currentDownloads + 1 }, { onConflict: 'id' })
+        .select();
+      if (upsertError) {
+        console.error('Upsert error:', JSON.stringify(upsertError, null, 2));
+        throw upsertError;
       }
-      console.log('Update executed successfully');
+      console.log('Upsert result:', JSON.stringify(upsertData, null, 2));
 
-      // Step 5: Fetch updated song to confirm
+      // Step 5: Wait briefly and refetch song
+      await new Promise(resolve => setTimeout(resolve, 500)); // 500ms delay to ensure commit
       const { data: updatedSong, error: refetchError } = await supabase
         .from('songs')
         .select('id, title, composer, google_drive_file_id, downloads, is_public, permalink')
         .eq('id', numericSongId)
         .single();
-      if (refetchError) {
-        console.error('Refetch error:', refetchError.message);
-        throw refetchError;
-      }
-      console.log('Updated song after refetch:', JSON.stringify(updatedSong, null, 2));
+      if (refetchError) throw refetchError;
+      console.log('Refetched song:', JSON.stringify(updatedSong, null, 2));
       setSong(updatedSong);
     } catch (err) {
-      console.error('Download process failed:', err.message);
-      setError('Failed to process download: ' + err.message);
+      console.error('Download failed:', err.message);
+      setError('Failed to download: ' + err.message);
     }
   };
 

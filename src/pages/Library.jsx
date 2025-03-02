@@ -51,13 +51,12 @@ function Library() {
       const lastResetKey = `lastReset_${year}-${month}`;
       const storedReset = localStorage.getItem(lastResetKey);
       const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-  
-      // Reset logic
+
       if (!storedReset || storedReset !== currentMonthStart) {
         localStorage.setItem(downloadKey, '0');
         localStorage.setItem(lastResetKey, currentMonthStart);
       }
-  
+
       if (!isAuthenticated) {
         const downloadCount = parseInt(localStorage.getItem(downloadKey) || '0', 10);
         if (downloadCount >= 3) {
@@ -68,14 +67,14 @@ function Library() {
       } else {
         const { data: userData, error: userError } = await supabase.auth.getUser();
         if (userError) throw userError;
-  
+
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('has_donated')
           .eq('id', userData.user.id)
           .single();
         if (profileError) throw profileError;
-  
+
         if (!profileData?.has_donated) {
           const downloadCount = parseInt(localStorage.getItem(downloadKey) || '0', 10);
           if (downloadCount >= 6) {
@@ -85,27 +84,39 @@ function Library() {
           localStorage.setItem(downloadKey, downloadCount + 1);
         }
       }
-  
+
+      // Optimistically update the local state
+      setSongs(prevSongs =>
+        prevSongs.map(song =>
+          song.id === songId ? { ...song, downloads: (song.downloads || 0) + 1 } : song
+        )
+      );
+
       const url = `https://drive.google.com/uc?export=download&id=${fileId}`;
       const link = document.createElement('a');
       link.href = url;
       link.download = `choircenter.com-${songId}.pdf`;
       link.click();
-  
+
+      // Update server and confirm
       const { error: updateError } = await supabase
         .from('songs')
         .update({ downloads: (songs.find(s => s.id === songId)?.downloads || 0) + 1 })
         .eq('id', songId);
       if (updateError) throw updateError;
-  
-      const { data: updatedSongs } = await supabase
+
+      // Fetch updated data to ensure consistency
+      const { data: updatedSongs, error: fetchError } = await supabase
         .from('songs')
         .select('id, title, composer, google_drive_file_id, permalink, is_public, downloads')
         .order(sortBy, { ascending: sortOrder === 'asc' });
+      if (fetchError) throw fetchError;
       setSongs(updatedSongs || []);
     } catch (err) {
       console.error('Download error:', err.message);
       setError('Failed to update download count or check profile.');
+      // Revert optimistic update on failure
+      setSongs(prevSongs => prevSongs);
     }
   };
 

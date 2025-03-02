@@ -56,16 +56,30 @@ function App() {
   const [recaptchaLoaded, setRecaptchaLoaded] = useState(false);
 
   useEffect(() => {
-    // Enhanced reCAPTCHA loading check with logging
+    const loadRecaptchaScript = () => {
+      if (!document.querySelector('script[src="https://www.google.com/recaptcha/api.js"]')) {
+        console.log('reCAPTCHA script not found, adding dynamically');
+        const script = document.createElement('script');
+        script.src = 'https://www.google.com/recaptcha/api.js';
+        script.async = true;
+        script.defer = true;
+        script.onload = () => console.log('reCAPTCHA script loaded dynamically');
+        script.onerror = () => console.error('Failed to load reCAPTCHA script dynamically');
+        document.head.appendChild(script);
+      }
+    };
+
     const checkRecaptcha = () => {
       if (window.grecaptcha && window.grecaptcha.render) {
         console.log('reCAPTCHA script loaded successfully');
         setRecaptchaLoaded(true);
       } else {
         console.log('reCAPTCHA not yet loaded, retrying...');
+        loadRecaptchaScript(); // Fallback to load script if not present
         setTimeout(checkRecaptcha, 500); // Retry every 500ms
       }
     };
+
     console.log('Starting reCAPTCHA load check');
     checkRecaptcha();
 

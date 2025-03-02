@@ -20,19 +20,20 @@ function SignupDonate({ recaptchaLoaded }) {
     const renderRecaptcha = () => {
       if (recaptchaLoaded && window.grecaptcha && window.grecaptcha.render && recaptchaRef.current) {
         try {
-          console.log('Attempting to render reCAPTCHA');
+          console.log('Attempting to render reCAPTCHA on SignupDonate');
           window.grecaptcha.render(recaptchaRef.current, {
             sitekey: '6LczEuYqAAAAANYh6VG8jSj1Fmt6LKMK7Ee1OcfU',
             callback: (token) => console.log('reCAPTCHA token received:', token),
           });
-          console.log('reCAPTCHA rendered successfully');
+          console.log('reCAPTCHA rendered successfully on SignupDonate');
         } catch (err) {
-          console.error('Error rendering reCAPTCHA:', err);
-          setError('Failed to render reCAPTCHA. Please refresh the page.');
+          console.error('Error rendering reCAPTCHA on SignupDonate:', err);
+          setError('Failed to load reCAPTCHA. Please refresh the page or try again later.');
         }
+      } else if (!recaptchaLoaded) {
+        console.log('reCAPTCHA not loaded yet on SignupDonate');
       } else {
-        console.log('reCAPTCHA not ready yet:', {
-          recaptchaLoaded,
+        console.log('reCAPTCHA script present but not fully initialized:', {
           grecaptchaExists: !!window.grecaptcha,
           renderExists: window.grecaptcha && !!window.grecaptcha.render,
           refExists: !!recaptchaRef.current,

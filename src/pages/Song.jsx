@@ -30,10 +30,12 @@ function Song() {
 
       const { data, error } = await query.single();
       if (error) {
+        console.error('Song fetch error:', error.message);
         setError('Failed to load song: ' + error.message);
       } else if (!data.is_public) {
         setError('This song is private and cannot be viewed.');
       } else {
+        console.log('Initial fetched song:', JSON.stringify(data, null, 2));
         setSong(data);
       }
     };
@@ -56,69 +58,92 @@ function Song() {
 
   const handleDownload = async () => {
     if (!song) return;
-  
+
     try {
+      console.log('Starting handleDownload with songId:', song.id, 'fileId:', song.google_drive_file_id);
+
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      const isAuthenticated = sessionData?.session && !sessionError;
+      if (sessionError) throw sessionError;
+      const isAuthenticated = !!sessionData?.session;
+      console.log('User authenticated:', isAuthenticated);
+
       const now = new Date();
       const year = now.getFullYear();
-      const month = String(now.getMonth() + 1).padStart(2, '0'); // Months are 0-based, so +1
+      const month = String(now.getMonth() + 1).padStart(2, '0');
       const downloadKey = `downloads_${year}-${month}`;
       const lastResetKey = `lastReset_${year}-${month}`;
       const storedReset = localStorage.getItem(lastResetKey);
       const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-  
-      // Reset logic: If the month has changed, clear download count
+
       if (!storedReset || storedReset !== currentMonthStart) {
         localStorage.setItem(downloadKey, '0');
         localStorage.setItem(lastResetKey, currentMonthStart);
       }
-  
-      if (!isAuthenticated) {
-        const downloadCount = parseInt(localStorage.getItem(downloadKey) || '0', 10);
-        if (downloadCount >= 3) {
-          setDownloadPrompt('Download Limit Reached.\nYou’ve used your 3 free monthly downloads. Sign up for 6 monthly downloads or Buy us a Meat Pie ☕ for unlimited access! Every bit helps keep the site running! 🤗');
-          return;
-        }
-        localStorage.setItem(downloadKey, downloadCount + 1);
-      } else {
+
+      const downloadCount = parseInt(localStorage.getItem(downloadKey) || '0', 10);
+      console.log('Current download count:', downloadCount);
+
+      if (!isAuthenticated && downloadCount >= 3) {
+        setDownloadPrompt('Download Limit Reached.\nYou’ve used your 3 free monthly downloads. Sign up for 6 monthly downloads or Buy us a Meat Pie ☕ for unlimited access! Every bit helps keep the site running! 🤗');
+        return;
+      } else if (isAuthenticated) {
         const { data: userData, error: userError } = await supabase.auth.getUser();
         if (userError) throw userError;
-  
+
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('has_donated')
           .eq('id', userData.user.id)
           .single();
         if (profileError) throw profileError;
-  
-        if (!profileData?.has_donated) {
-          const downloadCount = parseInt(localStorage.getItem(downloadKey) || '0', 10);
-          if (downloadCount >= 6) {
-            setDownloadPrompt('Download Limit Reached.\nYou’ve used your 6 free monthly downloads. Buy us a Meat Pie ☕ for unlimited access this month! Every bit helps keep the site running! 🤗');
-            return;
-          }
-          localStorage.setItem(downloadKey, downloadCount + 1);
+        console.log('User profile:', JSON.stringify(profileData, null, 2));
+
+        if (!profileData?.has_donated && downloadCount >= 6) {
+          setDownloadPrompt('Download Limit Reached.\nYou’ve used your 6 free monthly downloads. Buy us a Meat Pie ☕ for unlimited access this month! Every bit helps keep the site running! 🤗');
+          return;
         }
-        // For "Buy us a Meat Pie" users, no limit check needed (unlimited)
       }
-  
+      localStorage.setItem(downloadKey, downloadCount + 1);
+      console.log('Download count incremented to:', downloadCount + 1);
+
+      const numericSongId = parseInt(song.id, 10);
+      if (isNaN(numericSongId)) throw new Error('Invalid song ID: ' + song.id);
+      console.log('Converted songId to numeric:', numericSongId);
+
+      const currentDownloads = song.downloads || 0;
+      console.log('Current downloads before update:', currentDownloads);
+
       const url = `https://drive.google.com/uc?export=download&id=${song.google_drive_file_id}`;
       const link = document.createElement('a');
       link.href = url;
       link.download = `choircenter.com-${song.id}.pdf`;
       link.click();
-  
+      console.log('Download triggered');
+
       const { error: updateError } = await supabase
         .from('songs')
-        .update({ downloads: (song.downloads || 0) + 1 })
-        .eq('id', song.id);
-      if (updateError) throw updateError;
-  
-      setSong({ ...song, downloads: (song.downloads || 0) + 1 });
+        .update({ downloads: currentDownloads + 1 })
+        .eq('id', numericSongId);
+      if (updateError) {
+        console.error('Update error:', JSON.stringify(updateError, null, 2));
+        throw updateError;
+      }
+      console.log('Server update successful');
+
+      const { data: updatedSong, error: fetchError } = await supabase
+        .from('songs')
+        .select('id, title, composer, google_drive_file_id, downloads, is_public, permalink')
+        .eq('id', numericSongId)
+        .single();
+      if (fetchError) {
+        console.error('Refetch error:', JSON.stringify(fetchError, null, 2));
+        throw fetchError;
+      }
+      console.log('Refetched song after update:', JSON.stringify(updatedSong, null, 2));
+      setSong(updatedSong);
     } catch (err) {
       console.error('Download error:', err.message);
-      setError('Failed to update download count or check profile.');
+      setError('Failed to update download count: ' + err.message);
     }
   };
 

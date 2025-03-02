@@ -56,14 +56,17 @@ function App() {
   const [recaptchaLoaded, setRecaptchaLoaded] = useState(false);
 
   useEffect(() => {
-    // Check if reCAPTCHA script is loaded
+    // Enhanced reCAPTCHA loading check with logging
     const checkRecaptcha = () => {
-      if (window.grecaptcha) {
+      if (window.grecaptcha && window.grecaptcha.render) {
+        console.log('reCAPTCHA script loaded successfully');
         setRecaptchaLoaded(true);
       } else {
-        setTimeout(checkRecaptcha, 100); // Poll every 100ms until loaded
+        console.log('reCAPTCHA not yet loaded, retrying...');
+        setTimeout(checkRecaptcha, 500); // Retry every 500ms
       }
     };
+    console.log('Starting reCAPTCHA load check');
     checkRecaptcha();
 
     const fetchUserAndProfile = async () => {
@@ -195,7 +198,7 @@ function App() {
           path="/signup"
           element={user ? <Navigate to="/" /> : <Signup recaptchaLoaded={recaptchaLoaded} />}
         />
-        <Route path="/signup-donate" element={<SignupDonate />} />
+        <Route path="/signup-donate" element={<SignupDonate recaptchaLoaded={recaptchaLoaded} />} />
         <Route
           path="/login"
           element={user ? <Navigate to="/" /> : <Login recaptchaLoaded={recaptchaLoaded} />}

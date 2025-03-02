@@ -25,7 +25,7 @@ function Home() {
         console.error('Error fetching songs:', songError.message);
         setError('Failed to load songs: ' + songError.message);
       } else {
-        console.log('Fetched songs:', JSON.stringify(songData, null, 2));
+        console.log('Initial fetched songs:', JSON.stringify(songData, null, 2));
         setSongs(songData || []);
       }
 
@@ -133,6 +133,10 @@ function Home() {
       if (isNaN(numericSongId)) throw new Error('Invalid song ID: ' + songId);
       console.log('Converted songId to numeric:', numericSongId);
 
+      const currentSong = songs.find(s => s.id === numericSongId);
+      const currentDownloads = currentSong ? currentSong.downloads || 0 : 0;
+      console.log('Current downloads before update:', currentDownloads);
+
       const url = `https://drive.google.com/uc?export=download&id=${fileId}`;
       const link = document.createElement('a');
       link.href = url;
@@ -140,13 +144,12 @@ function Home() {
       link.click();
       console.log('Download triggered');
 
-      const currentDownloads = songs.find(s => s.id === numericSongId)?.downloads || 0;
       const { error: updateError } = await supabase
         .from('songs')
         .update({ downloads: currentDownloads + 1 })
         .eq('id', numericSongId);
       if (updateError) {
-        console.error('Update error:', updateError.message);
+        console.error('Update error:', JSON.stringify(updateError, null, 2));
         throw updateError;
       }
       console.log('Server update successful');
@@ -156,8 +159,11 @@ function Home() {
         .select('id, title, composer, google_drive_file_id, permalink, is_public, downloads')
         .order('created_at', { ascending: false })
         .limit(10);
-      if (fetchError) throw fetchError;
-      console.log('Refetched songs:', JSON.stringify(updatedSongs, null, 2));
+      if (fetchError) {
+        console.error('Refetch error:', JSON.stringify(fetchError, null, 2));
+        throw fetchError;
+      }
+      console.log('Refetched songs after update:', JSON.stringify(updatedSongs, null, 2));
       setSongs(updatedSongs || []);
     } catch (err) {
       console.error('Download error:', err.message);

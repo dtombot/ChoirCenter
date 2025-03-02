@@ -44,51 +44,60 @@ function Library() {
     try {
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       const isAuthenticated = sessionData?.session && !sessionError;
-
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const downloadKey = `downloads_${year}-${month}`;
+      const lastResetKey = `lastReset_${year}-${month}`;
+      const storedReset = localStorage.getItem(lastResetKey);
+      const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+  
+      // Reset logic
+      if (!storedReset || storedReset !== currentMonthStart) {
+        localStorage.setItem(downloadKey, '0');
+        localStorage.setItem(lastResetKey, currentMonthStart);
+      }
+  
       if (!isAuthenticated) {
-        const today = new Date().toDateString();
-        const downloadKey = `downloads_${today}`;
         const downloadCount = parseInt(localStorage.getItem(downloadKey) || '0', 10);
-        if (downloadCount >= 2) {
-          setDownloadPrompt('Download Limit Reached.\nWant to keep downloading? Buy us a Meat Pie☕ to help sustain the site and enjoy unlimited access, or Just Sign up for additional downloads. Every little bit helps keep the site running! 🤗');
+        if (downloadCount >= 3) {
+          setDownloadPrompt('Download Limit Reached.\nYou’ve used your 3 free monthly downloads. Sign up for 6 monthly downloads or Buy us a Meat Pie ☕ for unlimited access! Every bit helps keep the site running! 🤗');
           return;
         }
         localStorage.setItem(downloadKey, downloadCount + 1);
       } else {
         const { data: userData, error: userError } = await supabase.auth.getUser();
         if (userError) throw userError;
-
+  
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('has_donated')
           .eq('id', userData.user.id)
           .single();
         if (profileError) throw profileError;
-
+  
         if (!profileData?.has_donated) {
-          const today = new Date().toDateString();
-          const downloadKey = `downloads_${today}`;
           const downloadCount = parseInt(localStorage.getItem(downloadKey) || '0', 10);
-          if (downloadCount >= 5) {
-            setDownloadPrompt('Download Limit Reached.\nWant to keep downloading? Buy us a Meat Pie☕ to help sustain the site and enjoy unlimited access. Every little bit helps keep the site running! 🤗');
+          if (downloadCount >= 6) {
+            setDownloadPrompt('Download Limit Reached.\nYou’ve used your 6 free monthly downloads. Buy us a Meat Pie ☕ for unlimited access this month! Every bit helps keep the site running! 🤗');
             return;
           }
           localStorage.setItem(downloadKey, downloadCount + 1);
         }
       }
-
+  
       const url = `https://drive.google.com/uc?export=download&id=${fileId}`;
       const link = document.createElement('a');
       link.href = url;
       link.download = `choircenter.com-${songId}.pdf`;
       link.click();
-
+  
       const { error: updateError } = await supabase
         .from('songs')
         .update({ downloads: (songs.find(s => s.id === songId)?.downloads || 0) + 1 })
         .eq('id', songId);
       if (updateError) throw updateError;
-
+  
       const { data: updatedSongs } = await supabase
         .from('songs')
         .select('id, title, composer, google_drive_file_id, permalink, is_public, downloads')

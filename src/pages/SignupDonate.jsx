@@ -9,11 +9,10 @@ function SignupDonate() {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [userId, setUserId] = useState(null); // To store user ID after signup
+  const [userId, setUserId] = useState(null);
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams(); // To check redirect params
+  const [searchParams] = useSearchParams();
 
-  // Check if redirected from Paystack with success
   const paymentSuccess = searchParams.get('trxref') && searchParams.get('reference');
 
   const handleSignup = async (e) => {
@@ -30,15 +29,14 @@ function SignupDonate() {
 
       if (error) throw error;
 
-      setUserId(data.user.id); // Store user ID for donation tracking
+      setUserId(data.user.id);
       setSuccess('Signup successful! Redirecting to donation page...');
       setEmail('');
       setPassword('');
 
-      // Redirect to Paystack donation page after signup
       setTimeout(() => {
         window.location.href = 'https://paystack.com/pay/choircenterdonation';
-      }, 1000); // Brief delay to show success message
+      }, 1000);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -47,11 +45,9 @@ function SignupDonate() {
   };
 
   const handleDonate = () => {
-    // Redirect to Paystack donation page
     window.location.href = 'https://paystack.com/pay/choircenterdonation';
   };
 
-  // Handle successful payment redirect
   if (paymentSuccess && userId) {
     const updateProfile = async () => {
       try {
@@ -66,7 +62,7 @@ function SignupDonate() {
           .from('profiles')
           .upsert({ id: userId, has_donated: true, updated_at: new Date().toISOString() });
         if (error) throw error;
-        setSuccess('Thank you for your donation! You now have unlimited downloads.');
+        setSuccess('Thank you for your donation! You now have unlimited downloads this month.');
       } catch (err) {
         setError('Donation recorded, but failed to update profile: ' + err.message);
       }
@@ -85,7 +81,7 @@ function SignupDonate() {
             <p className="success-message">{success}</p>
             {!paymentSuccess && (
               <>
-                <p className="auth-subtitle">Want unlimited downloads? Support us with a Meat Pie ☕!</p>
+                <p className="auth-subtitle">Want unlimited downloads this month? Support us with a Meat Pie ☕!</p>
                 <button onClick={handleDonate} className="meatpie-button" disabled={loading}>
                   Donate Now
                 </button>

@@ -13,18 +13,34 @@ function SignupDonate({ recaptchaLoaded }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const recaptchaRef = useRef(null);
-  const [recaptchaId, setRecaptchaId] = useState(null);
 
   const paymentSuccess = searchParams.get('trxref') && searchParams.get('reference');
 
   useEffect(() => {
-    if (recaptchaLoaded && window.grecaptcha && recaptchaRef.current && !recaptchaId) {
-      const id = window.grecaptcha.render(recaptchaRef.current, {
-        sitekey: '6LczEuYqAAAAANYh6VG8jSj1Fmt6LKMK7Ee1OcfU',
-        callback: (token) => console.log('reCAPTCHA token received:', token),
-      });
-      setRecaptchaId(id);
-    }
+    const renderRecaptcha = () => {
+      if (recaptchaLoaded && window.grecaptcha && window.grecaptcha.render && recaptchaRef.current) {
+        try {
+          console.log('Attempting to render reCAPTCHA');
+          window.grecaptcha.render(recaptchaRef.current, {
+            sitekey: '6LczEuYqAAAAANYh6VG8jSj1Fmt6LKMK7Ee1OcfU',
+            callback: (token) => console.log('reCAPTCHA token received:', token),
+          });
+          console.log('reCAPTCHA rendered successfully');
+        } catch (err) {
+          console.error('Error rendering reCAPTCHA:', err);
+          setError('Failed to render reCAPTCHA. Please refresh the page.');
+        }
+      } else {
+        console.log('reCAPTCHA not ready yet:', {
+          recaptchaLoaded,
+          grecaptchaExists: !!window.grecaptcha,
+          renderExists: window.grecaptcha && !!window.grecaptcha.render,
+          refExists: !!recaptchaRef.current,
+        });
+      }
+    };
+
+    renderRecaptcha();
   }, [recaptchaLoaded]);
 
   const verifyRecaptcha = async (token) => {
@@ -49,12 +65,12 @@ function SignupDonate({ recaptchaLoaded }) {
     setSuccess(null);
 
     if (!recaptchaLoaded || !window.grecaptcha) {
-      setError('reCAPTCHA is not loaded yet. Please wait.');
+      setError('reCAPTCHA is not loaded yet. Please wait or refresh the page.');
       setLoading(false);
       return;
     }
 
-    const token = window.grecaptcha.getResponse(recaptchaId);
+    const token = window.grecaptcha.getResponse();
     console.log('Token retrieved on submit:', token);
 
     if (!token || token === '') {
@@ -69,7 +85,7 @@ function SignupDonate({ recaptchaLoaded }) {
       console.log('reCAPTCHA verification failed');
       setError('reCAPTCHA verification failed. Please try again.');
       setLoading(false);
-      if (window.grecaptcha) window.grecaptcha.reset(recaptchaId);
+      if (window.grecaptcha) window.grecaptcha.reset();
       return;
     }
 
@@ -93,7 +109,7 @@ function SignupDonate({ recaptchaLoaded }) {
       setError(err.message);
     } finally {
       setLoading(false);
-      if (window.grecaptcha) window.grecaptcha.reset(recaptchaId);
+      if (window.grecaptcha) window.grecaptcha.reset();
     }
   };
 
@@ -169,7 +185,7 @@ function SignupDonate({ recaptchaLoaded }) {
               />
             </div>
             <div ref={recaptchaRef} className="g-recaptcha"></div>
-            {recaptchaLoaded ? null : <p>Loading reCAPTCHA...</p>}
+            {!recaptchaLoaded && <p>Loading reCAPTCHA...</p>}
             <button type="submit" className="auth-button" disabled={loading || !recaptchaLoaded}>
               {loading ? 'Processing...' : 'Sign Up and Buy us a Meat Pie'}
             </button>

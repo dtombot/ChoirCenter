@@ -18,18 +18,19 @@ function Home() {
 
   useEffect(() => {
     const fetchData = async () => {
+      console.log('Fetching all data');
       const { data: songData, error: songError } = await supabase
         .from('songs')
         .select('id, title, composer, google_drive_file_id, permalink, is_public, downloads')
-        .eq('is_public', true) // Fetch only public songs
+        .eq('is_public', true)
         .order('created_at', { ascending: false });
       if (songError) {
         console.error('Initial song fetch error:', songError.message);
         setError('Failed to load songs: ' + songError.message);
       } else {
-        console.log('Initial songs:', JSON.stringify(songData, null, 2));
+        console.log('Fetched songs:', JSON.stringify(songData, null, 2));
         setSongs(songData || []);
-        setFilteredSongs(songData.slice(0, 10) || []); // Limit to 10 initially
+        setFilteredSongs(songData.slice(0, 10) || []);
       }
 
       const { data: postData, error: postError } = await supabase
@@ -40,9 +41,9 @@ function Home() {
         console.error('Post fetch error:', postError.message);
         setError('Failed to load posts: ' + postError.message);
       } else {
-        console.log('Initial posts:', JSON.stringify(postData, null, 2));
+        console.log('Fetched posts:', JSON.stringify(postData, null, 2));
         setPosts(postData || []);
-        setFilteredPosts(postData.slice(0, 10) || []); // Limit to 10 initially
+        setFilteredPosts(postData.slice(0, 10) || []);
       }
 
       const { data: songOfTheWeekData, error: sotwError } = await supabase
@@ -67,6 +68,35 @@ function Home() {
     return () => clearInterval(slideInterval);
   }, []);
 
+  const filterContent = (query) => {
+    const trimmedQuery = query.trim().toLowerCase();
+    console.log('Filtering with query:', trimmedQuery);
+
+    if (!trimmedQuery) {
+      console.log('Resetting to initial 10 items');
+      setFilteredSongs(songs.slice(0, 10));
+      setFilteredPosts(posts.slice(0, 10));
+      setError(null);
+    } else {
+      const songMatches = songs.filter(song =>
+        song.title.toLowerCase().includes(trimmedQuery) ||
+        (song.composer && song.composer.toLowerCase().includes(trimmedQuery))
+      ).slice(0, 10);
+      const postMatches = posts.filter(post =>
+        post.title.toLowerCase().includes(trimmedQuery)
+      ).slice(0, 10);
+      console.log('Filtered songs:', JSON.stringify(songMatches, null, 2));
+      console.log('Filtered posts:', JSON.stringify(postMatches, null, 2));
+      setFilteredSongs(songMatches);
+      setFilteredPosts(postMatches);
+      if (songMatches.length === 0 && postMatches.length === 0) {
+        setError(`No results found for "${query}".`);
+      } else {
+        setError(null);
+      }
+    }
+  };
+
   const handleSearch = (e) => {
     e.preventDefault();
     console.log('Search form submitted');
@@ -76,32 +106,14 @@ function Home() {
       console.log('Spam detected in honeypot');
       return;
     }
+    filterContent(searchQuery);
+  };
 
-    const trimmedQuery = searchQuery.trim().toLowerCase();
-    console.log('Search query:', trimmedQuery);
-
-    if (!trimmedQuery) {
-      setFilteredSongs(songs.slice(0, 10)); // Reset to initial 10 songs
-      setFilteredPosts(posts.slice(0, 10)); // Reset to initial 10 posts
-      setError(null);
-    } else {
-      const songMatches = songs.filter(song =>
-        song.title.toLowerCase().includes(trimmedQuery) ||
-        (song.composer && song.composer.toLowerCase().includes(trimmedQuery))
-      ).slice(0, 10); // Limit to 10
-      const postMatches = posts.filter(post =>
-        post.title.toLowerCase().includes(trimmedQuery)
-      ).slice(0, 10); // Limit to 10
-      setFilteredSongs(songMatches);
-      setFilteredPosts(postMatches);
-      if (songMatches.length === 0 && postMatches.length === 0) {
-        setError(`No results found for "${searchQuery}".`);
-      } else {
-        setError(null);
-      }
-      console.log('Filtered songs:', JSON.stringify(songMatches, null, 2));
-      console.log('Filtered posts:', JSON.stringify(postMatches, null, 2));
-    }
+  const handleSearchChange = (e) => {
+    const newQuery = e.target.value;
+    console.log('Search input changed:', newQuery);
+    setSearchQuery(newQuery);
+    filterContent(newQuery);
   };
 
   const handleSongClick = (song) => {
@@ -213,14 +225,8 @@ function Home() {
       console.log('Refetched songs:', JSON.stringify(updatedSongs, null, 2));
       setSongs(updatedSongs || []);
 
-      // Update filteredSongs based on current searchQuery
-      const trimmedQuery = searchQuery.trim().toLowerCase();
-      setFilteredSongs(trimmedQuery
-        ? updatedSongs.filter(song =>
-            song.title.toLowerCase().includes(trimmedQuery) ||
-            (song.composer && song.composer.toLowerCase().includes(trimmedQuery))
-          ).slice(0, 10)
-        : updatedSongs.slice(0, 10));
+      // Reapply filtering after download
+      filterContent(searchQuery);
     } catch (err) {
       console.error('Download error:', err.message);
       setError('Failed to download or update count: ' + err.message);
@@ -265,7 +271,7 @@ function Home() {
               type="text"
               placeholder="Search songs and posts..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={handleSearchChange}
               className="search-input animate-input"
             />
             <input type="text" name="honeypot" className="honeypot" />

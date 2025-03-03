@@ -4,6 +4,15 @@ import { Link, useNavigate } from 'react-router-dom';
 import AdBanner from '../components/AdBanner';
 import '../styles.css';
 
+// Simple UUID generator
+const generateUUID = () => {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+};
+
 function Home() {
   const [songs, setSongs] = useState([]);
   const [filteredSongs, setFilteredSongs] = useState([]);
@@ -151,7 +160,10 @@ function Home() {
       console.log('handleDownload started - songId:', songId, 'fileId:', fileId);
 
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError) throw sessionError;
+      if (sessionError) {
+        console.error('Session fetch error:', sessionError.message);
+        throw sessionError;
+      }
       const isAuthenticated = !!sessionData?.session;
       console.log('Authenticated:', isAuthenticated);
 
@@ -177,11 +189,9 @@ function Home() {
 
       if (!isAuthenticated) {
         if (!clientId) {
-          const { data, error } = await supabase.rpc('uuid_generate_v4');
-          if (error) throw error;
-          clientId = data;
+          clientId = generateUUID();
           localStorage.setItem(clientIdKey, clientId);
-          console.log('Generated new client ID:', clientId);
+          console.log('Generated client ID:', clientId);
         }
 
         const { data: limitData, error: limitError } = await supabase
@@ -192,17 +202,19 @@ function Home() {
           .eq('is_authenticated', false)
           .single();
 
-        if (limitError && limitError.code !== 'PGRST116') throw limitError; // PGRST116 means no row found
-        downloadCount = limitData ? limitData.download_count : 0;
-        console.log('Server download count:', downloadCount);
-
-        // Sync localStorage with server count if higher
-        if (downloadCount > parseInt(localStorage.getItem(downloadKey) || '0', 10)) {
+        if (limitError && limitError.code !== 'PGRST116') {
+          console.error('Fetch download_limits error:', limitError.message);
+        } else if (limitData) {
+          downloadCount = Math.max(downloadCount, limitData.download_count);
           localStorage.setItem(downloadKey, downloadCount.toString());
+          console.log('Synced server download count:', downloadCount);
         }
       } else {
         const { data: userData, error: userError } = await supabase.auth.getUser();
-        if (userError) throw userError;
+        if (userError) {
+          console.error('User fetch error:', userError.message);
+          throw userError;
+        }
         const userId = userData.user.id;
 
         const { data: limitData, error: limitError } = await supabase
@@ -213,12 +225,12 @@ function Home() {
           .eq('is_authenticated', true)
           .single();
 
-        if (limitError && limitError.code !== 'PGRST116') throw limitError;
-        downloadCount = limitData ? limitData.download_count : 0;
-        console.log('Server download count for user:', downloadCount);
-
-        if (downloadCount > parseInt(localStorage.getItem(downloadKey) || '0', 10)) {
+        if (limitError && limitError.code !== 'PGRST116') {
+          console.error('Fetch download_limits error for user:', limitError.message);
+        } else if (limitData) {
+          downloadCount = Math.max(downloadCount, limitData.download_count);
           localStorage.setItem(downloadKey, downloadCount.toString());
+          console.log('Synced server download count for user:', downloadCount);
         }
       }
 
@@ -231,14 +243,20 @@ function Home() {
         return;
       } else if (isAuthenticated) {
         const { data: userData, error: userError } = await supabase.auth.getUser();
-        if (userError) throw userError;
+        if (userError) {
+          console.error('User fetch error:', userError.message);
+          throw userError;
+        }
 
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('has_donated')
           .eq('id', userData.user.id)
           .single();
-        if (profileError) throw profileError;
+        if (profileError) {
+          console.error('Profile fetch error:', profileError.message);
+          throw profileError;
+        }
         console.log('Profile data:', JSON.stringify(profileData, null, 2));
 
         if (!profileData?.has_donated && downloadCount >= 6) {
@@ -247,12 +265,11 @@ function Home() {
         }
       }
 
-      // Increment and update count
       downloadCount += 1;
       localStorage.setItem(downloadKey, downloadCount.toString());
       console.log('Download count after:', downloadCount);
 
-      if (!isAuthenticated) {
+      if (!isAuthenticated && clientId) {
         const { error: upsertError } = await supabase
           .from('download_limits')
           .upsert({
@@ -261,21 +278,27 @@ function Home() {
             year_month: yearMonth,
             is_authenticated: false,
           }, { onConflict: 'id' });
-        if (upsertError) throw upsertError;
-        console.log('Updated server download count for anonymous user:', downloadCount);
-      } else {
+        if (upsertError) {
+          console.error('Upsert download_limits error:', upsertError.message);
+        } else {
+          console.log('Updated server download count for anonymous user:', downloadCount);
+        }
+      } else if (isAuthenticated) {
         const { data: userData } = await supabase.auth.getUser();
         const { error: upsertError } = await supabase
           .from('download_limits')
           .upsert({
-            id: userData.user.id, // Use user ID as primary key for authenticated users
+            id: userData.user.id,
             download_count: downloadCount,
             year_month: yearMonth,
             is_authenticated: true,
             user_id: userData.user.id,
           }, { onConflict: 'id' });
-        if (upsertError) throw upsertError;
-        console.log('Updated server download count for authenticated user:', downloadCount);
+        if (upsertError) {
+          console.error('Upsert download_limits error for user:', upsertError.message);
+        } else {
+          console.log('Updated server download count for authenticated user:', downloadCount);
+        }
       }
 
       const numericSongId = parseInt(songId, 10);

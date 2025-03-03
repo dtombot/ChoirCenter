@@ -43,13 +43,13 @@ function Library() {
 
   const handleDownload = async (songId, fileId) => {
     try {
-      console.log('New handleDownload started - songId:', songId, 'fileId:', fileId);
+      console.log('handleDownload started - songId:', songId, 'fileId:', fileId);
 
-      // Step 1: Download limits check
+      // Step 1: Check download limits
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       if (sessionError) throw sessionError;
       const isAuthenticated = !!sessionData?.session;
-      console.log('Is authenticated:', isAuthenticated);
+      console.log('Authenticated:', isAuthenticated);
 
       const now = new Date();
       const year = now.getFullYear();
@@ -65,7 +65,7 @@ function Library() {
       }
 
       const downloadCount = parseInt(localStorage.getItem(downloadKey) || '0', 10);
-      console.log('Download count:', downloadCount);
+      console.log('Download count before:', downloadCount);
 
       if (!isAuthenticated && downloadCount >= 3) {
         setDownloadPrompt('Download Limit Reached.\nYou’ve used your 3 free monthly downloads. Sign up for 6 monthly downloads or Buy us a Meat Pie ☕ for unlimited access! Every bit helps keep the site running! 🤗');
@@ -80,7 +80,7 @@ function Library() {
           .eq('id', userData.user.id)
           .single();
         if (profileError) throw profileError;
-        console.log('User profile:', JSON.stringify(profileData, null, 2));
+        console.log('Profile data:', JSON.stringify(profileData, null, 2));
 
         if (!profileData?.has_donated && downloadCount >= 6) {
           setDownloadPrompt('Download Limit Reached.\nYou’ve used your 6 free monthly downloads. Buy us a Meat Pie ☕ for unlimited access this month! Every bit helps keep the site running! 🤗');
@@ -88,12 +88,12 @@ function Library() {
         }
       }
       localStorage.setItem(downloadKey, downloadCount + 1);
-      console.log('New download count:', downloadCount + 1);
+      console.log('Download count after:', downloadCount + 1);
 
-      // Step 2: Trigger download
+      // Step 2: Trigger file download
       const numericSongId = parseInt(songId, 10);
       if (isNaN(numericSongId)) throw new Error('Invalid song ID');
-      console.log('Song ID parsed:', numericSongId);
+      console.log('Parsed song ID:', numericSongId);
 
       const url = `https://drive.google.com/uc?export=download&id=${fileId}`;
       const link = document.createElement('a');
@@ -102,41 +102,46 @@ function Library() {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      console.log('Download initiated');
+      console.log('File download triggered');
 
-      // Step 3: Get current downloads
+      // Step 3: Fetch current downloads
       const { data: songData, error: fetchError } = await supabase
         .from('songs')
         .select('downloads')
         .eq('id', numericSongId)
         .single();
-      if (fetchError) throw fetchError;
+      if (fetchError) {
+        console.error('Fetch error:', fetchError.message);
+        throw fetchError;
+      }
       const currentDownloads = songData.downloads || 0;
       console.log('Downloads before update:', currentDownloads);
 
-      // Step 4: Upsert to increment downloads
-      const { data: upsertData, error: upsertError } = await supabase
+      // Step 4: Update downloads using update (not upsert)
+      const { error: updateError } = await supabase
         .from('songs')
-        .upsert({ id: numericSongId, downloads: currentDownloads + 1 }, { onConflict: 'id' })
-        .select();
-      if (upsertError) {
-        console.error('Upsert error:', JSON.stringify(upsertError, null, 2));
-        throw upsertError;
+        .update({ downloads: currentDownloads + 1 })
+        .eq('id', numericSongId);
+      if (updateError) {
+        console.error('Update error:', JSON.stringify(updateError, null, 2));
+        throw updateError;
       }
-      console.log('Upsert result:', JSON.stringify(upsertData, null, 2));
+      console.log('Update successful');
 
-      // Step 5: Wait briefly and refetch all songs
-      await new Promise(resolve => setTimeout(resolve, 500)); // 500ms delay to ensure commit
+      // Step 5: Refetch songs to confirm update
       const { data: updatedSongs, error: refetchError } = await supabase
         .from('songs')
         .select('id, title, composer, google_drive_file_id, permalink, is_public, downloads')
         .order(sortBy, { ascending: sortOrder === 'asc' });
-      if (refetchError) throw refetchError;
+      if (refetchError) {
+        console.error('Refetch error:', refetchError.message);
+        throw refetchError;
+      }
       console.log('Refetched songs:', JSON.stringify(updatedSongs, null, 2));
       setSongs(updatedSongs || []);
     } catch (err) {
-      console.error('Download failed:', err.message);
-      setError('Failed to download: ' + err.message);
+      console.error('Download error:', err.message);
+      setError('Failed to download or update count: ' + err.message);
     }
   };
 

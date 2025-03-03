@@ -30,7 +30,7 @@ function Home() {
       } else {
         console.log('Fetched songs:', JSON.stringify(songData, null, 2));
         setSongs(songData || []);
-        setFilteredSongs(songData.slice(0, 10) || []);
+        setFilteredSongs(songData.slice(0, 6) || []); // Limit to 6
       }
 
       const { data: postData, error: postError } = await supabase
@@ -43,7 +43,7 @@ function Home() {
       } else {
         console.log('Fetched posts:', JSON.stringify(postData, null, 2));
         setPosts(postData || []);
-        setFilteredPosts(postData.slice(0, 10) || []);
+        setFilteredPosts(postData.slice(0, 6) || []); // Limit to 6
       }
 
       const { data: songOfTheWeekData, error: sotwError } = await supabase
@@ -73,18 +73,18 @@ function Home() {
     console.log('Filtering with query:', trimmedQuery);
 
     if (!trimmedQuery) {
-      console.log('Resetting to initial 10 items');
-      setFilteredSongs(songs.slice(0, 10));
-      setFilteredPosts(posts.slice(0, 10));
+      console.log('Resetting to initial 6 items');
+      setFilteredSongs(songs.slice(0, 6)); // Limit to 6
+      setFilteredPosts(posts.slice(0, 6)); // Limit to 6
       setError(null);
     } else {
       const songMatches = songs.filter(song =>
         song.title.toLowerCase().includes(trimmedQuery) ||
         (song.composer && song.composer.toLowerCase().includes(trimmedQuery))
-      ).slice(0, 10);
+      ).slice(0, 6); // Limit to 6
       const postMatches = posts.filter(post =>
         post.title.toLowerCase().includes(trimmedQuery)
-      ).slice(0, 10);
+      ).slice(0, 6); // Limit to 6
       console.log('Filtered songs:', JSON.stringify(songMatches, null, 2));
       console.log('Filtered posts:', JSON.stringify(postMatches, null, 2));
       setFilteredSongs(songMatches);
@@ -354,6 +354,7 @@ function Home() {
             <p>No songs available.</p>
           )}
         </div>
+        <Link to="/library" className="action-button">View More Songs</Link>
       </section>
       <hr className="section-separator" />
       <section className="blog-list-container">
@@ -373,6 +374,7 @@ function Home() {
             <p>No blog posts available.</p>
           )}
         </div>
+        <Link to="/blog" className="action-button">View More Posts</Link>
       </section>
       <hr className="section-separator" />
       <section className="faq-section">

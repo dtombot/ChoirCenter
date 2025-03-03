@@ -6,7 +6,9 @@ import '../styles.css';
 
 function Home() {
   const [songs, setSongs] = useState([]);
+  const [filteredSongs, setFilteredSongs] = useState([]);
   const [posts, setPosts] = useState([]);
+  const [filteredPosts, setFilteredPosts] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [error, setError] = useState(null);
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -19,27 +21,28 @@ function Home() {
       const { data: songData, error: songError } = await supabase
         .from('songs')
         .select('id, title, composer, google_drive_file_id, permalink, is_public, downloads')
-        .order('created_at', { ascending: false })
-        .limit(10);
+        .eq('is_public', true) // Fetch only public songs
+        .order('created_at', { ascending: false });
       if (songError) {
         console.error('Initial song fetch error:', songError.message);
         setError('Failed to load songs: ' + songError.message);
       } else {
         console.log('Initial songs:', JSON.stringify(songData, null, 2));
         setSongs(songData || []);
+        setFilteredSongs(songData.slice(0, 10) || []); // Limit to 10 initially
       }
 
       const { data: postData, error: postError } = await supabase
         .from('blog_posts')
         .select('id, title, permalink')
-        .order('created_at', { ascending: false })
-        .limit(10);
+        .order('created_at', { ascending: false });
       if (postError) {
         console.error('Post fetch error:', postError.message);
         setError('Failed to load posts: ' + postError.message);
       } else {
         console.log('Initial posts:', JSON.stringify(postData, null, 2));
         setPosts(postData || []);
+        setFilteredPosts(postData.slice(0, 10) || []); // Limit to 10 initially
       }
 
       const { data: songOfTheWeekData, error: sotwError } = await supabase
@@ -73,14 +76,32 @@ function Home() {
       console.log('Spam detected in honeypot');
       return;
     }
-    if (!searchQuery.trim()) {
-      setError('Please enter a search term');
-      console.log('Search query is empty');
-      return;
+
+    const trimmedQuery = searchQuery.trim().toLowerCase();
+    console.log('Search query:', trimmedQuery);
+
+    if (!trimmedQuery) {
+      setFilteredSongs(songs.slice(0, 10)); // Reset to initial 10 songs
+      setFilteredPosts(posts.slice(0, 10)); // Reset to initial 10 posts
+      setError(null);
+    } else {
+      const songMatches = songs.filter(song =>
+        song.title.toLowerCase().includes(trimmedQuery) ||
+        (song.composer && song.composer.toLowerCase().includes(trimmedQuery))
+      ).slice(0, 10); // Limit to 10
+      const postMatches = posts.filter(post =>
+        post.title.toLowerCase().includes(trimmedQuery)
+      ).slice(0, 10); // Limit to 10
+      setFilteredSongs(songMatches);
+      setFilteredPosts(postMatches);
+      if (songMatches.length === 0 && postMatches.length === 0) {
+        setError(`No results found for "${searchQuery}".`);
+      } else {
+        setError(null);
+      }
+      console.log('Filtered songs:', JSON.stringify(songMatches, null, 2));
+      console.log('Filtered posts:', JSON.stringify(postMatches, null, 2));
     }
-    console.log('Navigating to search with query:', searchQuery);
-    navigate(`/search?query=${encodeURIComponent(searchQuery)}`);
-    setSearchQuery('');
   };
 
   const handleSongClick = (song) => {
@@ -183,14 +204,23 @@ function Home() {
       const { data: updatedSongs, error: refetchError } = await supabase
         .from('songs')
         .select('id, title, composer, google_drive_file_id, permalink, is_public, downloads')
-        .order('created_at', { ascending: false })
-        .limit(10);
+        .eq('is_public', true)
+        .order('created_at', { ascending: false });
       if (refetchError) {
         console.error('Refetch error:', refetchError.message);
         throw refetchError;
       }
       console.log('Refetched songs:', JSON.stringify(updatedSongs, null, 2));
       setSongs(updatedSongs || []);
+
+      // Update filteredSongs based on current searchQuery
+      const trimmedQuery = searchQuery.trim().toLowerCase();
+      setFilteredSongs(trimmedQuery
+        ? updatedSongs.filter(song =>
+            song.title.toLowerCase().includes(trimmedQuery) ||
+            (song.composer && song.composer.toLowerCase().includes(trimmedQuery))
+          ).slice(0, 10)
+        : updatedSongs.slice(0, 10));
     } catch (err) {
       console.error('Download error:', err.message);
       setError('Failed to download or update count: ' + err.message);
@@ -233,7 +263,7 @@ function Home() {
           <form onSubmit={handleSearch} className="search-form">
             <input
               type="text"
-              placeholder="Search songs..."
+              placeholder="Search songs and posts..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="search-input animate-input"
@@ -261,8 +291,8 @@ function Home() {
       <section className="latest-additions">
         <h2 className="section-title animate-text">Latest Additions</h2>
         <div className="song-grid">
-          {songs.length > 0 ? (
-            songs.map((song, index) => (
+          {filteredSongs.length > 0 ? (
+            filteredSongs.map((song, index) => (
               <div
                 key={song.id}
                 className={`song-card-modern ${index % 2 === 0 ? 'variant-1' : 'variant-2'}`}
@@ -298,8 +328,8 @@ function Home() {
       <section className="blog-list-container">
         <h2 className="section-title animate-text">Latest Insights</h2>
         <div className="blog-list">
-          {posts.length > 0 ? (
-            posts.map((post, index) => (
+          {filteredPosts.length > 0 ? (
+            filteredPosts.map((post, index) => (
               <Link
                 key={post.id}
                 to={`/blog/${post.permalink || `post-${post.id}`}`}

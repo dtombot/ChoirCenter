@@ -210,12 +210,17 @@ function Admin() {
         return;
       }
 
+      // Convert tags string to array
+      const tagsArray = postForm.tags
+        ? postForm.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0)
+        : null;
+
       const postData = {
         title: postForm.title,
         content: postForm.content,
         permalink: generatedPermalink,
         meta_description: postForm.meta_description || null,
-        tags: postForm.tags || null,
+        tags: tagsArray, // Pass as array instead of string
         category: postForm.category || null,
         focus_keyword: postForm.focus_keyword || null,
         featured_image_url: postForm.featured_image_url || null,
@@ -324,7 +329,7 @@ function Admin() {
       content: post.content, 
       permalink: post.permalink || '', 
       meta_description: post.meta_description || '', 
-      tags: post.tags || '', 
+      tags: post.tags ? post.tags.join(', ') : '', // Convert array back to string for editing
       category: post.category || '', 
       focus_keyword: post.focus_keyword || '',
       featured_image_url: post.featured_image_url || ''
@@ -440,6 +445,20 @@ function Admin() {
       (songFilter === 'private' && !song.is_public);
     return matchesSearch && matchesFilter;
   });
+
+  const fetchUsers = async () => {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+      const response = await fetch('/.netlify/functions/fetch-users', { signal: controller.signal });
+      clearTimeout(timeoutId);
+      if (!response.ok) throw new Error('Failed to fetch users');
+      const users = await response.json();
+      setUsers(users || []);
+    } catch (err) {
+      setError('Failed to load users: ' + (err.name === 'AbortError' ? 'Request timed out' : err.message));
+    }
+  };
 
   if (!user) return null;
 

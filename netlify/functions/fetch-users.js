@@ -1,10 +1,19 @@
 const { createClient } = require('@supabase/supabase-js');
 
 exports.handler = async (event, context) => {
-  const supabase = createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-  );
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  console.log('Supabase URL:', supabaseUrl);
+  console.log('Service Role Key (first 10 chars):', supabaseKey?.substring(0, 10) || 'Not set');
+
+  if (!supabaseUrl || !supabaseKey) {
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: 'Supabase URL or Service Role Key not set' }),
+    };
+  }
+
+  const supabase = createClient(supabaseUrl, supabaseKey);
 
   try {
     const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
@@ -27,6 +36,7 @@ exports.handler = async (event, context) => {
       body: JSON.stringify(users),
     };
   } catch (error) {
+    console.error('Fetch users error:', error.message);
     return {
       statusCode: 403,
       body: JSON.stringify({ error: error.message }),

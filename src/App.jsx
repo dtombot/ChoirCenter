@@ -15,6 +15,7 @@ import Terms from './pages/Terms';
 import Blog from './pages/Blog';
 import BlogPost from './pages/BlogPost';
 import Song from './pages/Song';
+import Search from './pages/Search';
 
 function CookieConsent({ onAccept }) {
   const [isVisible, setIsVisible] = useState(false);
@@ -75,8 +76,8 @@ function App() {
         setRecaptchaLoaded(true);
       } else {
         console.log('reCAPTCHA not yet loaded, retrying...');
-        loadRecaptchaScript(); // Fallback to load script if not present
-        setTimeout(checkRecaptcha, 500); // Retry every 500ms
+        loadRecaptchaScript();
+        setTimeout(checkRecaptcha, 500);
       }
     };
 
@@ -224,7 +225,7 @@ function App() {
         <Route path="/blog" element={<Blog />} />
         <Route path="/blog/:permalink" element={<BlogPost />} />
         <Route path="/song/:id" element={<Song />} />
-        <Route path="/search" element={<div>Search Placeholder</div>} />
+        <Route path="/search" element={<Search />} />
       </Routes>
       <CookieConsent onAccept={handleCookiesAccepted} />
       <footer className="footer">

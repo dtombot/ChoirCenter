@@ -74,8 +74,8 @@ function Home() {
       return;
     }
     if (!searchQuery.trim()) {
-      console.log('Search query is empty');
       setError('Please enter a search term');
+      console.log('Search query is empty');
       return;
     }
     console.log('Navigating to search with query:', searchQuery);

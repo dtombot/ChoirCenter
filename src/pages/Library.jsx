@@ -117,13 +117,18 @@ function Library() {
       const currentDownloads = songData.downloads || 0;
       console.log('Downloads before update:', currentDownloads);
 
-      // Step 4: Update downloads using new RPC function
-      const { error: sqlError } = await supabase.rpc('increment_song_downloads', { p_song_id: numericSongId });
-      if (sqlError) {
-        console.error('SQL update error:', JSON.stringify(sqlError, null, 2));
-        throw sqlError;
+      // Step 4: Update downloads directly with select
+      const { data: updatedSong, error: updateError } = await supabase
+        .from('songs')
+        .update({ downloads: currentDownloads + 1 })
+        .eq('id', numericSongId)
+        .select('downloads')
+        .single();
+      if (updateError) {
+        console.error('Update error:', JSON.stringify(updateError, null, 2));
+        throw updateError;
       }
-      console.log('SQL update successful');
+      console.log('Updated song after update:', JSON.stringify(updatedSong, null, 2));
 
       // Step 5: Refetch songs to confirm update
       const { data: updatedSongs, error: refetchError } = await supabase

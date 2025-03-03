@@ -25,12 +25,11 @@ function Song() {
   const [downloadPrompt, setDownloadPrompt] = useState(null);
   const [numPages, setNumPages] = useState(null);
   const [scale, setScale] = useState(1.0);
-  const [pdfProgress, setPdfProgress] = useState(0); // PDF-specific progress
+  const [pdfProgress, setPdfProgress] = useState(0);
 
   useEffect(() => {
     let interval;
     if (!song) {
-      // Full-page loader progress
       interval = setInterval(() => {
         setPdfProgress((prev) => {
           if (prev >= 90) return prev;
@@ -57,7 +56,7 @@ function Song() {
       } else {
         console.log('Initial song:', JSON.stringify(data, null, 2));
         setSong(data);
-        setPdfProgress(100); // Reset when song data is loaded
+        setPdfProgress(100);
       }
     };
     fetchSong();
@@ -302,14 +301,14 @@ function Song() {
     setNumPages(numPages);
   };
 
-  // PDF loading progress bar
+  // PDF loading progress bar with green gradient
   const PdfLoadingProgress = () => {
     const [progress, setProgress] = useState(0);
 
     useEffect(() => {
       const interval = setInterval(() => {
         setProgress((prev) => {
-          if (prev >= 90) return prev; // Slow down near end
+          if (prev >= 90) return prev;
           return prev + 10;
         });
       }, 200);
@@ -317,12 +316,12 @@ function Song() {
     }, []);
 
     return (
-      <div style={{ width: '100%', height: '20px', background: '#ccc', borderRadius: '4px', overflow: 'hidden' }}>
+      <div style={{ width: '100%', height: '20px', background: '#e0e0e0', borderRadius: '4px', overflow: 'hidden' }}>
         <div
           style={{
             width: `${progress}%`,
             height: '100%',
-            background: '#333',
+            background: 'linear-gradient(90deg, #90EE90 0%, #32CD32 50%, #006400 100%)',
             transition: 'width 0.2s ease-in-out',
           }}
         />

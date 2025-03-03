@@ -147,7 +147,7 @@ function Home() {
       // Step 3: Fetch current downloads
       const { data: songData, error: fetchError } = await supabase
         .from('songs')
-        .select('downloads')
+        .select('id, downloads')
         .eq('id', numericSongId)
         .single();
       if (fetchError) {
@@ -157,20 +157,30 @@ function Home() {
       const currentDownloads = songData.downloads || 0;
       console.log('Downloads before update:', currentDownloads);
 
-      // Step 4: Update downloads directly with select
-      const { data: updatedSong, error: updateError } = await supabase
+      // Step 4: Update downloads without expecting immediate return
+      const { error: updateError } = await supabase
         .from('songs')
         .update({ downloads: currentDownloads + 1 })
-        .eq('id', numericSongId)
-        .select('downloads')
-        .single();
+        .eq('id', numericSongId);
       if (updateError) {
         console.error('Update error:', JSON.stringify(updateError, null, 2));
         throw updateError;
       }
-      console.log('Updated song after update:', JSON.stringify(updatedSong, null, 2));
+      console.log('Update executed successfully');
 
-      // Step 5: Refetch all songs to confirm update
+      // Step 5: Fetch updated song to confirm
+      const { data: updatedSong, error: postUpdateFetchError } = await supabase
+        .from('songs')
+        .select('id, title, composer, google_drive_file_id, downloads, is_public, permalink')
+        .eq('id', numericSongId)
+        .single();
+      if (postUpdateFetchError) {
+        console.error('Post-update fetch error:', postUpdateFetchError.message);
+        throw postUpdateFetchError;
+      }
+      console.log('Fetched song after update:', JSON.stringify(updatedSong, null, 2));
+
+      // Step 6: Refetch all songs to update state
       const { data: updatedSongs, error: refetchError } = await supabase
         .from('songs')
         .select('id, title, composer, google_drive_file_id, permalink, is_public, downloads')

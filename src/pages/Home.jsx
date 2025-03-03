@@ -106,7 +106,13 @@ function Home() {
       console.log('Spam detected in honeypot');
       return;
     }
-    filterContent(searchQuery);
+    if (!searchQuery.trim()) {
+      setError('Please enter a search term');
+      console.log('Search query is empty');
+      return;
+    }
+    console.log('Navigating to search page with query:', searchQuery);
+    navigate(`/search?query=${encodeURIComponent(searchQuery)}`);
   };
 
   const handleSearchChange = (e) => {
@@ -225,7 +231,6 @@ function Home() {
       console.log('Refetched songs:', JSON.stringify(updatedSongs, null, 2));
       setSongs(updatedSongs || []);
 
-      // Reapply filtering after download
       filterContent(searchQuery);
     } catch (err) {
       console.error('Download error:', err.message);

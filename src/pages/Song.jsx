@@ -25,9 +25,20 @@ function Song() {
   const [downloadPrompt, setDownloadPrompt] = useState(null);
   const [numPages, setNumPages] = useState(null);
   const [scale, setScale] = useState(1.0);
-  const navigate = useNavigate();
+  const [pdfProgress, setPdfProgress] = useState(0); // PDF-specific progress
 
   useEffect(() => {
+    let interval;
+    if (!song) {
+      // Full-page loader progress
+      interval = setInterval(() => {
+        setPdfProgress((prev) => {
+          if (prev >= 90) return prev;
+          return prev + 10;
+        });
+      }, 200);
+    }
+
     const fetchSong = async () => {
       let query = supabase.from('songs').select('id, title, composer, google_drive_file_id, downloads, is_public, permalink');
       
@@ -46,6 +57,7 @@ function Song() {
       } else {
         console.log('Initial song:', JSON.stringify(data, null, 2));
         setSong(data);
+        setPdfProgress(100); // Reset when song data is loaded
       }
     };
     fetchSong();
@@ -62,7 +74,11 @@ function Song() {
     };
     updateScale();
     window.addEventListener('resize', updateScale);
-    return () => window.removeEventListener('resize', updateScale);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('resize', updateScale);
+    };
   }, [id]);
 
   const handleDownload = async () => {
@@ -286,6 +302,34 @@ function Song() {
     setNumPages(numPages);
   };
 
+  // PDF loading progress bar
+  const PdfLoadingProgress = () => {
+    const [progress, setProgress] = useState(0);
+
+    useEffect(() => {
+      const interval = setInterval(() => {
+        setProgress((prev) => {
+          if (prev >= 90) return prev; // Slow down near end
+          return prev + 10;
+        });
+      }, 200);
+      return () => clearInterval(interval);
+    }, []);
+
+    return (
+      <div style={{ width: '100%', height: '20px', background: '#ccc', borderRadius: '4px', overflow: 'hidden' }}>
+        <div
+          style={{
+            width: `${progress}%`,
+            height: '100%',
+            background: '#333',
+            transition: 'width 0.2s ease-in-out',
+          }}
+        />
+      </div>
+    );
+  };
+
   return (
     <>
       <section className="ad-section">
@@ -299,24 +343,27 @@ function Song() {
           </>
         ) : !song ? (
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px' }}>
-            <div
-              style={{
-                width: '40px',
-                height: '40px',
-                border: '4px solid #ccc',
-                borderTop: '4px solid #333',
-                borderRadius: '50%',
-                animation: 'spin 1s linear infinite',
-              }}
-            />
-            <style>
-              {`
-                @keyframes spin {
-                  0% { transform: rotate(0deg); }
-                  100% { transform: rotate(360deg); }
-                }
-              `}
-            </style>
+            <svg width="60" height="60" viewBox="0 0 60 60">
+              <circle
+                cx="30"
+                cy="30"
+                r="25"
+                fill="none"
+                stroke="#ccc"
+                strokeWidth="4"
+              />
+              <circle
+                cx="30"
+                cy="30"
+                r="25"
+                fill="none"
+                stroke="#333"
+                strokeWidth="4"
+                strokeDasharray="157"
+                strokeDashoffset={157 - (157 * pdfProgress) / 100}
+                style={{ transition: 'stroke-dashoffset 0.2s ease-in-out' }}
+              />
+            </svg>
           </div>
         ) : (
           <>
@@ -329,6 +376,7 @@ function Song() {
                   file={`/.netlify/functions/proxy-pdf?fileId=${song.google_drive_file_id}`}
                   onLoadSuccess={onDocumentLoadSuccess}
                   onLoadError={(err) => setError('Failed to load PDF preview: ' + err.message)}
+                  loading={<PdfLoadingProgress />}
                 >
                   <Page pageNumber={1} scale={scale} />
                 </Document>

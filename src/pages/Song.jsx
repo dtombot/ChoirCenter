@@ -124,7 +124,7 @@ function Song() {
       // Step 3: Fetch current downloads
       const { data: songData, error: fetchError } = await supabase
         .from('songs')
-        .select('downloads')
+        .select('id, downloads')
         .eq('id', numericSongId)
         .single();
       if (fetchError) {
@@ -134,31 +134,29 @@ function Song() {
       const currentDownloads = songData.downloads || 0;
       console.log('Downloads before update:', currentDownloads);
 
-      // Step 4: Update downloads directly with select
-      const { data: updatedSong, error: updateError } = await supabase
+      // Step 4: Update downloads without expecting immediate return
+      const { error: updateError } = await supabase
         .from('songs')
         .update({ downloads: currentDownloads + 1 })
-        .eq('id', numericSongId)
-        .select('downloads')
-        .single();
+        .eq('id', numericSongId);
       if (updateError) {
         console.error('Update error:', JSON.stringify(updateError, null, 2));
         throw updateError;
       }
-      console.log('Updated song after update:', JSON.stringify(updatedSong, null, 2));
+      console.log('Update executed successfully');
 
-      // Step 5: Refetch song to confirm update
-      const { data: refetchedSong, error: refetchError } = await supabase
+      // Step 5: Fetch updated song to confirm
+      const { data: updatedSong, error: postUpdateFetchError } = await supabase
         .from('songs')
         .select('id, title, composer, google_drive_file_id, downloads, is_public, permalink')
         .eq('id', numericSongId)
         .single();
-      if (refetchError) {
-        console.error('Refetch error:', refetchError.message);
-        throw refetchError;
+      if (postUpdateFetchError) {
+        console.error('Post-update fetch error:', postUpdateFetchError.message);
+        throw postUpdateFetchError;
       }
-      console.log('Refetched song:', JSON.stringify(refetchedSong, null, 2));
-      setSong(refetchedSong);
+      console.log('Fetched song after update:', JSON.stringify(updatedSong, null, 2));
+      setSong(updatedSong);
     } catch (err) {
       console.error('Download error:', err.message);
       setError('Failed to download or update count: ' + err.message);

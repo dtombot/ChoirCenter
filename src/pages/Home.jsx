@@ -66,12 +66,19 @@ function Home() {
 
   const handleSearch = (e) => {
     e.preventDefault();
+    console.log('Search form submitted');
     const honeypot = e.target.elements.honeypot.value;
     if (honeypot) {
       setError('Spam detected');
+      console.log('Spam detected in honeypot');
       return;
     }
-    if (!searchQuery.trim()) return;
+    if (!searchQuery.trim()) {
+      console.log('Search query is empty');
+      setError('Please enter a search term');
+      return;
+    }
+    console.log('Navigating to search with query:', searchQuery);
     navigate(`/search?query=${encodeURIComponent(searchQuery)}`);
     setSearchQuery('');
   };
@@ -85,7 +92,6 @@ function Home() {
     try {
       console.log('handleDownload started - songId:', songId, 'fileId:', fileId);
 
-      // Step 1: Check download limits
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       if (sessionError) throw sessionError;
       const isAuthenticated = !!sessionData?.session;
@@ -130,7 +136,6 @@ function Home() {
       localStorage.setItem(downloadKey, downloadCount + 1);
       console.log('Download count after:', downloadCount + 1);
 
-      // Step 2: Trigger file download
       const numericSongId = parseInt(songId, 10);
       if (isNaN(numericSongId)) throw new Error('Invalid song ID');
       console.log('Parsed song ID:', numericSongId);
@@ -144,7 +149,6 @@ function Home() {
       document.body.removeChild(link);
       console.log('File download triggered');
 
-      // Step 3: Fetch current downloads
       const { data: songData, error: fetchError } = await supabase
         .from('songs')
         .select('id, downloads')
@@ -157,7 +161,6 @@ function Home() {
       const currentDownloads = songData.downloads || 0;
       console.log('Downloads before update:', currentDownloads);
 
-      // Step 4: Update downloads using RPC
       const { data: newDownloads, error: updateError } = await supabase
         .rpc('update_song_downloads', { p_song_id: numericSongId });
       if (updateError) {
@@ -166,7 +169,6 @@ function Home() {
       }
       console.log('New downloads value from RPC:', newDownloads);
 
-      // Step 5: Fetch updated song to confirm
       const { data: updatedSong, error: postUpdateFetchError } = await supabase
         .from('songs')
         .select('id, title, composer, google_drive_file_id, downloads, is_public, permalink')
@@ -178,7 +180,6 @@ function Home() {
       }
       console.log('Fetched song after update:', JSON.stringify(updatedSong, null, 2));
 
-      // Step 6: Refetch all songs to update state
       const { data: updatedSongs, error: refetchError } = await supabase
         .from('songs')
         .select('id, title, composer, google_drive_file_id, permalink, is_public, downloads')

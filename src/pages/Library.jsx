@@ -117,8 +117,8 @@ function Library() {
       const currentDownloads = songData.downloads || 0;
       console.log('Downloads before update:', currentDownloads);
 
-      // Step 4: Update downloads using raw SQL
-      const { error: sqlError } = await supabase.rpc('increment_downloads', { song_id: numericSongId });
+      // Step 4: Update downloads using new RPC function
+      const { error: sqlError } = await supabase.rpc('increment_song_downloads', { p_song_id: numericSongId });
       if (sqlError) {
         console.error('SQL update error:', JSON.stringify(sqlError, null, 2));
         throw sqlError;

@@ -3,7 +3,7 @@
   [headers.values]
     Content-Security-Policy = """
       default-src 'self';
-      img-src 'self' data: https://images.unsplash.com https://images.pexels.com;
+      img-src 'self' data: https:;
       style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
       font-src 'self' https://fonts.gstatic.com;
       script-src 'self' 'unsafe-inline' https://unpkg.com https://www.google.com https://www.gstatic.com;

@@ -45,7 +45,6 @@ function Library() {
     try {
       console.log('handleDownload started - songId:', songId, 'fileId:', fileId);
 
-      // Step 1: Check download limits
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       if (sessionError) throw sessionError;
       const isAuthenticated = !!sessionData?.session;
@@ -58,6 +57,7 @@ function Library() {
       const lastResetKey = `lastReset_${year}-${month}`;
       const storedReset = localStorage.getItem(lastResetKey);
       const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+      const monthName = now.toLocaleString('default', { month: 'long' });
 
       if (!storedReset || storedReset !== currentMonthStart) {
         localStorage.setItem(downloadKey, '0');
@@ -67,8 +67,12 @@ function Library() {
       const downloadCount = parseInt(localStorage.getItem(downloadKey) || '0', 10);
       console.log('Download count before:', downloadCount);
 
+      const maxDownloads = isAuthenticated ? 6 : 3;
+      const downloadsUsed = downloadCount;
+      const downloadsRemaining = maxDownloads - downloadsUsed;
+
       if (!isAuthenticated && downloadCount >= 3) {
-        setDownloadPrompt('Download Limit Reached.\nYou’ve used your 3 free monthly downloads. Sign up for 6 monthly downloads or Buy us a Meat Pie ☕ for unlimited access! Every bit helps keep the site running! 🤗');
+        setDownloadPrompt(`Download Limit Reached for ${monthName}! This resets on the 1st of every month. You’re allowed 3 downloads per month, have used ${downloadsUsed}, and have ${downloadsRemaining} remaining. Want to keep downloading? Buy us a Meat Pie ☕ to help sustain the site and enjoy unlimited access, or Just Sign up for additional downloads. Every little bit helps keep the site running! 🤗`);
         return;
       } else if (isAuthenticated) {
         const { data: userData, error: userError } = await supabase.auth.getUser();
@@ -83,14 +87,13 @@ function Library() {
         console.log('Profile data:', JSON.stringify(profileData, null, 2));
 
         if (!profileData?.has_donated && downloadCount >= 6) {
-          setDownloadPrompt('Download Limit Reached.\nYou’ve used your 6 free monthly downloads. Buy us a Meat Pie ☕ for unlimited access this month! Every bit helps keep the site running! 🤗');
+          setDownloadPrompt(`Download Limit Reached for ${monthName}! This resets on the 1st of every month. You’re allowed 6 downloads per month, have used ${downloadsUsed}, and have ${downloadsRemaining} remaining. Want to keep downloading? Buy us a Meat Pie ☕ to help sustain the site and enjoy unlimited access, or Just Sign up for additional downloads. Every little bit helps keep the site running! 🤗`);
           return;
         }
       }
       localStorage.setItem(downloadKey, downloadCount + 1);
       console.log('Download count after:', downloadCount + 1);
 
-      // Step 2: Trigger file download
       const numericSongId = parseInt(songId, 10);
       if (isNaN(numericSongId)) throw new Error('Invalid song ID');
       console.log('Parsed song ID:', numericSongId);
@@ -104,7 +107,6 @@ function Library() {
       document.body.removeChild(link);
       console.log('File download triggered');
 
-      // Step 3: Fetch current downloads
       const { data: songData, error: fetchError } = await supabase
         .from('songs')
         .select('id, downloads')
@@ -117,7 +119,6 @@ function Library() {
       const currentDownloads = songData.downloads || 0;
       console.log('Downloads before update:', currentDownloads);
 
-      // Step 4: Update downloads using RPC
       const { data: newDownloads, error: updateError } = await supabase
         .rpc('update_song_downloads', { p_song_id: numericSongId });
       if (updateError) {
@@ -126,7 +127,6 @@ function Library() {
       }
       console.log('New downloads value from RPC:', newDownloads);
 
-      // Step 5: Fetch updated song to confirm
       const { data: updatedSong, error: postUpdateFetchError } = await supabase
         .from('songs')
         .select('id, title, composer, google_drive_file_id, downloads, is_public, permalink')
@@ -138,7 +138,6 @@ function Library() {
       }
       console.log('Fetched song after update:', JSON.stringify(updatedSong, null, 2));
 
-      // Step 6: Refetch all songs to update state
       const { data: updatedSongs, error: refetchError } = await supabase
         .from('songs')
         .select('id, title, composer, google_drive_file_id, permalink, is_public, downloads')
@@ -318,17 +317,13 @@ function Library() {
         <div className="modal-overlay">
           <div className="modal-content download-modal">
             <h3 className="modal-title">Download Limit Reached</h3>
-            <p className="modal-text">
-              Want to keep downloading?{' '}
-              <button className="meatpie-button">
-                <Link to="/signup-donate" className="modal-link">Buy us a Meat Pie ☕</Link>
-              </button>{' '}
-              to help sustain the site and enjoy unlimited access, or{' '}
-              <button className="signup-button">
-                <Link to="/signup" className="modal-link">Just Sign up</Link>
-              </button>{' '}
-              for additional downloads. Every little bit helps keep the site running! 🤗
-            </p>
+            <p className="modal-text">{downloadPrompt}</p>
+            <button className="meatpie-button">
+              <Link to="/signup-donate" className="modal-link">Buy us a Meat Pie ☕</Link>
+            </button>{' '}
+            <button className="signup-button">
+              <Link to="/signup" className="modal-link">Just Sign up</Link>
+            </button>{' '}
             <button onClick={() => setDownloadPrompt(null)} className="cancel-button">Close</button>
           </div>
         </div>

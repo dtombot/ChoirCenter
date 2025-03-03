@@ -157,16 +157,14 @@ function Home() {
       const currentDownloads = songData.downloads || 0;
       console.log('Downloads before update:', currentDownloads);
 
-      // Step 4: Update downloads without expecting immediate return
-      const { error: updateError } = await supabase
-        .from('songs')
-        .update({ downloads: currentDownloads + 1 })
-        .eq('id', numericSongId);
+      // Step 4: Update downloads using RPC
+      const { data: newDownloads, error: updateError } = await supabase
+        .rpc('update_song_downloads', { p_song_id: numericSongId });
       if (updateError) {
-        console.error('Update error:', JSON.stringify(updateError, null, 2));
+        console.error('RPC update error:', JSON.stringify(updateError, null, 2));
         throw updateError;
       }
-      console.log('Update executed successfully');
+      console.log('New downloads value from RPC:', newDownloads);
 
       // Step 5: Fetch updated song to confirm
       const { data: updatedSong, error: postUpdateFetchError } = await supabase

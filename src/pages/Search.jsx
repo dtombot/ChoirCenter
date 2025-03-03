@@ -23,7 +23,7 @@ function Search() {
         .from('songs')
         .select('id, title, composer, permalink, is_public, downloads')
         .or(`title.ilike.%${query}%,composer.ilike.%${query}%`)
-        .eq('is_public', true) // Only public songs
+        .eq('is_public', true)
         .limit(10);
       if (songError) {
         console.error('Song search error:', songError.message);
@@ -51,29 +51,57 @@ function Search() {
   }, [query]);
 
   return (
-    <div className="search-container">
+    <div className="home-container">
       <h1 className="search-title animate-text">Search Results for "{query}"</h1>
       {error ? (
         <p className="error-message">{error}</p>
       ) : searchResults.length === 0 ? (
         <p className="no-results">No results found for "{query}".</p>
       ) : (
-        <div className="search-grid">
-          {searchResults.map(result => (
-            <Link
-              key={result.id}
-              to={result.composer ? `/song/${result.permalink || result.id}` : `/blog/${result.permalink || `post-${result.id}`}`}
-              className="search-card animate-card"
-            >
-              <h3 className="search-card-title">{result.title}</h3>
-              {result.composer && <p className="search-card-composer">{result.composer}</p>}
-              {result.downloads !== undefined && (
-                <p className="search-card-downloads">Downloaded {result.downloads || 0} times</p>
+        <>
+          <section className="latest-additions">
+            <h2 className="section-title animate-text">Songs</h2>
+            <div className="song-grid">
+              {searchResults.filter(result => result.composer).length > 0 ? (
+                searchResults.filter(result => result.composer).map((song, index) => (
+                  <div
+                    key={song.id}
+                    className={`song-card-modern ${index % 2 === 0 ? 'variant-1' : 'variant-2'}`}
+                  >
+                    <Link to={`/song/${song.permalink || song.id}`} className="song-card-link">
+                      <div className="song-card-content">
+                        <h3 className="song-card-title-modern">{song.title}</h3>
+                        <p className="song-card-composer-modern">{song.composer || 'Unknown Composer'}</p>
+                        <p className="song-card-downloads-modern">Downloaded {song.downloads || 0} times</p>
+                      </div>
+                    </Link>
+                  </div>
+                ))
+              ) : (
+                <p>No matching songs found.</p>
               )}
-              <span className="search-card-type">{result.composer ? 'Song' : 'Blog Post'}</span>
-            </Link>
-          ))}
-        </div>
+            </div>
+          </section>
+          <hr className="section-separator" />
+          <section className="blog-list-container">
+            <h2 className="section-title animate-text">Blog Posts</h2>
+            <div className="blog-list">
+              {searchResults.filter(result => !result.composer).length > 0 ? (
+                searchResults.filter(result => !result.composer).map((post, index) => (
+                  <Link
+                    key={post.id}
+                    to={`/blog/${post.permalink || `post-${post.id}`}`}
+                    className={`blog-card-modern ${index % 2 === 0 ? 'variant-1' : 'variant-2'}`}
+                  >
+                    <h3 className="blog-card-title-modern">{post.title}</h3>
+                  </Link>
+                ))
+              ) : (
+                <p>No matching blog posts found.</p>
+              )}
+            </div>
+          </section>
+        </>
       )}
       <Link to="/" className="action-button">Back to Home</Link>
     </div>

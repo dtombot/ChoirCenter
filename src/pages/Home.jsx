@@ -158,8 +158,9 @@ function Home() {
       const now = new Date();
       const year = now.getFullYear();
       const month = String(now.getMonth() + 1).padStart(2, '0');
-      const downloadKey = `downloads_${year}-${month}`;
-      const lastResetKey = `lastReset_${year}-${month}`;
+      const yearMonth = `${year}-${month}`;
+      const downloadKey = `downloads_${yearMonth}`;
+      const lastResetKey = `lastReset_${yearMonth}`;
       const storedReset = localStorage.getItem(lastResetKey);
       const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
       const monthName = now.toLocaleString('default', { month: 'long' });
@@ -169,10 +170,59 @@ function Home() {
         localStorage.setItem(lastResetKey, currentMonthStart);
       }
 
-      const downloadCount = parseInt(localStorage.getItem(downloadKey) || '0', 10);
-      console.log('Download count before:', downloadCount);
-
+      let downloadCount = parseInt(localStorage.getItem(downloadKey) || '0', 10);
       const maxDownloads = isAuthenticated ? 6 : 3;
+      const clientIdKey = 'client_id';
+      let clientId = localStorage.getItem(clientIdKey);
+
+      if (!isAuthenticated) {
+        if (!clientId) {
+          const { data, error } = await supabase.rpc('uuid_generate_v4');
+          if (error) throw error;
+          clientId = data;
+          localStorage.setItem(clientIdKey, clientId);
+          console.log('Generated new client ID:', clientId);
+        }
+
+        const { data: limitData, error: limitError } = await supabase
+          .from('download_limits')
+          .select('download_count')
+          .eq('id', clientId)
+          .eq('year_month', yearMonth)
+          .eq('is_authenticated', false)
+          .single();
+
+        if (limitError && limitError.code !== 'PGRST116') throw limitError; // PGRST116 means no row found
+        downloadCount = limitData ? limitData.download_count : 0;
+        console.log('Server download count:', downloadCount);
+
+        // Sync localStorage with server count if higher
+        if (downloadCount > parseInt(localStorage.getItem(downloadKey) || '0', 10)) {
+          localStorage.setItem(downloadKey, downloadCount.toString());
+        }
+      } else {
+        const { data: userData, error: userError } = await supabase.auth.getUser();
+        if (userError) throw userError;
+        const userId = userData.user.id;
+
+        const { data: limitData, error: limitError } = await supabase
+          .from('download_limits')
+          .select('download_count')
+          .eq('user_id', userId)
+          .eq('year_month', yearMonth)
+          .eq('is_authenticated', true)
+          .single();
+
+        if (limitError && limitError.code !== 'PGRST116') throw limitError;
+        downloadCount = limitData ? limitData.download_count : 0;
+        console.log('Server download count for user:', downloadCount);
+
+        if (downloadCount > parseInt(localStorage.getItem(downloadKey) || '0', 10)) {
+          localStorage.setItem(downloadKey, downloadCount.toString());
+        }
+      }
+
+      console.log('Download count before check:', downloadCount);
       const downloadsUsed = downloadCount;
       const downloadsRemaining = maxDownloads - downloadsUsed;
 
@@ -196,8 +246,37 @@ function Home() {
           return;
         }
       }
-      localStorage.setItem(downloadKey, downloadCount + 1);
-      console.log('Download count after:', downloadCount + 1);
+
+      // Increment and update count
+      downloadCount += 1;
+      localStorage.setItem(downloadKey, downloadCount.toString());
+      console.log('Download count after:', downloadCount);
+
+      if (!isAuthenticated) {
+        const { error: upsertError } = await supabase
+          .from('download_limits')
+          .upsert({
+            id: clientId,
+            download_count: downloadCount,
+            year_month: yearMonth,
+            is_authenticated: false,
+          }, { onConflict: 'id' });
+        if (upsertError) throw upsertError;
+        console.log('Updated server download count for anonymous user:', downloadCount);
+      } else {
+        const { data: userData } = await supabase.auth.getUser();
+        const { error: upsertError } = await supabase
+          .from('download_limits')
+          .upsert({
+            id: userData.user.id, // Use user ID as primary key for authenticated users
+            download_count: downloadCount,
+            year_month: yearMonth,
+            is_authenticated: true,
+            user_id: userData.user.id,
+          }, { onConflict: 'id' });
+        if (upsertError) throw upsertError;
+        console.log('Updated server download count for authenticated user:', downloadCount);
+      }
 
       const numericSongId = parseInt(songId, 10);
       if (isNaN(numericSongId)) throw new Error('Invalid song ID');

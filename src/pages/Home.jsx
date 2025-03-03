@@ -99,7 +99,7 @@ function Home() {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    console.log('Search form submitted');
+    console.log('Search form submitted via onSubmit');
     const honeypot = e.target.elements.honeypot.value;
     if (honeypot) {
       setError('Spam detected');
@@ -111,7 +111,7 @@ function Home() {
       console.log('Search query is empty');
       return;
     }
-    console.log('Navigating to search page with query:', searchQuery);
+    console.log('Attempting navigation to search page with query:', searchQuery);
     navigate(`/search?query=${encodeURIComponent(searchQuery)}`);
   };
 
@@ -120,6 +120,25 @@ function Home() {
     console.log('Search input changed:', newQuery);
     setSearchQuery(newQuery);
     filterContent(newQuery);
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      console.log('Enter key pressed in input');
+      const honeypot = document.querySelector('input[name="honeypot"]').value;
+      if (honeypot) {
+        setError('Spam detected');
+        console.log('Spam detected in honeypot via keypress');
+        return;
+      }
+      if (!searchQuery.trim()) {
+        setError('Please enter a search term');
+        console.log('Search query is empty via keypress');
+        return;
+      }
+      console.log('Navigating via Enter keypress with query:', searchQuery);
+      navigate(`/search?query=${encodeURIComponent(searchQuery)}`);
+    }
   };
 
   const handleSongClick = (song) => {
@@ -277,6 +296,7 @@ function Home() {
               placeholder="Search songs and posts..."
               value={searchQuery}
               onChange={handleSearchChange}
+              onKeyPress={handleKeyPress}
               className="search-input animate-input"
             />
             <input type="text" name="honeypot" className="honeypot" />

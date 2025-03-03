@@ -157,16 +157,13 @@ function Home() {
       const currentDownloads = songData.downloads || 0;
       console.log('Downloads before update:', currentDownloads);
 
-      // Step 4: Update downloads using update (not upsert)
-      const { error: updateError } = await supabase
-        .from('songs')
-        .update({ downloads: currentDownloads + 1 })
-        .eq('id', numericSongId);
-      if (updateError) {
-        console.error('Update error:', JSON.stringify(updateError, null, 2));
-        throw updateError;
+      // Step 4: Update downloads using raw SQL
+      const { error: sqlError } = await supabase.rpc('increment_downloads', { song_id: numericSongId });
+      if (sqlError) {
+        console.error('SQL update error:', JSON.stringify(sqlError, null, 2));
+        throw sqlError;
       }
-      console.log('Update successful');
+      console.log('SQL update successful');
 
       // Step 5: Refetch songs to confirm update
       const { data: updatedSongs, error: refetchError } = await supabase

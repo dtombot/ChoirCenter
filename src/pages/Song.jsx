@@ -134,16 +134,21 @@ function Song() {
       const currentDownloads = songData.downloads || 0;
       console.log('Downloads before update:', currentDownloads);
 
-      // Step 4: Update downloads using new RPC function
-      const { error: sqlError } = await supabase.rpc('increment_song_downloads', { p_song_id: numericSongId });
-      if (sqlError) {
-        console.error('SQL update error:', JSON.stringify(sqlError, null, 2));
-        throw sqlError;
+      // Step 4: Update downloads directly with select
+      const { data: updatedSong, error: updateError } = await supabase
+        .from('songs')
+        .update({ downloads: currentDownloads + 1 })
+        .eq('id', numericSongId)
+        .select('downloads')
+        .single();
+      if (updateError) {
+        console.error('Update error:', JSON.stringify(updateError, null, 2));
+        throw updateError;
       }
-      console.log('SQL update successful');
+      console.log('Updated song after update:', JSON.stringify(updatedSong, null, 2));
 
       // Step 5: Refetch song to confirm update
-      const { data: updatedSong, error: refetchError } = await supabase
+      const { data: refetchedSong, error: refetchError } = await supabase
         .from('songs')
         .select('id, title, composer, google_drive_file_id, downloads, is_public, permalink')
         .eq('id', numericSongId)
@@ -152,8 +157,8 @@ function Song() {
         console.error('Refetch error:', refetchError.message);
         throw refetchError;
       }
-      console.log('Refetched song:', JSON.stringify(updatedSong, null, 2));
-      setSong(updatedSong);
+      console.log('Refetched song:', JSON.stringify(refetchedSong, null, 2));
+      setSong(refetchedSong);
     } catch (err) {
       console.error('Download error:', err.message);
       setError('Failed to download or update count: ' + err.message);

@@ -107,18 +107,21 @@ function Song() {
       localStorage.setItem(downloadKey, downloadCount + 1);
       console.log('Download count after:', downloadCount + 1);
 
-      // Step 2: Trigger file download
+      // Step 2: Trigger file download with Promise
       const numericSongId = parseInt(song.id, 10);
       if (isNaN(numericSongId)) throw new Error('Invalid song ID');
       console.log('Parsed song ID:', numericSongId);
 
       const url = `https://drive.google.com/uc?export=download&id=${song.google_drive_file_id}`;
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `choircenter.com-${song.id}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      await new Promise(resolve => {
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `choircenter.com-${song.id}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        resolve();
+      });
       console.log('File download triggered');
 
       // Step 3: Fetch current downloads

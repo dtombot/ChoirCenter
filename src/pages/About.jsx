@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import styled from "styled-components";
-import { Helmet } from "react-helmet"; // For meta tags (install: npm install react-helmet)
+import { Helmet } from "react-helmet"; // For meta tags
 
 // Color theme
 const LIGHT_GREEN = "#A9DFBF"; // Light green shade
@@ -13,7 +13,7 @@ const SiteContainer = styled.div`
   height: 100%;
   overflow-x: auto;
   overflow-y: scroll;
-  font-family: Arial, Helvetica, sans-serif; /* Wix default font */
+  font-family: Arial, Helvetica, sans-serif;
   margin: 0 auto;
   background: ${WHITE};
 `;
@@ -33,8 +33,8 @@ const Header = styled.header`
   width: 100%;
   padding: 40px 20px;
   text-align: center;
-  background-color: ${LIGHT_GREEN}; /* Light green header */
-  color: ${DARK_GREEN}; /* Dark green text */
+  background-color: ${LIGHT_GREEN};
+  color: ${DARK_GREEN};
 `;
 
 const PagesContainer = styled.main`
@@ -43,7 +43,7 @@ const PagesContainer = styled.main`
   position: relative;
   width: 100%;
   padding: 20px 0;
-  background-color: ${WHITE}; /* White background for content */
+  background-color: ${WHITE};
 `;
 
 const Footer = styled.footer`
@@ -52,8 +52,8 @@ const Footer = styled.footer`
   width: 100%;
   padding: 20px;
   text-align: center;
-  background-color: ${DARK_GREEN}; /* Dark green footer */
-  color: ${WHITE}; /* White text */
+  background-color: ${DARK_GREEN};
+  color: ${WHITE};
 `;
 
 const AboutContainer = styled.div`
@@ -69,7 +69,7 @@ const AboutContainer = styled.div`
 const AboutTitle = styled.h1`
   font-size: 2.5rem;
   margin-bottom: 20px;
-  color: ${DARK_GREEN}; /* Dark green title */
+  color: ${DARK_GREEN};
   font-weight: bold;
 
   @media (max-width: 768px) {
@@ -80,15 +80,15 @@ const AboutTitle = styled.h1`
 const AboutContent = styled.section`
   font-size: 1rem;
   line-height: 1.6;
-  color: ${DARK_GREEN}; /* Dark green text for readability */
+  color: ${DARK_GREEN};
 
   p {
     margin-bottom: 20px;
     opacity: 0;
-    transition: opacity 0.6s ease-in-out; /* Wix-like transition */
-    background-color: ${LIGHT_GREEN}; /* Light green background for paragraphs */
+    transition: opacity 0.6s ease-in-out;
+    background-color: ${LIGHT_GREEN};
     padding: 15px;
-    border-radius: 8px; /* Slight rounding for a polished look */
+    border-radius: 8px;
   }
 
   p.visible {
@@ -96,7 +96,7 @@ const AboutContent = styled.section`
   }
 
   strong {
-    color: ${DARK_GREEN}; /* Dark green for emphasis */
+    color: ${DARK_GREEN};
     font-weight: bold;
   }
 `;
@@ -120,7 +120,6 @@ function About() {
 
   return (
     <>
-      {/* Meta tags inspired by Wix for SEO and compatibility */}
       <Helmet>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -130,7 +129,6 @@ function About() {
         <link rel="icon" href="/favicon.ico" /> {/* Update with your favicon */}
       </Helmet>
 
-      {/* Main structure inspired by Wix */}
       <SiteContainer id="SITE_CONTAINER">
         <MasterPage id="masterPage">
           <Header id="SITE_HEADER">

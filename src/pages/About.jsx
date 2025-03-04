@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import styled from "styled-components";
-import { Helmet } from "react-helmet"; // For meta tags
+import { Helmet } from "react-helmet";
 
 // Color theme
 const LIGHT_GREEN = "#A9DFBF"; // Light green shade
@@ -126,7 +126,7 @@ function About() {
         <meta name="description" content="Learn more about Choir Center, your ultimate platform for choir resources." />
         <meta name="format-detection" content="telephone=no" />
         <title>About Choir Center</title>
-        <link rel="icon" href="/favicon.ico" /> {/* Update with your favicon */}
+        <link rel="icon" href="/favicon.ico" />
       </Helmet>
 
       <SiteContainer id="SITE_CONTAINER">

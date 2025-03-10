@@ -1,3 +1,4 @@
+// src/pages/Admin.jsx
 import { useEffect, useState } from 'react';
 import { supabase } from '../supabase';
 import { useNavigate } from 'react-router-dom';
@@ -38,6 +39,7 @@ function Admin() {
     is_active: true
   });
   const [analyticsData, setAnalyticsData] = useState({ ga: null, gsc: null });
+  const [visitorData, setVisitorData] = useState([]); // New state for visitor data
   const [topSongs, setTopSongs] = useState([]);
   const [topPosts, setTopPosts] = useState([]);
   const [songOfTheWeekHtml, setSongOfTheWeekHtml] = useState('');
@@ -90,7 +92,7 @@ function Admin() {
       const fetchUsers = async () => {
         try {
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+          const timeoutId = setTimeout(() => controller.abort(), 10000);
           const response = await fetch('/.netlify/functions/fetch-users', { signal: controller.signal });
           clearTimeout(timeoutId);
           if (!response.ok) throw new Error('Failed to fetch users');
@@ -121,6 +123,17 @@ function Admin() {
         }
       };
       fetchAnalytics();
+
+      const fetchVisitors = async () => { // New function to fetch visitor data
+        const { data, error } = await supabase
+          .from('visitors')
+          .select('*')
+          .order('visit_timestamp', { ascending: false })
+          .limit(100); // Limit to last 100 visits for performance
+        if (error) setError('Failed to load visitor data: ' + error.message);
+        else setVisitorData(data || []);
+      };
+      fetchVisitors();
 
       const fetchTopSongs = async () => {
         const { data, error } = await supabase
@@ -210,7 +223,6 @@ function Admin() {
         return;
       }
 
-      // Convert tags string to array
       const tagsArray = postForm.tags
         ? postForm.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0)
         : null;
@@ -220,7 +232,7 @@ function Admin() {
         content: postForm.content,
         permalink: generatedPermalink,
         meta_description: postForm.meta_description || null,
-        tags: tagsArray, // Pass as array instead of string
+        tags: tagsArray,
         category: postForm.category || null,
         focus_keyword: postForm.focus_keyword || null,
         featured_image_url: postForm.featured_image_url || null,
@@ -329,7 +341,7 @@ function Admin() {
       content: post.content, 
       permalink: post.permalink || '', 
       meta_description: post.meta_description || '', 
-      tags: post.tags ? post.tags.join(', ') : '', // Convert array back to string for editing
+      tags: post.tags ? post.tags.join(', ') : '',
       category: post.category || '', 
       focus_keyword: post.focus_keyword || '',
       featured_image_url: post.featured_image_url || ''
@@ -396,7 +408,7 @@ function Admin() {
         const { error } = await supabase.from('admins').insert([{ user_id: id }]);
         if (error) throw error;
       }
-      fetchUsers(); // Refresh user list
+      fetchUsers();
     } catch (err) {
       setError('Failed to update user status: ' + err.message);
     }
@@ -449,7 +461,7 @@ function Admin() {
   const fetchUsers = async () => {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
       const response = await fetch('/.netlify/functions/fetch-users', { signal: controller.signal });
       clearTimeout(timeoutId);
       if (!response.ok) throw new Error('Failed to fetch users');
@@ -465,6 +477,35 @@ function Admin() {
   const totalDownloads = songs.reduce((sum, song) => sum + (song.downloads || 0), 0);
   const publicSongs = songs.filter(song => song.is_public).length;
   const privateSongs = songs.length - publicSongs;
+
+  // Aggregate visitor metrics
+  const totalVisits = visitorData.length;
+  const uniqueVisitors = new Set(visitorData.map(v => v.ip_address)).size;
+  const avgDuration = visitorData.length
+    ? Math.round(visitorData.reduce((sum, v) => sum + (v.duration || 0), 0) / visitorData.length)
+    : 0;
+  const topCities = Object.entries(
+    visitorData.reduce((acc, v) => {
+      acc[v.city] = (acc[v.city] || 0) + 1;
+      return acc;
+    }, {})
+  )
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5);
+  const topReferrers = Object.entries(
+    visitorData.reduce((acc, v) => {
+      acc[v.referrer] = (acc[v.referrer] || 0) + 1;
+      return acc;
+    }, {})
+  )
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5);
+  const deviceTypes = Object.entries(
+    visitorData.reduce((acc, v) => {
+      acc[v.device_type] = (acc[v.device_type] || 0) + 1;
+      return acc;
+    }, {})
+  );
 
   return (
     <div className="admin-container">
@@ -856,6 +897,76 @@ function Admin() {
                   </div>
                 </div>
               )}
+            </div>
+            <div className="analytics-section visitor-data">
+              <h3 className="analytics-section-title">Site Visitors (Last 100 Visits)</h3>
+              <div className="analytics-row">
+                <div className="admin-analytics-item">
+                  <h4 className="admin-analytics-title">Total Visits</h4>
+                  <p className="admin-analytics-value">{totalVisits}</p>
+                </div>
+                <div className="admin-analytics-item">
+                  <h4 className="admin-analytics-title">Unique Visitors</h4>
+                  <p className="admin-analytics-value">{uniqueVisitors}</p>
+                </div>
+                <div className="admin-analytics-item">
+                  <h4 className="admin-analytics-title">Avg. Duration</h4>
+                  <p className="admin-analytics-value">{avgDuration}s</p>
+                </div>
+                <div className="admin-analytics-item">
+                  <h4 className="admin-analytics-title">Top Cities</h4>
+                  <ul className="top-items">
+                    {topCities.map(([city, count]) => (
+                      <li key={city}>{city}: {count}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="admin-analytics-item">
+                  <h4 className="admin-analytics-title">Top Referrers</h4>
+                  <ul className="top-items">
+                    {topReferrers.map(([referrer, count]) => (
+                      <li key={referrer}>{referrer}: {count}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="admin-analytics-item">
+                  <h4 className="admin-analytics-title">Device Types</h4>
+                  <ul className="top-items">
+                    {deviceTypes.map(([type, count]) => (
+                      <li key={type}>{type}: {count}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+              <h4 className="analytics-section-subtitle">Recent Visits</h4>
+              <div className="admin-table-container">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Timestamp</th>
+                      <th>IP</th>
+                      <th>City</th>
+                      <th>Page</th>
+                      <th>Duration (s)</th>
+                      <th>Clicks</th>
+                      <th>Device</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {visitorData.map(visit => (
+                      <tr key={visit.id}>
+                        <td>{new Date(visit.visit_timestamp).toLocaleString()}</td>
+                        <td>{visit.ip_address}</td>
+                        <td>{visit.city}</td>
+                        <td>{visit.page_url}</td>
+                        <td>{visit.duration || 0}</td>
+                        <td>{visit.click_events.length ? visit.click_events.map(e => e.element).join(', ') : 'None'}</td>
+                        <td>{visit.device_type}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}

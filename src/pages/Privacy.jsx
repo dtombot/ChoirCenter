@@ -16,6 +16,7 @@ function Privacy() {
           <li><strong>Personal Information:</strong> When you register, contact us, or donate, we may collect your name, email address, phone number, and payment details (processed securely via third-party providers like Paystack).</li>
           <li><strong>Usage Data:</strong> We gather data on how you interact with our site, such as IP address, browser type, pages visited, and timestamps, using cookies and analytics tools.</li>
           <li><strong>Content Submissions:</strong> Information you provide, like messages via our contact form or song download preferences.</li>
+          <li><strong>Visitor Tracking:</strong> We collect anonymized data on site visits, including IP addresses (for location), referrers, clicks, duration, and device types, to improve our services.</li>
         </ul>
 
         <h3>2. How We Use Your Information</h3>

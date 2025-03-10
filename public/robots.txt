@@ -4,4 +4,4 @@ Disallow: /signup
 Disallow: /login
 Allow: /
 
-Sitemap: https://choircenter.com/sitemap.xml
+Sitemap: https://choircenter.com/.netlify/functions/sitemap

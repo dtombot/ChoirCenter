@@ -16,10 +16,47 @@
   <!-- Google reCAPTCHA Script -->
   <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
+<!-- public/index.html -->
 <body>
   <noscript>You need to enable JavaScript to run this app.</noscript>
   <div id="root"></div>
   <!-- React Quill JS -->
   <script src="https://unpkg.com/react-quill@2.0.0/dist/react-quill.js"></script>
+  <!-- Visitor Tracking Script -->
+  <script>
+    (function () {
+      let startTime = Date.now();
+      let clickEvents = [];
+
+      // Track clicks
+      document.addEventListener('click', (e) => {
+        const target = e.target.tagName.toLowerCase() + (e.target.id ? `#${e.target.id}` : '');
+        clickEvents.push({
+          element: target,
+          timestamp: new Date().toISOString(),
+        });
+      });
+
+      // Send data on page unload
+      window.addEventListener('beforeunload', () => {
+        const duration = Math.round((Date.now() - startTime) / 1000); // Duration in seconds
+        const data = {
+          pageUrl: window.location.href,
+          clickEvents: clickEvents,
+          duration: duration,
+        };
+
+        // Use navigator.sendBeacon for reliable sending
+        navigator.sendBeacon('/.netlify/functions/track-visitor', JSON.stringify(data));
+      });
+
+      // Initial visit tracking (without duration or clicks yet)
+      fetch('/.netlify/functions/track-visitor', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pageUrl: window.location.href }),
+      });
+    })();
+  </script>
 </body>
 </html>

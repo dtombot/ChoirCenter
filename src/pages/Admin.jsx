@@ -1,4 +1,3 @@
-// src/pages/Admin.jsx
 import { useEffect, useState } from 'react';
 import { supabase } from '../supabase';
 import { useNavigate } from 'react-router-dom';
@@ -137,6 +136,17 @@ function Admin() {
       };
       fetchVisitors();
 
+      // Real-time visitor subscription
+      const visitorSubscription = supabase
+        .channel('visitors')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'visitors' }, (payload) => {
+          setVisitorData((current) => {
+            const newData = [payload.new, ...current].slice(0, 100);
+            return newData;
+          });
+        })
+        .subscribe();
+
       const fetchTopSongs = async () => {
         const { data, error } = await supabase
           .from('songs')
@@ -168,6 +178,10 @@ function Admin() {
         else setSongOfTheWeekHtml(data?.audio_url || '');
       };
       fetchSongOfTheWeek();
+
+      return () => {
+        supabase.removeChannel(visitorSubscription);
+      };
     };
     fetchUser();
   }, [navigate]);

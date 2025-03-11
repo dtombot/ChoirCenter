@@ -27,6 +27,7 @@ function Home() {
   const [songTitle, setSongTitle] = useState(''); // Fetched from Supabase
   const [songComposer, setSongComposer] = useState(''); // Fetched from Supabase
   const [isPlaying, setIsPlaying] = useState(false);
+  const [progress, setProgress] = useState(0); // Track playback progress (0-100)
   const audioRef = useRef(null);
   const navigate = useNavigate();
 
@@ -85,6 +86,21 @@ function Home() {
     }, 5000);
     return () => clearInterval(slideInterval);
   }, []);
+
+  // Update progress bar as audio plays
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (audio) {
+      const updateProgress = () => {
+        if (audio.duration) {
+          const progressValue = (audio.currentTime / audio.duration) * 100;
+          setProgress(progressValue);
+        }
+      };
+      audio.addEventListener('timeupdate', updateProgress);
+      return () => audio.removeEventListener('timeupdate', updateProgress);
+    }
+  }, [songOfTheWeek]);
 
   // Audio player functions
   const togglePlay = () => {
@@ -472,17 +488,19 @@ function Home() {
                 transition: 'all 0.3s ease',
               }}
             >
-              {/* Song Title with Animation */}
+              {/* Song Title and Composer with Animation */}
               <div
-                className="song-title"
+                className="song-info"
                 style={{
                   fontSize: '18px',
-                  fontWeight: 'bold',
                   opacity: 0,
                   animation: 'fadeInSlideUp 0.5s forwards',
                 }}
               >
-                {songTitle}
+                <div className="song-title" style={{ fontWeight: 'bold' }}>{songTitle}</div>
+                <div className="song-composer" style={{ fontSize: '14px', color: '#D4A017' }}>
+                  {songComposer}
+                </div>
               </div>
 
               {/* Rewind Button */}
@@ -579,11 +597,19 @@ function Home() {
                 <span role="img" aria-label="like">♥</span>
               </button>
 
-              {/* Progress Slider */}
+              {/* Progress Bar */}
               <input
                 type="range"
                 min="0"
                 max="100"
+                value={progress}
+                onChange={(e) => {
+                  if (audioRef.current) {
+                    const newTime = (e.target.value / 100) * audioRef.current.duration;
+                    audioRef.current.currentTime = newTime;
+                    setProgress(e.target.value);
+                  }
+                }}
                 style={{
                   width: '150px',
                   backgroundColor: '#4A7C6D',

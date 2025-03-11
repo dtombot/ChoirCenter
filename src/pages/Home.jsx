@@ -24,7 +24,8 @@ function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [downloadPrompt, setDownloadPrompt] = useState(null);
   const [songOfTheWeek, setSongOfTheWeek] = useState(null);
-  const [songTitle, setSongTitle] = useState('Kene Eze Igwe'); // Default title; update with Supabase data if available
+  const [songTitle, setSongTitle] = useState(''); // Fetched from Supabase
+  const [songComposer, setSongComposer] = useState(''); // Fetched from Supabase
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef(null);
   const navigate = useNavigate();
@@ -61,7 +62,7 @@ function Home() {
 
       const { data: songOfTheWeekData, error: sotwError } = await supabase
         .from('song_of_the_week')
-        .select('audio_url')
+        .select('audio_url, title, composer')
         .limit(1);
       if (sotwError) {
         console.error('Song of the Week fetch error:', sotwError.message);
@@ -69,8 +70,12 @@ function Home() {
       } else {
         console.log('Song of the Week data:', JSON.stringify(songOfTheWeekData, null, 2));
         const audioUrl = songOfTheWeekData && songOfTheWeekData.length > 0 ? songOfTheWeekData[0].audio_url : null;
-        console.log('Song of the Week audio URL:', audioUrl);
+        const title = songOfTheWeekData && songOfTheWeekData.length > 0 ? songOfTheWeekData[0].title : 'Unknown Title';
+        const composer = songOfTheWeekData && songOfTheWeekData.length > 0 ? songOfTheWeekData[0].composer || 'Unknown Composer' : 'Unknown Composer';
+        console.log('Song of the Week audio URL:', audioUrl, 'Title:', title, 'Composer:', composer);
         setSongOfTheWeek(audioUrl);
+        setSongTitle(title);
+        setSongComposer(composer);
       }
     };
     fetchData();

@@ -27,7 +27,6 @@ function Song() {
   const [numPages, setNumPages] = useState(null);
   const [scale, setScale] = useState(1.0);
   const [pdfProgress, setPdfProgress] = useState(0);
-  const [audioUrl, setAudioUrl] = useState(null);
   const audioRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -46,7 +45,7 @@ function Song() {
     const fetchSong = async () => {
       let query = supabase
         .from('songs')
-        .select('id, title, composer, google_drive_file_id, downloads, is_public, permalink, audio_url'); // Added audio_url
+        .select('id, title, composer, google_drive_file_id, downloads, is_public, permalink, audio_url');
       
       if (/^\d+$/.test(id)) {
         query = query.eq('id', parseInt(id, 10));
@@ -63,7 +62,6 @@ function Song() {
       } else {
         console.log('Initial song:', JSON.stringify(data, null, 2));
         setSong(data);
-        setAudioUrl(data.audio_url); // Set audio URL from fetched data
         setPdfProgress(100);
       }
     };
@@ -280,7 +278,6 @@ function Song() {
       }
       console.log('Fetched song after update:', JSON.stringify(updatedSong, null, 2));
       setSong(updatedSong);
-      setAudioUrl(updatedSong.audio_url);
     } catch (err) {
       console.error('Download error:', err.message);
       setError('Failed to download or update count: ' + err.message);
@@ -403,11 +400,11 @@ function Song() {
               <p className="song-composer-modern">{song.composer || 'Unknown Composer'}</p>
               <p className="song-downloads-modern">Downloaded {song.downloads || 0} times</p>
 
-              {/* Audio Player Section */}
-              {audioUrl && (
+              {/* Audio Player Section - Moved Here */}
+              {song.audio_url && (
                 <div className="song-preview-modern">
                   <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '0.5rem' }}>
-                    Download and listen to an audio preview of {song.title}
+                    Listen to an audio preview of {song.title}
                   </p>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
                     <button
@@ -425,7 +422,7 @@ function Song() {
                       Stop
                     </button>
                     <a
-                      href={audioUrl}
+                      href={song.audio_url}
                       download={`${song.title}-preview.mp3`}
                       className="download-button-modern"
                       style={{ padding: '0.5rem 1rem', minWidth: '100px', textDecoration: 'none', textAlign: 'center' }}
@@ -456,7 +453,7 @@ function Song() {
                   </div>
                   <audio
                     ref={audioRef}
-                    src={audioUrl}
+                    src={song.audio_url}
                     onTimeUpdate={updateProgress}
                     onEnded={() => {
                       setIsPlaying(false);
@@ -467,6 +464,7 @@ function Song() {
                 </div>
               )}
 
+              {/* PDF Preview */}
               <div className="song-preview-modern">
                 <Document
                   file={`/.netlify/functions/proxy-pdf?fileId=${song.google_drive_file_id}`}

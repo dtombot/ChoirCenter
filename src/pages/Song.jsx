@@ -27,6 +27,7 @@ function Song() {
   const [numPages, setNumPages] = useState(null);
   const [scale, setScale] = useState(1.0);
   const [pdfProgress, setPdfProgress] = useState(0);
+  const [hasDonated, setHasDonated] = useState(null); // New state for donation status
   const navigate = useNavigate();
   const shadowHostRef = useRef(null);
 
@@ -41,7 +42,8 @@ function Song() {
       }, 200);
     }
 
-    const fetchSong = async () => {
+    const fetchSongAndDonationStatus = async () => {
+      // Fetch song
       let query = supabase
         .from('songs')
         .select('id, title, composer, google_drive_file_id, downloads, is_public, permalink, audio_url');
@@ -52,19 +54,45 @@ function Song() {
         query = query.eq('permalink', id);
       }
 
-      const { data, error } = await query.single();
-      if (error) {
-        console.error('Initial song fetch error:', error.message);
-        setError('Failed to load song: ' + error.message);
-      } else if (!data.is_public) {
+      const { data: songData, error: songError } = await query.single();
+      if (songError) {
+        console.error('Initial song fetch error:', songError.message);
+        setError('Failed to load song: ' + songError.message);
+      } else if (!songData.is_public) {
         setError('This song is private and cannot be viewed.');
       } else {
-        console.log('Initial song:', JSON.stringify(data, null, 2));
-        setSong(data);
+        console.log('Initial song:', JSON.stringify(songData, null, 2));
+        setSong(songData);
         setPdfProgress(100);
       }
+
+      // Fetch donation status
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !sessionData?.session) {
+        setHasDonated(false); // Not logged in, assume no donation
+        return;
+      }
+
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError) {
+        console.error('User fetch error:', userError.message);
+        setHasDonated(false);
+        return;
+      }
+
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('has_donated')
+        .eq('id', userData.user.id)
+        .single();
+      if (profileError) {
+        console.error('Profile fetch error:', profileError.message);
+        setHasDonated(false);
+      } else {
+        setHasDonated(profileData.has_donated || false);
+      }
     };
-    fetchSong();
+    fetchSongAndDonationStatus();
 
     const updateScale = () => {
       const width = window.innerWidth;
@@ -86,12 +114,11 @@ function Song() {
   }, [id]);
 
   useEffect(() => {
-    if (song?.audio_url && shadowHostRef.current) {
-      // Create a shadow root to isolate the iframe
+    if (song?.audio_url && shadowHostRef.current && hasDonated) {
       const shadowRoot = shadowHostRef.current.attachShadow({ mode: 'open' });
       shadowRoot.innerHTML = song.audio_url;
     }
-  }, [song]);
+  }, [song, hasDonated]);
 
   const handleDownload = async () => {
     if (!song) return;
@@ -353,7 +380,7 @@ function Song() {
             <p className="error-message">{error}</p>
             <Link to="/library" className="action-button">Back to Library</Link>
           </>
-        ) : !song ? (
+        ) : !song || hasDonated === null ? ( // Wait for hasDonated to load
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px' }}>
             <svg width="60" height="60" viewBox="0 0 60 60">
               <circle
@@ -390,13 +417,39 @@ function Song() {
                   <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '0.5rem' }}>
                     Listen to an audio preview of {song.title}
                   </p>
-                  <div
-                    ref={shadowHostRef}
-                    style={{ maxWidth: '100%' }}
-                  />
+                  {hasDonated ? (
+                    <div
+                      ref={shadowHostRef}
+                      style={{ maxWidth: '100%' }}
+                    />
+                  ) : (
+                    <div
+                      style={{
+                        width: '500px',
+                        height: '60px',
+                        maxWidth: '100%',
+                        background: '#f0f0f0',
+                        borderRadius: '4px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        textAlign: 'center',
+                        padding: '10px',
+                        fontSize: '0.9rem',
+                        color: '#666',
+                      }}
+                    >
+                      <span>
+                        Want to hear this preview and enjoy unlimited access?{' '}
+                        <Link to="/signup-donate" style={{ color: '#007bff', textDecoration: 'underline' }}>
+                          Sign Up & Donate ☕
+                        </Link>
+                      </span>
+                    </div>
+                  )}
                   {!song.audio_url.includes('iframe') && (
                     <p style={{ fontSize: '0.8rem', color: '#999', marginTop: '0.5rem' }}>
-                      Audio player not displayed. Please paste a valid &lt;iframe&gt; code in the admin panel.
+                      Audio player not displayed. Please paste a valid <iframe> code in the admin panel.
                     </p>
                   )}
                 </div>

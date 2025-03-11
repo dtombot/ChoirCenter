@@ -24,8 +24,8 @@ function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [downloadPrompt, setDownloadPrompt] = useState(null);
   const [songOfTheWeek, setSongOfTheWeek] = useState(null);
-  const [isPlaying, setIsPlaying] = useState(false); // Added for audio player
-  const audioRef = useRef(null); // Added for audio player
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -82,24 +82,28 @@ function Home() {
 
   // Audio player functions
   const togglePlay = () => {
-    if (isPlaying) {
-      audioRef.current.pause();
-    } else {
-      audioRef.current.play().catch((err) => {
-        console.error('Play failed:', err.message);
-        setError('Failed to play audio. Check the URL or browser permissions.');
-      });
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause();
+      } else {
+        audioRef.current.play().catch((err) => {
+          console.error('Play failed for URL:', audioRef.current.src, 'Error:', err.message);
+          setError(`Failed to play audio. Check the URL (${audioRef.current.src}) or browser console for details.`);
+        });
+      }
+      setIsPlaying(!isPlaying);
     }
-    setIsPlaying(!isPlaying);
   };
 
   const rewind = () => {
-    audioRef.current.currentTime = 0;
-    if (!isPlaying) audioRef.current.play().catch((err) => {
-      console.error('Play failed:', err.message);
-      setError('Failed to play audio. Check the URL or browser permissions.');
-    });
-    setIsPlaying(true);
+    if (audioRef.current) {
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().catch((err) => {
+        console.error('Play failed for URL:', audioRef.current.src, 'Error:', err.message);
+        setError(`Failed to play audio. Check the URL (${audioRef.current.src}) or browser console for details.`);
+      });
+      setIsPlaying(true);
+    }
   };
 
   const filterContent = (query) => {
@@ -538,7 +542,11 @@ function Home() {
                 }}
               />
             </div>
-            <audio ref={audioRef} src={songOfTheWeek} />
+            <audio
+              ref={audioRef}
+              src={songOfTheWeek}
+              onError={(e) => console.error('Audio error for URL:', songOfTheWeek, 'Error:', e.target.error)}
+            />
           </div>
         ) : (
           <p className="animate-text">No song selected for this week.</p>

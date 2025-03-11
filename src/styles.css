@@ -2727,3 +2727,92 @@ body {
     height: 16px;
   }
 }
+
+
+
+
+/* src/styles.css (append or modify existing styles) */
+
+/* Animation Keyframes */
+@keyframes fadeInSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Audio Player Styles */
+.audio-player {
+  margin: 10px auto;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.audio-controls {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px;
+}
+
+.song-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+/* Control Button Styles */
+.control-button {
+  padding: 5px 10px;
+  border-radius: 50%;
+  outline: none;
+}
+
+.control-button:hover {
+  transform: scale(1.2);
+  color: #FFD700 !important; /* Gold on hover for all buttons */
+}
+
+/* Progress Slider Styles */
+input[type="range"] {
+  -webkit-appearance: none;
+  height: 8px;
+  border-radius: 5px;
+  background: #4A7C6D;
+  outline: none;
+  transition: background-color 0.3s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  background: #D4A017;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+input[type="range"]:hover::-webkit-slider-thumb {
+  transform: scale(1.2);
+}
+
+/* Ensure existing animations are preserved */
+.animate-text {
+  animation: fadeInSlideUp 0.5s forwards;
+}
+
+.section-title.animate-text,
+.hero-title.animate-text,
+.hero-text.animate-text,
+.search-input.animate-input,
+.action-button.animate-button {
+  animation: fadeInSlideUp 0.5s forwards;
+}

@@ -1,5 +1,5 @@
 // src/pages/Song.jsx
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '../supabase';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { Document, Page, pdfjs } from 'react-pdf';
@@ -27,9 +27,7 @@ function Song() {
   const [numPages, setNumPages] = useState(null);
   const [scale, setScale] = useState(1.0);
   const [pdfProgress, setPdfProgress] = useState(0);
-  const audioRef = useRef(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const navigate = useNavigate();
 
   useEffect(() => {
     let interval;
@@ -307,27 +305,11 @@ function Song() {
     setNumPages(numPages);
   };
 
-  // Audio Player Controls
-  const togglePlay = () => {
-    if (isPlaying) {
-      audioRef.current.pause();
-    } else {
-      audioRef.current.play();
-    }
-    setIsPlaying(!isPlaying);
-  };
-
-  const stopAudio = () => {
-    audioRef.current.pause();
-    audioRef.current.currentTime = 0;
-    setIsPlaying(false);
-    setProgress(0);
-  };
-
-  const updateProgress = () => {
-    const duration = audioRef.current.duration;
-    const currentTime = audioRef.current.currentTime;
-    setProgress((currentTime / duration) * 100);
+  // Transform audio_url to embed format
+  const getEmbedUrl = (audioUrl) => {
+    if (!audioUrl) return null;
+    // Replace 'details' or 'download' with 'embed' for archive.org URLs
+    return audioUrl.replace(/archive\.org\/(details|download)\//, 'archive.org/embed/');
   };
 
   // PDF loading progress bar with green gradient
@@ -400,67 +382,22 @@ function Song() {
               <p className="song-composer-modern">{song.composer || 'Unknown Composer'}</p>
               <p className="song-downloads-modern">Downloaded {song.downloads || 0} times</p>
 
-              {/* Audio Player Section - Moved Here */}
+              {/* Internet Archive Embedded Audio Player */}
               {song.audio_url && (
                 <div className="song-preview-modern">
                   <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '0.5rem' }}>
                     Listen to an audio preview of {song.title}
                   </p>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
-                    <button
-                      onClick={togglePlay}
-                      className="download-button-modern"
-                      style={{ padding: '0.5rem 1rem', minWidth: '80px' }}
-                    >
-                      {isPlaying ? 'Pause' : 'Play'}
-                    </button>
-                    <button
-                      onClick={stopAudio}
-                      className="share-button-modern"
-                      style={{ padding: '0.5rem 1rem', minWidth: '80px' }}
-                    >
-                      Stop
-                    </button>
-                    <a
-                      href={song.audio_url}
-                      download={`${song.title}-preview.mp3`}
-                      className="download-button-modern"
-                      style={{ padding: '0.5rem 1rem', minWidth: '100px', textDecoration: 'none', textAlign: 'center' }}
-                    >
-                      Download
-                    </a>
-                    <div style={{ flex: '1', minWidth: '200px' }}>
-                      <div
-                        style={{
-                          height: '5px',
-                          background: '#e0e0e0',
-                          borderRadius: '2px',
-                          width: '100%',
-                          position: 'relative',
-                        }}
-                      >
-                        <div
-                          style={{
-                            height: '100%',
-                            width: `${progress}%`,
-                            background: '#3cb371',
-                            borderRadius: '2px',
-                            transition: 'width 0.1s linear',
-                          }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  <audio
-                    ref={audioRef}
-                    src={song.audio_url}
-                    onTimeUpdate={updateProgress}
-                    onEnded={() => {
-                      setIsPlaying(false);
-                      setProgress(100);
-                    }}
-                    style={{ display: 'none' }}
-                  />
+                  <iframe
+                    src={getEmbedUrl(song.audio_url)}
+                    width="500"
+                    height="60"
+                    frameBorder="0"
+                    webkitallowfullscreen="true"
+                    mozallowfullscreen="true"
+                    allowFullScreen
+                    style={{ maxWidth: '100%', borderRadius: '4px' }}
+                  ></iframe>
                 </div>
               )}
 

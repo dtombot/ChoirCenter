@@ -343,6 +343,7 @@ function Song() {
     setNumPages(numPages);
   };
 
+  // PDF loading progress bar with green gradient
   const PdfLoadingProgress = () => {
     const [progress, setProgress] = useState(0);
 

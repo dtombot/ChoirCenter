@@ -21,8 +21,8 @@ function Admin() {
     permalink: '', 
     is_public: true,
     source: 'google_drive',
-    audio_url: '', // Added audio_url
-    description: '' // Added description
+    audio_url: '',
+    description: ''
   });
   const [postForm, setPostForm] = useState({ 
     title: '', 
@@ -162,10 +162,10 @@ function Admin() {
       const fetchSongOfTheWeek = async () => {
         const { data, error } = await supabase
           .from('song_of_the_week')
-          .select('spotify_embed_html')
+          .select('audio_url')
           .single();
         if (error) console.warn('Song of the week fetch warning: ' + error.message);
-        else setSongOfTheWeekHtml(data?.spotify_embed_html || '');
+        else setSongOfTheWeekHtml(data?.audio_url || '');
       };
       fetchSongOfTheWeek();
     };
@@ -190,8 +190,8 @@ function Admin() {
             github_file_url: songForm.source === 'github' ? songForm.github_file_url : null, 
             permalink: songForm.permalink, 
             is_public: songForm.is_public,
-            audio_url: songForm.audio_url || null, // Added audio_url
-            description: songForm.description || null // Added description
+            audio_url: songForm.audio_url || null,
+            description: songForm.description || null
           })
           .eq('id', editingSongId);
         if (error) throw error;
@@ -207,8 +207,8 @@ function Admin() {
             permalink: songForm.permalink, 
             is_public: songForm.is_public, 
             downloads: 0,
-            audio_url: songForm.audio_url || null, // Added audio_url
-            description: songForm.description || null // Added description
+            audio_url: songForm.audio_url || null,
+            description: songForm.description || null
           }]);
         if (error) throw error;
       }
@@ -220,8 +220,8 @@ function Admin() {
         permalink: '', 
         is_public: true, 
         source: 'google_drive',
-        audio_url: '', // Reset audio_url
-        description: '' // Reset description
+        audio_url: '',
+        description: ''
       });
       const { data } = await supabase.from('songs').select('*');
       setSongs(data || []);
@@ -323,13 +323,13 @@ function Admin() {
       if (existingData) {
         const { error } = await supabase
           .from('song_of_the_week')
-          .update({ spotify_embed_html: songOfTheWeekHtml })
+          .update({ audio_url: songOfTheWeekHtml })
           .eq('id', existingData.id);
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from('song_of_the_week')
-          .insert([{ spotify_embed_html: songOfTheWeekHtml }]);
+          .insert([{ audio_url: songOfTheWeekHtml }]);
         if (error) throw error;
       }
       setError('Song of the Week updated successfully!');
@@ -347,8 +347,8 @@ function Admin() {
       permalink: song.permalink, 
       is_public: song.is_public,
       source: song.google_drive_file_id ? 'google_drive' : 'github',
-      audio_url: song.audio_url || '', // Added audio_url
-      description: song.description || '' // Added description
+      audio_url: song.audio_url || '',
+      description: song.description || ''
     });
     setEditingSongId(song.id);
   };
@@ -633,8 +633,8 @@ function Admin() {
                       permalink: '', 
                       is_public: true, 
                       source: 'google_drive',
-                      audio_url: '', 
-                      description: '' 
+                      audio_url: '',
+                      description: ''
                     }); 
                     setEditingSongId(null); 
                   }}
@@ -1049,11 +1049,11 @@ function Admin() {
             <h3 className="admin-form-title">Song of the Week</h3>
             <form onSubmit={handleSongOfTheWeekSubmit} className="admin-form-grid">
               <div className="admin-form-group full-width">
-                <label htmlFor="spotifyEmbedHtml">Spotify Embed HTML</label>
+                <label htmlFor="audioUrl">Audio URL</label>
                 <input
-                  id="spotifyEmbedHtml"
+                  id="audioUrl"
                   type="text"
-                  placeholder="e.g., <iframe style='border-radius:12px' src='https://open.spotify.com/embed/track/...'>"
+                  placeholder="e.g., https://archive.org/download/.../song.mp3"
                   value={songOfTheWeekHtml}
                   onChange={(e) => setSongOfTheWeekHtml(e.target.value)}
                   className="admin-form-input"
@@ -1061,7 +1061,7 @@ function Admin() {
               </div>
               <button type="submit" className="admin-form-submit">Update Song of the Week</button>
             </form>
-            <p className="admin-note">Paste the full Spotify iframe embed code (e.g., from 'Share > Copy Embed Code' on Spotify). Leave blank to remove the player.</p>
+            <p className="admin-note">Paste the direct URL to an audio file (e.g., .mp3). Leave blank to remove the player.</p>
           </div>
         )}
         {activeTab === 'advert' && (

@@ -1,4 +1,3 @@
-// netlify/functions/track-visitor.js
 const { createClient } = require('@supabase/supabase-js');
 const fetch = require('node-fetch');
 
@@ -21,7 +20,6 @@ exports.handler = async (event) => {
   const userAgent = event.headers['user-agent'] || 'unknown';
   const { pageUrl, clickEvents, duration } = body;
 
-  // Fetch geolocation data from an IP API (e.g., ipapi.co)
   let city = 'unknown';
   let country = 'unknown';
   try {
@@ -33,7 +31,6 @@ exports.handler = async (event) => {
     console.error('Geolocation fetch error:', geoError.message);
   }
 
-  // Determine device type from user agent
   const deviceType = /mobile/i.test(userAgent)
     ? 'mobile'
     : /tablet/i.test(userAgent)
@@ -43,14 +40,15 @@ exports.handler = async (event) => {
   try {
     const { error } = await supabase.from('visitors').insert({
       ip_address: ip,
-      referrer,
-      city,
-      country,
-      device_type: deviceType,
-      user_agent: userAgent,
-      page_url: pageUrl || event.headers['referer'] || '/',
+      referrer: referrer || 'direct',
+      city: city || 'unknown',
+      country: country || 'unknown',
+      device_type: deviceType || 'unknown',
+      user_agent: userAgent || 'unknown',
+      page_url: pageUrl || '/',
       click_events: clickEvents || [],
       duration: duration || 0,
+      visit_timestamp: new Date().toISOString()
     });
 
     if (error) throw error;
@@ -63,7 +61,7 @@ exports.handler = async (event) => {
     console.error('Track visitor error:', error.message);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: 'Failed to track visitor' }),
+      body: JSON.stringify({ error: 'Failed to track visitor: ' + error.message }),
     };
   }
 };

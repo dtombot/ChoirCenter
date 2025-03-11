@@ -83,6 +83,7 @@ function Home() {
   // Audio player functions
   const togglePlay = () => {
     if (audioRef.current) {
+      console.log('Attempting to play audio from URL:', audioRef.current.src);
       if (isPlaying) {
         audioRef.current.pause();
       } else {
@@ -97,6 +98,7 @@ function Home() {
 
   const rewind = () => {
     if (audioRef.current) {
+      console.log('Rewinding audio from URL:', audioRef.current.src);
       audioRef.current.currentTime = 0;
       audioRef.current.play().catch((err) => {
         console.error('Play failed for URL:', audioRef.current.src, 'Error:', err.message);
@@ -626,7 +628,7 @@ function Home() {
             <h3 className="faq-question">Does singing in a choir enhance spirituality?</h3>
             <p className="faq-answer">Yes, it uplifts your spirit, fosters peace, and connects you deeply through harmonious expression.</p>
           </div>
-          <div className="faq-item animate-card">
+          <div className "faq-item animate-card">
             <h3 className="faq-question">What are the key qualities of a good chorister?</h3>
             <p className="faq-answer">Dedication, teamwork, a strong ear, and a passion for singing make an exceptional chorister.</p>
           </div>

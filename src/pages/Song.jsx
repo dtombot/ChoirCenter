@@ -27,7 +27,7 @@ function Song() {
   const [numPages, setNumPages] = useState(null);
   const [scale, setScale] = useState(1.0);
   const [pdfProgress, setPdfProgress] = useState(0);
-  const [hasDonated, setHasDonated] = useState(null); // New state for donation status
+  const [hasDonated, setHasDonated] = useState(null);
   const navigate = useNavigate();
   const shadowHostRef = useRef(null);
 
@@ -43,10 +43,10 @@ function Song() {
     }
 
     const fetchSongAndDonationStatus = async () => {
-      // Fetch song
+      // Fetch song with description
       let query = supabase
         .from('songs')
-        .select('id, title, composer, google_drive_file_id, downloads, is_public, permalink, audio_url');
+        .select('id, title, composer, google_drive_file_id, downloads, is_public, permalink, audio_url, description');
       
       if (/^\d+$/.test(id)) {
         query = query.eq('id', parseInt(id, 10));
@@ -69,7 +69,7 @@ function Song() {
       // Fetch donation status
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       if (sessionError || !sessionData?.session) {
-        setHasDonated(false); // Not logged in, assume no donation
+        setHasDonated(false);
         return;
       }
 
@@ -114,7 +114,7 @@ function Song() {
   }, [id]);
 
   useEffect(() => {
-    if (song?.audio_url && shadowHostRef.current && hasDonated !== null) { // Modified condition
+    if (song?.audio_url && shadowHostRef.current && hasDonated !== null) {
       if (hasDonated) {
         const shadowRoot = shadowHostRef.current.attachShadow({ mode: 'open' });
         shadowRoot.innerHTML = song.audio_url;
@@ -305,7 +305,7 @@ function Song() {
 
       const { data: updatedSong, error: postUpdateFetchError } = await supabase
         .from('songs')
-        .select('id, title, composer, google_drive_file_id, downloads, is_public, permalink, audio_url')
+        .select('id, title, composer, google_drive_file_id, downloads, is_public, permalink, audio_url, description')
         .eq('id', numericSongId)
         .single();
       if (postUpdateFetchError) {
@@ -343,7 +343,6 @@ function Song() {
     setNumPages(numPages);
   };
 
-  // PDF loading progress bar with green gradient
   const PdfLoadingProgress = () => {
     const [progress, setProgress] = useState(0);
 
@@ -382,28 +381,11 @@ function Song() {
             <p className="error-message">{error}</p>
             <Link to="/library" className="action-button">Back to Library</Link>
           </>
-        ) : !song || hasDonated === null ? ( // Wait for hasDonated to load
+        ) : !song || hasDonated === null ? (
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px' }}>
             <svg width="60" height="60" viewBox="0 0 60 60">
-              <circle
-                cx="30"
-                cy="30"
-                r="25"
-                fill="none"
-                stroke="#ccc"
-                strokeWidth="4"
-              />
-              <circle
-                cx="30"
-                cy="30"
-                r="25"
-                fill="none"
-                stroke="#333"
-                strokeWidth="4"
-                strokeDasharray="157"
-                strokeDashoffset={157 - (157 * pdfProgress) / 100}
-                style={{ transition: 'stroke-dashoffset 0.2s ease-in-out' }}
-              />
+              <circle cx="30" cy="30" r="25" fill="none" stroke="#ccc" strokeWidth="4" />
+              <circle cx="30" cy="30" r="25" fill="none" stroke="#333" strokeWidth="4" strokeDasharray="157" strokeDashoffset={157 - (157 * pdfProgress) / 100} style={{ transition: 'stroke-dashoffset 0.2s ease-in-out' }} />
             </svg>
           </div>
         ) : (
@@ -420,10 +402,7 @@ function Song() {
                     Listen to an audio preview of {song.title}
                   </p>
                   {hasDonated ? (
-                    <div
-                      ref={shadowHostRef}
-                      style={{ maxWidth: '100%' }}
-                    />
+                    <div ref={shadowHostRef} style={{ maxWidth: '100%' }} />
                   ) : (
                     <div
                       style={{
@@ -439,20 +418,36 @@ function Song() {
                         padding: '10px',
                         fontSize: '0.9rem',
                         color: '#666',
+                        marginLeft: 'auto',
+                        marginRight: 'auto',
                       }}
                     >
                       <span>
-                        Want to hear this preview and enjoy unlimited access?{' '}
+                        Want to hear an audio preview of {song.title} and enjoy unlimited access to Choir Center?{' '}
                         <Link to="/signup-donate" style={{ color: '#007bff', textDecoration: 'underline' }}>
-                          Sign Up & Donate ☕
+                          Buy us a meat pie ☕
                         </Link>
                       </span>
                     </div>
                   )}
                   {!song.audio_url.includes('iframe') && (
                     <p style={{ fontSize: '0.8rem', color: '#999', marginTop: '0.5rem' }}>
-                      Audio player not displayed. Please paste a valid &lt;iframe&gt; code in the admin panel.
+                      Audio player not displayed. Please paste a valid <iframe> code in the admin panel.
                     </p>
+                  )}
+                  {/* Song Description */}
+                  {song.description && (
+                    <div
+                      style={{
+                        marginTop: '1rem',
+                        fontSize: '1rem',
+                        color: '#333',
+                        lineHeight: '1.5',
+                        maxWidth: '100%',
+                        overflowWrap: 'break-word',
+                      }}
+                      dangerouslySetInnerHTML={{ __html: song.description }}
+                    />
                   )}
                 </div>
               )}

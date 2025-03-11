@@ -343,7 +343,6 @@ function Song() {
     setNumPages(numPages);
   };
 
-  // PDF loading progress bar with green gradient
   const PdfLoadingProgress = () => {
     const [progress, setProgress] = useState(0);
 
@@ -390,89 +389,88 @@ function Song() {
             </svg>
           </div>
         ) : (
-          <>
-            <div className="song-card-modern">
-              <h1 className="song-title-modern">{song.title}</h1>
-              <p className="song-composer-modern">{song.composer || 'Unknown Composer'}</p>
-              <p className="song-downloads-modern">Downloaded {song.downloads || 0} times</p>
+          <div className="song-card-modern">
+            <h1 className="song-title-modern">{song.title}</h1>
+            <p className="song-composer-modern">{song.composer || 'Unknown Composer'}</p>
+            <p className="song-downloads-modern">Downloaded {song.downloads || 0} times</p>
 
-              {/* Internet Archive Embedded Audio Player */}
-              {song.audio_url && (
-                <div className="song-preview-modern">
-                  <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '0.5rem' }}>
-                    Listen to an audio preview of {song.title}
-                  </p>
-                  {hasDonated ? (
-                    <div ref={shadowHostRef} style={{ maxWidth: '100%' }} />
-                  ) : (
-                    <div
-                      style={{
-                        width: '500px',
-                        height: '60px',
-                        maxWidth: '100%',
-                        background: '#f0f0f0',
-                        borderRadius: '4px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        textAlign: 'center',
-                        padding: '10px',
-                        fontSize: '0.9rem',
-                        color: '#666',
-                        marginLeft: 'auto',
-                        marginRight: 'auto',
-                      }}
-                    >
-                      <span>
-                        Want to hear an audio preview of {song.title} and enjoy unlimited access to Choir Center?{' '}
-                        <Link to="/signup-donate" style={{ color: '#007bff', textDecoration: 'underline' }}>
-                          Buy us a meat pie ☕
-                        </Link>
-                      </span>
-                    </div>
-                  )}
-                  {!song.audio_url.includes('iframe') && (
-                    <p style={{ fontSize: '0.8rem', color: '#999', marginTop: '0.5rem' }}>
-                      Audio player not displayed. Please paste a valid <iframe> code in the admin panel.
-                    </p>
-                  )}
-                  {/* Song Description */}
-                  {song.description && (
-                    <div
-                      style={{
-                        marginTop: '1rem',
-                        fontSize: '1rem',
-                        color: '#333',
-                        lineHeight: '1.5',
-                        maxWidth: '100%',
-                        overflowWrap: 'break-word',
-                      }}
-                      dangerouslySetInnerHTML={{ __html: song.description }}
-                    />
-                  )}
-                </div>
-              )}
-
-              {/* PDF Preview */}
+            {/* Internet Archive Embedded Audio Player */}
+            {song.audio_url && (
               <div className="song-preview-modern">
-                <Document
-                  file={`/.netlify/functions/proxy-pdf?fileId=${song.google_drive_file_id}`}
-                  onLoadSuccess={onDocumentLoadSuccess}
-                  onLoadError={(err) => setError('Failed to load PDF preview: ' + err.message)}
-                  loading={<PdfLoadingProgress />}
-                >
-                  <Page pageNumber={1} scale={scale} />
-                </Document>
-                {numPages > 1 && (
-                  <p className="preview-note-modern">Previewing page 1 of {numPages}. Download to view the full song.</p>
+                <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '0.5rem' }}>
+                  Listen to an audio preview of {song.title}
+                </p>
+                {hasDonated ? (
+                  <div ref={shadowHostRef} style={{ maxWidth: '100%' }} />
+                ) : (
+                  <div
+                    style={{
+                      width: '500px',
+                      height: '60px',
+                      maxWidth: '100%',
+                      background: '#f0f0f0',
+                      borderRadius: '4px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      textAlign: 'center',
+                      padding: '10px',
+                      fontSize: '0.9rem',
+                      color: '#666',
+                      marginLeft: 'auto',
+                      marginRight: 'auto',
+                    }}
+                  >
+                    <span>
+                      Want to hear an audio preview of {song.title} and enjoy unlimited access to Choir Center?{' '}
+                      <Link to="/signup-donate" style={{ color: '#007bff', textDecoration: 'underline' }}>
+                        Buy us a meat pie ☕
+                      </Link>
+                    </span>
+                  </div>
+                )}
+                {!song.audio_url.includes('iframe') && (
+                  <p style={{ fontSize: '0.8rem', color: '#999', marginTop: '0.5rem' }}>
+                    Audio player not displayed. Please paste a valid iframe code in the admin panel.
+                  </p>
+                )}
+                {/* Song Description */}
+                {song.description && (
+                  <div
+                    style={{
+                      marginTop: '1rem',
+                      fontSize: '1rem',
+                      color: '#333',
+                      lineHeight: '1.5',
+                      maxWidth: '100%',
+                      overflowWrap: 'break-word',
+                    }}
+                    dangerouslySetInnerHTML={{ __html: song.description }}
+                  />
                 )}
               </div>
-              <div className="song-actions-modern">
-                <button onClick={handleDownload} className="download-button-modern">Download</button>
-                <button onClick={handleShare} className="share-button-modern">Share</button>
-                <Link to="/library" className="back-button-modern">Back to Library</Link>
-              </div>
+            )}
+
+            {/* PDF Preview */}
+            <div className="song-preview-modern">
+              <Document
+                file={`/.netlify/functions/proxy-pdf?fileId=${song.google_drive_file_id}`}
+                onLoadSuccess={onDocumentLoadSuccess}
+                onLoadError={(err) => setError('Failed to load PDF preview: ' + err.message)}
+                loading={<PdfLoadingProgress />}
+              >
+                <Page pageNumber={1} scale={scale} />
+              </Document>
+              {numPages > 1 && (
+                <p className="preview-note-modern">Previewing page 1 of {numPages}. Download to view the full song.</p>
+              )}
             </div>
+            <div className="song-actions-modern">
+              <button onClick={handleDownload} className="download-button-modern">Download</button>
+              <button onClick={handleShare} className="share-button-modern">Share</button>
+              <Link to="/library" className="back-button-modern">Back to Library</Link>
+            </div>
+
             {downloadPrompt && (
               <div className="modal-overlay">
                 <div className="modal-content download-modal">
@@ -488,7 +486,7 @@ function Song() {
                 </div>
               </div>
             )}
-          </>
+          </div>
         )}
       </div>
     </>

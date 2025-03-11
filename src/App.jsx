@@ -55,34 +55,22 @@ function App() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [cookiesAccepted, setCookiesAccepted] = useState(false);
   const [recaptchaLoaded, setRecaptchaLoaded] = useState(false);
+  const [visitStartTime, setVisitStartTime] = useState(null);
+  const [clickEvents, setClickEvents] = useState([]);
 
   useEffect(() => {
     const loadRecaptchaScript = () => {
       if (!document.querySelector('script[src="https://www.google.com/recaptcha/api.js"]')) {
-        console.log('reCAPTCHA script not found, adding dynamically');
         const script = document.createElement('script');
         script.src = 'https://www.google.com/recaptcha/api.js';
         script.async = true;
         script.defer = true;
-        script.onload = () => console.log('reCAPTCHA script loaded dynamically');
-        script.onerror = () => console.error('Failed to load reCAPTCHA script dynamically');
+        script.onload = () => setRecaptchaLoaded(true);
         document.head.appendChild(script);
       }
     };
 
-    const checkRecaptcha = () => {
-      if (window.grecaptcha && window.grecaptcha.render) {
-        console.log('reCAPTCHA script loaded successfully');
-        setRecaptchaLoaded(true);
-      } else {
-        console.log('reCAPTCHA not yet loaded, retrying...');
-        loadRecaptchaScript();
-        setTimeout(checkRecaptcha, 500);
-      }
-    };
-
-    console.log('Starting reCAPTCHA load check');
-    checkRecaptcha();
+    loadRecaptchaScript();
 
     const fetchUserAndProfile = async () => {
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
@@ -94,7 +82,6 @@ function App() {
 
       const { data: authData, error: authError } = await supabase.auth.getUser();
       if (authError) {
-        console.error('Auth error:', authError.message);
         setUser(null);
         setIsAdmin(false);
         return;
@@ -103,24 +90,16 @@ function App() {
       setUser(currentUser);
 
       if (currentUser) {
-        try {
-          const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('is_admin')
-            .eq('id', currentUser.id)
-            .limit(1)
-            .maybeSingle();
-          console.log('Profile fetch attempt for ID:', currentUser.id);
-          if (profileError) {
-            console.error('Profile fetch error:', profileError.message, profileError.details);
-            setIsAdmin(false);
-          } else {
-            console.log('Profile data:', JSON.stringify(profileData, null, 2));
-            setIsAdmin(profileData?.is_admin || false);
-          }
-        } catch (err) {
-          console.error('Unexpected profile fetch error:', err);
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('is_admin')
+          .eq('id', currentUser.id)
+          .limit(1)
+          .maybeSingle();
+        if (profileError) {
           setIsAdmin(false);
+        } else {
+          setIsAdmin(profileData?.is_admin || false);
         }
       }
     };
@@ -137,12 +116,9 @@ function App() {
           .limit(1)
           .maybeSingle()
           .then(({ data, error }) => {
-            console.log('Auth change profile fetch attempt for ID:', currentUser.id);
             if (error) {
-              console.error('Profile fetch error on auth change:', error.message, error.details);
               setIsAdmin(false);
             } else {
-              console.log('Profile data on auth change:', JSON.stringify(data, null, 2));
               setIsAdmin(data?.is_admin || false);
             }
           });
@@ -161,10 +137,39 @@ function App() {
       setCookiesAccepted(true);
     }
 
+    // Start visit timer and track clicks
+    setVisitStartTime(Date.now());
+    const handleClick = (e) => {
+      if (cookiesAccepted) {
+        setClickEvents((prev) => [
+          ...prev,
+          { element: e.target.tagName, timestamp: Date.now() },
+        ]);
+      }
+    };
+    document.addEventListener('click', handleClick);
+
+    // Track visit on unload
+    const trackVisit = async () => {
+      if (!cookiesAccepted || !visitStartTime) return;
+      const duration = Math.round((Date.now() - visitStartTime) / 1000);
+      await fetch('/.netlify/functions/track-visitor', {
+        method: 'POST',
+        body: JSON.stringify({
+          pageUrl: window.location.pathname,
+          clickEvents,
+          duration,
+        }),
+      });
+    };
+    window.addEventListener('beforeunload', trackVisit);
+
     return () => {
       authListener.subscription.unsubscribe();
+      document.removeEventListener('click', handleClick);
+      window.removeEventListener('beforeunload', trackVisit);
     };
-  }, []);
+  }, [cookiesAccepted]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();

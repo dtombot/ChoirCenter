@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+// src/pages/Home.jsx
+import { useEffect, useState, useRef } from 'react'; // Added useRef
 import { supabase } from '../supabase';
 import { Link, useNavigate } from 'react-router-dom';
 import AdBanner from '../components/AdBanner';
@@ -23,6 +24,8 @@ function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [downloadPrompt, setDownloadPrompt] = useState(null);
   const [songOfTheWeek, setSongOfTheWeek] = useState(null);
+  const [isPlaying, setIsPlaying] = useState(false); // Added for audio player
+  const audioRef = useRef(null); // Added for audio player
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -57,16 +60,16 @@ function Home() {
 
       const { data: songOfTheWeekData, error: sotwError } = await supabase
         .from('song_of_the_week')
-        .select('spotify_embed_html')
+        .select('audio_url')
         .limit(1);
       if (sotwError) {
         console.error('Song of the Week fetch error:', sotwError.message);
         setError('Failed to load Song of the Week: ' + sotwError.message);
       } else {
         console.log('Song of the Week data:', JSON.stringify(songOfTheWeekData, null, 2));
-        const embedHtml = songOfTheWeekData && songOfTheWeekData.length > 0 ? songOfTheWeekData[0].spotify_embed_html : null;
-        console.log('Song of the Week embed HTML:', embedHtml);
-        setSongOfTheWeek(embedHtml);
+        const audioUrl = songOfTheWeekData && songOfTheWeekData.length > 0 ? songOfTheWeekData[0].audio_url : null;
+        console.log('Song of the Week audio URL:', audioUrl);
+        setSongOfTheWeek(audioUrl);
       }
     };
     fetchData();
@@ -76,6 +79,22 @@ function Home() {
     }, 5000);
     return () => clearInterval(slideInterval);
   }, []);
+
+  // Audio player functions
+  const togglePlay = () => {
+    if (isPlaying) {
+      audioRef.current.pause();
+    } else {
+      audioRef.current.play();
+    }
+    setIsPlaying(!isPlaying);
+  };
+
+  const rewind = () => {
+    audioRef.current.currentTime = 0;
+    if (!isPlaying) audioRef.current.play();
+    setIsPlaying(true);
+  };
 
   const filterContent = (query) => {
     const trimmedQuery = query.trim().toLowerCase();
@@ -420,7 +439,95 @@ function Home() {
       <section className="song-of-the-week">
         <h2 className="section-title animate-text">Song of the Week</h2>
         {songOfTheWeek ? (
-          <div className="audio-player animate-text" dangerouslySetInnerHTML={{ __html: songOfTheWeek }} />
+          <div className="audio-player animate-text">
+            <div
+              style={{
+                backgroundColor: '#1A3C34', // Dark green
+                borderRadius: '10px',
+                padding: '10px',
+                width: '300px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                color: '#FFFFFF', // White
+              }}
+            >
+              <button
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: '#FFFFFF',
+                }}
+              >
+                <span role="img" aria-label="menu">
+                  ≡
+                </span>
+              </button>
+              <button
+                onClick={rewind}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: '#FFFFFF',
+                }}
+              >
+                <span role="img" aria-label="rewind">
+                  ◄
+                </span>
+              </button>
+              <button
+                onClick={togglePlay}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '20px',
+                  color: '#FFFFFF',
+                }}
+              >
+                <span role="img" aria-label="play/pause">
+                  {isPlaying ? '||' : '▶'}
+                </span>
+              </button>
+              <button
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: '#FFFFFF',
+                }}
+              >
+                <span role="img" aria-label="forward">
+                  ►
+                </span>
+              </button>
+              <button
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: '#D4A017', // Gold
+                }}
+              >
+                <span role="img" aria-label="like">
+                  ♥
+                </span>
+              </button>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                style={{
+                  width: '100px',
+                  backgroundColor: '#4A7C6D', // Light green
+                  cursor: 'pointer',
+                }}
+              />
+            </div>
+            <audio ref={audioRef} src={songOfTheWeek} />
+          </div>
         ) : (
           <p className="animate-text">No song selected for this week.</p>
         )}

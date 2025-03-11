@@ -423,29 +423,13 @@ function Song() {
                       style={{ maxWidth: '100%' }}
                     />
                   ) : (
-                    <div
-                      style={{
-                        width: '500px',
-                        height: '60px',
-                        maxWidth: '100%',
-                        background: '#f0f0f0',
-                        borderRadius: '4px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        textAlign: 'center',
-                        padding: '10px',
-                        fontSize: '0.9rem',
-                        color: '#666',
-                      }}
-                    >
-                      <span>
-                        Want to hear this preview and enjoy unlimited access?{' '}
-                        <Link to="/signup-donate" style={{ color: '#007bff', textDecoration: 'underline' }}>
-                          Sign Up & Donate ☕
-                        </Link>
-                      </span>
-                    </div>
+                    <p style={{ fontSize: '0.9rem', color: '#666' }}>
+                      Audio previews are available only to donors.{' '}
+                      <Link to="/signup-donate" style={{ color: '#007bff', textDecoration: 'underline' }}>
+                        Buy us a Meat Pie ☕
+                      </Link>{' '}
+                      to unlock this feature and support the site!
+                    </p>
                   )}
                   {!song.audio_url.includes('iframe') && (
                     <p style={{ fontSize: '0.8rem', color: '#999', marginTop: '0.5rem' }}>

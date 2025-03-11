@@ -308,8 +308,31 @@ function Song() {
   // Transform audio_url to embed format
   const getEmbedUrl = (audioUrl) => {
     if (!audioUrl) return null;
-    // Replace 'details' or 'download' with 'embed' for archive.org URLs
-    return audioUrl.replace(/archive\.org\/(details|download)\//, 'archive.org/embed/');
+
+    console.log('Original audio_url:', audioUrl);
+
+    // Handle common archive.org URL patterns
+    const urlPatterns = [
+      // Matches /details/ or /download/ and extracts the identifier
+      /archive\.org\/(?:details|download)\/([^\/]+)/,
+      // Matches direct file URLs and extracts the identifier from the path
+      /archive\.org\/download\/([^\/]+)\/[^\/]+\.(mp3|wav|ogg)/,
+    ];
+
+    for (const pattern of urlPatterns) {
+      const match = audioUrl.match(pattern);
+      if (match) {
+        const identifier = match[1];
+        const embedUrl = `https://archive.org/embed/${identifier}`;
+        console.log('Transformed embed URL:', embedUrl);
+        return embedUrl;
+      }
+    }
+
+    // Fallback: assume the audio_url is already an identifier or invalid
+    const fallbackEmbedUrl = `https://archive.org/embed/${audioUrl.split('/').pop().split('.')[0]}`;
+    console.log('Fallback embed URL:', fallbackEmbedUrl);
+    return fallbackEmbedUrl;
   };
 
   // PDF loading progress bar with green gradient
@@ -397,7 +420,13 @@ function Song() {
                     mozallowfullscreen="true"
                     allowFullScreen
                     style={{ maxWidth: '100%', borderRadius: '4px' }}
+                    onError={() => console.error('Iframe failed to load:', getEmbedUrl(song.audio_url))}
                   ></iframe>
+                  {getEmbedUrl(song.audio_url) && (
+                    <p style={{ fontSize: '0.8rem', color: '#999', marginTop: '0.5rem' }}>
+                      If the player doesn’t load, check the audio URL in the admin panel.
+                    </p>
+                  )}
                 </div>
               )}
 

@@ -643,10 +643,6 @@ body {
   animation: fadeInContent 0.5s ease forwards;
 }
 
-@keyframes fadeInContent {
-  to { opacity: 1; }
-}
-
 .blog-card-title-modern {
   font-size: 1.2rem;
   font-weight: 600;
@@ -1814,42 +1810,6 @@ body {
   flex-wrap: wrap;
 }
 
-.download-button-modern {
-  padding: 0.75rem 2rem;
-  background: linear-gradient(135deg, #3cb371, #2f9e5e);
-  color: #fff;
-  border: none;
-  border-radius: 30px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
-}
-
-.download-button-modern:hover {
-  transform: scale(1.1);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
-  background: linear-gradient(135deg, #2f9e5e, #3cb371);
-}
-
-.share-button-modern {
-  padding: 0.75rem 2rem;
-  background: linear-gradient(135deg, #98fb98, #66d966);
-  color: #2f4f2f;
-  border: none;
-  border-radius: 30px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
-}
-
-.share-button-modern:hover {
-  transform: scale(1.1);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
-  background: linear-gradient(135deg, #66d966, #98fb98);
-}
-
 .back-button-modern {
   padding: 0.75rem 2rem;
   background: #f4f6f8;
@@ -1956,24 +1916,136 @@ body {
 
 /* Song of the Week */
 .song-of-the-week {
-  padding: 1rem 0; /* Reduced padding for slimness */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
   text-align: center;
   background: #fff;
-  width: 100vw; /* Full viewport width */
-  margin-left: calc(-50vw + 50%); /* Center it site-wide */
+  width: 100vw;
+  margin-left: calc(-50vw + 50%);
 }
 
 .audio-player {
+  margin: 10px auto;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   width: 100%;
-  margin: 0 auto;
+  max-width: 400px;
 }
 
-.audio-player iframe {
-  width: 100%; /* Full width */
-  max-width: none; /* Remove max-width constraint */
-  height: 152px; /* Slim height (Spotify mini-player height) */
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+.audio-controls {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px;
+  width: 100%;
+  box-sizing: border-box;
+  background-color: #1A3C34;
+  border-radius: 10px;
+  color: #FFFFFF;
+  height: 90px;
+  transition: all 0.3s ease;
+}
+
+.song-info {
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 18px;
+  opacity: 0;
+  animation: fadeInSlideUp 0.5s forwards;
+}
+
+.song-title {
+  margin-bottom: 2px;
+  font-weight: bold;
+}
+
+.song-composer {
+  font-style: italic;
+  font-size: 14px;
+  color: #D4A017;
+}
+
+/* Control Button Styles */
+.control-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #FFFFFF;
+  font-size: 24px;
+  transition: transform 0.3s ease, color 0.3s ease;
+  padding: 5px 10px;
+  border-radius: 50%;
+  outline: none;
+}
+
+.control-button:hover {
+  transform: scale(1.2);
+  color: #D4A017;
+}
+
+.control-button:hover span {
+  color: #FFD700;
+}
+
+/* Progress Slider Styles */
+input[type="range"] {
+  -webkit-appearance: none;
+  height: 8px;
+  border-radius: 5px;
+  background: #4A7C6D;
+  cursor: pointer;
+  outline: none;
+  transition: background-color 0.3s ease;
+  width: 150px;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  background: #D4A017;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+input[type="range"]:hover::-webkit-slider-thumb {
+  transform: scale(1.2);
+}
+
+input[type="range"]:hover {
+  background-color: #6DAE9E;
+}
+
+/* Animation Keyframes */
+@keyframes fadeInSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Ensure existing animations are preserved */
+.section-title.animate-text,
+.hero-title.animate-text,
+.hero-text.animate-text,
+.search-input.animate-input,
+.action-button.animate-button {
+  animation: fadeInSlideUp 0.5s forwards;
+}
+
+@keyframes fadeInContent {
+  to { opacity: 1; }
 }
 
 /* Responsive Adjustments */
@@ -2156,8 +2228,19 @@ body {
     min-height: 60px;
   }
 
-  .audio-player iframe {
-    height: 152px; /* Consistent slim height */
+  .audio-player {
+    max-width: 300px;
+  }
+  .audio-controls {
+    padding: 8px;
+    height: 80px;
+  }
+  .audio-controls button {
+    font-size: 18px;
+  }
+  .audio-controls input[type="range"] {
+    width: 80px;
+    height: 18px;
   }
 }
 
@@ -2315,8 +2398,19 @@ body {
     min-height: 50px;
   }
 
-  .audio-player iframe {
-    height: 152px; /* Consistent slim height */
+  .audio-player {
+    max-width: 250px;
+  }
+  .audio-controls {
+    padding: 6px;
+    height: 70px;
+  }
+  .audio-controls button {
+    font-size: 16px;
+  }
+  .audio-controls input[type="range"] {
+    width: 60px;
+    height: 16px;
   }
 }
 
@@ -2419,14 +2513,6 @@ body {
   padding: 2rem;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.form-group label {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #2f4f2f;
-  margin-bottom: 0.5rem;
-  display: block;
 }
 
 .contact-input, .contact-textarea {
@@ -2612,305 +2698,4 @@ body {
   max-width: 1200px;
   margin: 0 auto;
   padding: 0.5rem 1rem;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: #f9fafb;
-}
-
-.ad-sample {
-  width: 728px; /* Standard leaderboard size for AdSense */
-  height: 90px;
-  background: linear-gradient(135deg, #3cb371, #2f9e5e);
-  border-radius: 8px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 1rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-  position: relative;
-}
-
-.ad-text {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #fff;
-  animation: slideText 5s infinite;
-}
-
-@keyframes slideText {
-  0% { transform: translateX(-100%); }
-  20% { transform: translateX(0); }
-  80% { transform: translateX(0); }
-  100% { transform: translateX(100%); }
-}
-
-.ad-icon {
-  width: 40px;
-  height: 40px;
-  animation: bounce 2s infinite;
-}
-
-@keyframes bounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
-}
-
-.ad-link {
-  font-size: 0.9rem;
-  color: #fff;
-  text-decoration: none;
-  font-weight: 600;
-  background: rgba(255, 255, 255, 0.2);
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  transition: background 0.3s ease, transform 0.3s ease;
-}
-
-.ad-link:hover {
-  background: rgba(255, 255, 255, 0.3);
-  transform: scale(1.05);
-}
-
-
-/* Add to src/styles.css */
-.song-of-the-week {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 1rem;
-  text-align: center;
-}
-
-.audio-player {
-  width: 100%;
-  max-width: 400px; /* Maximum width for larger screens */
-  margin: 0 auto; /* Center the player */
-}
-
-.audio-controls {
-  width: 100%; /* Ensure it takes full width of its container */
-  box-sizing: border-box; /* Include padding in width calculation */
-}
-
-@media (max-width: 768px) {
-  .audio-player {
-    max-width: 300px; /* Reduce max-width for tablets */
-  }
-  .audio-controls {
-    padding: 8px;
-    height: 80px; /* Slightly reduce height for smaller screens */
-  }
-  .audio-controls button {
-    font-size: 18px; /* Adjust button sizes */
-  }
-  .audio-controls input[type="range"] {
-    width: 80px; /* Reduce range input width */
-    height: 18px;
-  }
-}
-
-@media (max-width: 480px) {
-  .audio-player {
-    max-width: 250px; /* Further reduce for phones */
-  }
-  .audio-controls {
-    padding: 6px;
-    height: 70px; /* Adjust height for very small screens */
-  }
-  .audio-controls button {
-    font-size: 16px; /* Smaller button sizes */
-  }
-  .audio-controls input[type="range"] {
-    width: 60px; /* Even smaller range input */
-    height: 16px;
-  }
-}
-
-
-
-
-/* src/styles.css (append or modify existing styles) */
-
-/* Animation Keyframes */
-@keyframes fadeInSlideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Audio Player Styles */
-.audio-player {
-  margin: 10px auto;
-  border-radius: 10px;
-  overflow: hidden;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.audio-controls {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 15px;
-}
-
-.song-title {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 200px;
-}
-
-/* Control Button Styles */
-.control-button {
-  padding: 5px 10px;
-  border-radius: 50%;
-  outline: none;
-}
-
-.control-button:hover {
-  transform: scale(1.2);
-  color: #FFD700 !important; /* Gold on hover for all buttons */
-}
-
-/* Progress Slider Styles */
-input[type="range"] {
-  -webkit-appearance: none;
-  height: 8px;
-  border-radius: 5px;
-  background: #4A7C6D;
-  outline: none;
-  transition: background-color 0.3s ease;
-}
-
-input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 16px;
-  height: 16px;
-  background: #D4A017;
-  border-radius: 50%;
-  cursor: pointer;
-  transition: transform 0.3s ease;
-}
-
-input[type="range"]:hover::-webkit-slider-thumb {
-  transform: scale(1.2);
-}
-
-/* Ensure existing animations are preserved */
-.animate-text {
-  animation: fadeInSlideUp 0.5s forwards;
-}
-
-.section-title.animate-text,
-.hero-title.animate-text,
-.hero-text.animate-text,
-.search-input.animate-input,
-.action-button.animate-button {
-  animation: fadeInSlideUp 0.5s forwards;
-}
-
-
-
-
-/* src/styles.css (append or modify existing styles) */
-
-/* Animation Keyframes */
-@keyframes fadeInSlideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Audio Player Styles */
-.audio-player {
-  margin: 10px auto;
-  border-radius: 10px;
-  overflow: hidden;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.audio-controls {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 15px;
-}
-
-.song-info {
-  max-width: 200px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.song-title {
-  margin-bottom: 2px;
-}
-
-.song-composer {
-  font-style: italic;
-}
-
-/* Control Button Styles */
-.control-button {
-  padding: 5px 10px;
-  border-radius: 50%;
-  outline: none;
-}
-
-.control-button:hover {
-  transform: scale(1.2);
-  color: #FFD700 !important; /* Gold on hover for all buttons */
-}
-
-/* Progress Slider Styles */
-input[type="range"] {
-  -webkit-appearance: none;
-  height: 8px;
-  border-radius: 5px;
-  background: linear-gradient(to right, #D4A017 0%, #D4A017 var(--progress), #4A7C6D var(--progress), #4A7C6D 100%);
-  cursor: pointer;
-  outline: none;
-  transition: background-color 0.3s ease;
-}
-
-input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 16px;
-  height: 16px;
-  background: #D4A017;
-  border-radius: 50%;
-  cursor: pointer;
-  transition: transform 0.3s ease;
-}
-
-input[type="range"]:hover::-webkit-slider-thumb {
-  transform: scale(1.2);
-}
-
-/* Ensure existing animations are preserved */
-.animate-text {
-  animation: fadeInSlideUp 0.5s forwards;
-}
-
-.section-title.animate-text,
-.hero-title.animate-text,
-.hero-text.animate-text,
-.search-input.animate-input,
-.action-button.animate-button {
-  animation: fadeInSlideUp 0.5s forwards;
-}
+  display: flex

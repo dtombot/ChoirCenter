@@ -1,5 +1,5 @@
 // src/pages/Home.jsx
-import { useEffect, useState, useRef } from 'react'; // Added useRef
+import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../supabase';
 import { Link, useNavigate } from 'react-router-dom';
 import AdBanner from '../components/AdBanner';
@@ -85,14 +85,20 @@ function Home() {
     if (isPlaying) {
       audioRef.current.pause();
     } else {
-      audioRef.current.play();
+      audioRef.current.play().catch((err) => {
+        console.error('Play failed:', err.message);
+        setError('Failed to play audio. Check the URL or browser permissions.');
+      });
     }
     setIsPlaying(!isPlaying);
   };
 
   const rewind = () => {
     audioRef.current.currentTime = 0;
-    if (!isPlaying) audioRef.current.play();
+    if (!isPlaying) audioRef.current.play().catch((err) => {
+      console.error('Play failed:', err.message);
+      setError('Failed to play audio. Check the URL or browser permissions.');
+    });
     setIsPlaying(true);
   };
 
@@ -322,7 +328,7 @@ function Home() {
 
       const numericSongId = parseInt(songId, 10);
       if (isNaN(numericSongId)) throw new Error('Invalid song ID');
-      console.log('Parsed song ID:', numericSongId);
+      console.log('Parsed songId:', numericSongId);
 
       const url = `https://drive.google.com/uc?export=download&id=${fileId}`;
       const link = document.createElement('a');
@@ -441,15 +447,16 @@ function Home() {
         {songOfTheWeek ? (
           <div className="audio-player animate-text">
             <div
+              className="audio-controls"
               style={{
                 backgroundColor: '#1A3C34', // Dark green
                 borderRadius: '10px',
                 padding: '10px',
-                width: '300px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 color: '#FFFFFF', // White
+                height: '90px', // Fixed height of 90px
               }}
             >
               <button
@@ -458,6 +465,7 @@ function Home() {
                   border: 'none',
                   cursor: 'pointer',
                   color: '#FFFFFF',
+                  fontSize: '20px',
                 }}
               >
                 <span role="img" aria-label="menu">
@@ -471,6 +479,7 @@ function Home() {
                   border: 'none',
                   cursor: 'pointer',
                   color: '#FFFFFF',
+                  fontSize: '20px',
                 }}
               >
                 <span role="img" aria-label="rewind">
@@ -483,7 +492,7 @@ function Home() {
                   background: 'none',
                   border: 'none',
                   cursor: 'pointer',
-                  fontSize: '20px',
+                  fontSize: '30px',
                   color: '#FFFFFF',
                 }}
               >
@@ -497,6 +506,7 @@ function Home() {
                   border: 'none',
                   cursor: 'pointer',
                   color: '#FFFFFF',
+                  fontSize: '20px',
                 }}
               >
                 <span role="img" aria-label="forward">
@@ -509,6 +519,7 @@ function Home() {
                   border: 'none',
                   cursor: 'pointer',
                   color: '#D4A017', // Gold
+                  fontSize: '20px',
                 }}
               >
                 <span role="img" aria-label="like">
@@ -523,6 +534,7 @@ function Home() {
                   width: '100px',
                   backgroundColor: '#4A7C6D', // Light green
                   cursor: 'pointer',
+                  height: '20px', // Ensure range input fits within 90px height
                 }}
               />
             </div>

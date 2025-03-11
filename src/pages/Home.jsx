@@ -24,6 +24,7 @@ function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [downloadPrompt, setDownloadPrompt] = useState(null);
   const [songOfTheWeek, setSongOfTheWeek] = useState(null);
+  const [songTitle, setSongTitle] = useState('Kene Eze Igwe'); // Default title; update with Supabase data if available
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef(null);
   const navigate = useNavigate();
@@ -451,97 +452,142 @@ function Home() {
       <section className="song-of-the-week">
         <h2 className="section-title animate-text">Song of the Week</h2>
         {songOfTheWeek ? (
-          <div className="audio-player animate-text">
+          <div className="audio-player animate-text" style={{ width: '600px' }}>
             <div
               className="audio-controls"
               style={{
-                backgroundColor: '#1A3C34', // Dark green
+                backgroundColor: '#1A3C34',
                 borderRadius: '10px',
-                padding: '10px',
+                padding: '15px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                color: '#FFFFFF', // White
-                height: '90px', // Fixed height of 90px
+                color: '#FFFFFF',
+                height: '90px',
+                transition: 'all 0.3s ease',
               }}
             >
-              <button
+              {/* Song Title with Animation */}
+              <div
+                className="song-title"
                 style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  color: '#FFFFFF',
-                  fontSize: '20px',
+                  fontSize: '18px',
+                  fontWeight: 'bold',
+                  opacity: 0,
+                  animation: 'fadeInSlideUp 0.5s forwards',
                 }}
               >
-                <span role="img" aria-label="menu">
-                  ≡
-                </span>
-              </button>
+                {songTitle}
+              </div>
+
+              {/* Rewind Button */}
               <button
                 onClick={rewind}
+                className="control-button"
                 style={{
                   background: 'none',
                   border: 'none',
                   cursor: 'pointer',
                   color: '#FFFFFF',
-                  fontSize: '20px',
+                  fontSize: '24px',
+                  transition: 'transform 0.3s ease, color 0.3s ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.transform = 'scale(1.2)';
+                  e.target.style.color = '#D4A017';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.transform = 'scale(1)';
+                  e.target.style.color = '#FFFFFF';
                 }}
               >
-                <span role="img" aria-label="rewind">
-                  ◄
-                </span>
+                <span role="img" aria-label="rewind">◄</span>
               </button>
+
+              {/* Play/Pause Button */}
               <button
                 onClick={togglePlay}
+                className="control-button"
                 style={{
                   background: 'none',
                   border: 'none',
                   cursor: 'pointer',
-                  fontSize: '30px',
+                  fontSize: '36px',
                   color: '#FFFFFF',
+                  transition: 'transform 0.3s ease, color 0.3s ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.transform = 'scale(1.2)';
+                  e.target.style.color = '#D4A017';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.transform = 'scale(1)';
+                  e.target.style.color = '#FFFFFF';
                 }}
               >
-                <span role="img" aria-label="play/pause">
-                  {isPlaying ? '||' : '▶'}
-                </span>
+                <span role="img" aria-label="play/pause">{isPlaying ? '||' : '▶'}</span>
               </button>
+
+              {/* Forward Button (Placeholder) */}
               <button
+                className="control-button"
                 style={{
                   background: 'none',
                   border: 'none',
                   cursor: 'pointer',
                   color: '#FFFFFF',
-                  fontSize: '20px',
+                  fontSize: '24px',
+                  transition: 'transform 0.3s ease, color 0.3s ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.transform = 'scale(1.2)';
+                  e.target.style.color = '#D4A017';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.transform = 'scale(1)';
+                  e.target.style.color = '#FFFFFF';
                 }}
               >
-                <span role="img" aria-label="forward">
-                  ►
-                </span>
+                <span role="img" aria-label="forward">►</span>
               </button>
+
+              {/* Like Button */}
               <button
+                className="control-button"
                 style={{
                   background: 'none',
                   border: 'none',
                   cursor: 'pointer',
-                  color: '#D4A017', // Gold
-                  fontSize: '20px',
+                  color: '#D4A017',
+                  fontSize: '24px',
+                  transition: 'transform 0.3s ease, color 0.3s ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.transform = 'scale(1.2)';
+                  e.target.style.color = '#FFD700';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.transform = 'scale(1)';
+                  e.target.style.color = '#D4A017';
                 }}
               >
-                <span role="img" aria-label="like">
-                  ♥
-                </span>
+                <span role="img" aria-label="like">♥</span>
               </button>
+
+              {/* Progress Slider */}
               <input
                 type="range"
                 min="0"
                 max="100"
                 style={{
-                  width: '100px',
-                  backgroundColor: '#4A7C6D', // Light green
+                  width: '150px',
+                  backgroundColor: '#4A7C6D',
                   cursor: 'pointer',
-                  height: '20px', // Ensure range input fits within 90px height
+                  height: '20px',
+                  transition: 'background-color 0.3s ease',
                 }}
+                onMouseEnter={(e) => (e.target.style.backgroundColor = '#6DAE9E')}
+                onMouseLeave={(e) => (e.target.style.backgroundColor = '#4A7C6D')}
               />
             </div>
             <audio
@@ -628,7 +674,7 @@ function Home() {
             <h3 className="faq-question">Does singing in a choir enhance spirituality?</h3>
             <p className="faq-answer">Yes, it uplifts your spirit, fosters peace, and connects you deeply through harmonious expression.</p>
           </div>
-          <div className "faq-item animate-card">
+          <div className="faq-item animate-card">
             <h3 className="faq-question">What are the key qualities of a good chorister?</h3>
             <p className="faq-answer">Dedication, teamwork, a strong ear, and a passion for singing make an exceptional chorister.</p>
           </div>

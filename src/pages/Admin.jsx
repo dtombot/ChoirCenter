@@ -20,7 +20,9 @@ function Admin() {
     github_file_url: '', 
     permalink: '', 
     is_public: true,
-    source: 'google_drive'
+    source: 'google_drive',
+    audio_url: '', // Added audio_url
+    description: '' // Added description
   });
   const [postForm, setPostForm] = useState({ 
     title: '', 
@@ -39,7 +41,7 @@ function Admin() {
     is_active: true
   });
   const [analyticsData, setAnalyticsData] = useState({ ga: null, gsc: null });
-  const [visitorData, setVisitorData] = useState([]); // New state for visitor data
+  const [visitorData, setVisitorData] = useState([]);
   const [topSongs, setTopSongs] = useState([]);
   const [topPosts, setTopPosts] = useState([]);
   const [songOfTheWeekHtml, setSongOfTheWeekHtml] = useState('');
@@ -124,12 +126,12 @@ function Admin() {
       };
       fetchAnalytics();
 
-      const fetchVisitors = async () => { // New function to fetch visitor data
+      const fetchVisitors = async () => {
         const { data, error } = await supabase
           .from('visitors')
           .select('*')
           .order('visit_timestamp', { ascending: false })
-          .limit(100); // Limit to last 100 visits for performance
+          .limit(100);
         if (error) setError('Failed to load visitor data: ' + error.message);
         else setVisitorData(data || []);
       };
@@ -187,7 +189,9 @@ function Admin() {
             google_drive_file_id: songForm.source === 'google_drive' ? songForm.google_drive_file_id : null, 
             github_file_url: songForm.source === 'github' ? songForm.github_file_url : null, 
             permalink: songForm.permalink, 
-            is_public: songForm.is_public 
+            is_public: songForm.is_public,
+            audio_url: songForm.audio_url || null, // Added audio_url
+            description: songForm.description || null // Added description
           })
           .eq('id', editingSongId);
         if (error) throw error;
@@ -202,11 +206,23 @@ function Admin() {
             github_file_url: songForm.source === 'github' ? songForm.github_file_url : null, 
             permalink: songForm.permalink, 
             is_public: songForm.is_public, 
-            downloads: 0 
+            downloads: 0,
+            audio_url: songForm.audio_url || null, // Added audio_url
+            description: songForm.description || null // Added description
           }]);
         if (error) throw error;
       }
-      setSongForm({ title: '', composer: '', google_drive_file_id: '', github_file_url: '', permalink: '', is_public: true, source: 'google_drive' });
+      setSongForm({ 
+        title: '', 
+        composer: '', 
+        google_drive_file_id: '', 
+        github_file_url: '', 
+        permalink: '', 
+        is_public: true, 
+        source: 'google_drive',
+        audio_url: '', // Reset audio_url
+        description: '' // Reset description
+      });
       const { data } = await supabase.from('songs').select('*');
       setSongs(data || []);
     } catch (err) {
@@ -330,7 +346,9 @@ function Admin() {
       github_file_url: song.github_file_url || '', 
       permalink: song.permalink, 
       is_public: song.is_public,
-      source: song.google_drive_file_id ? 'google_drive' : 'github'
+      source: song.google_drive_file_id ? 'google_drive' : 'github',
+      audio_url: song.audio_url || '', // Added audio_url
+      description: song.description || '' // Added description
     });
     setEditingSongId(song.id);
   };
@@ -478,7 +496,6 @@ function Admin() {
   const publicSongs = songs.filter(song => song.is_public).length;
   const privateSongs = songs.length - publicSongs;
 
-  // Aggregate visitor metrics
   const totalVisits = visitorData.length;
   const uniqueVisitors = new Set(visitorData.map(v => v.ip_address)).size;
   const avgDuration = visitorData.length
@@ -580,6 +597,20 @@ function Admin() {
                 onChange={(e) => setSongForm({ ...songForm, permalink: e.target.value })} 
                 className="admin-form-input" 
               />
+              <input 
+                type="text" 
+                placeholder="Audio URL (e.g., https://archive.org/download/...)" 
+                value={songForm.audio_url} 
+                onChange={(e) => setSongForm({ ...songForm, audio_url: e.target.value })} 
+                className="admin-form-input" 
+              />
+              <textarea 
+                placeholder="Song Description" 
+                value={songForm.description} 
+                onChange={(e) => setSongForm({ ...songForm, description: e.target.value })} 
+                className="admin-form-input" 
+                rows="3"
+              />
               <label className="admin-checkbox">
                 <input 
                   type="checkbox" 
@@ -593,7 +624,20 @@ function Admin() {
                 <button 
                   type="button" 
                   className="admin-cancel-button" 
-                  onClick={() => { setSongForm({ title: '', composer: '', google_drive_file_id: '', github_file_url: '', permalink: '', is_public: true, source: 'google_drive' }); setEditingSongId(null); }}
+                  onClick={() => { 
+                    setSongForm({ 
+                      title: '', 
+                      composer: '', 
+                      google_drive_file_id: '', 
+                      github_file_url: '', 
+                      permalink: '', 
+                      is_public: true, 
+                      source: 'google_drive',
+                      audio_url: '', 
+                      description: '' 
+                    }); 
+                    setEditingSongId(null); 
+                  }}
                 >
                   Cancel
                 </button>

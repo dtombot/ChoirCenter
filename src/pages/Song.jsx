@@ -305,36 +305,6 @@ function Song() {
     setNumPages(numPages);
   };
 
-  // Transform audio_url to embed format
-  const getEmbedUrl = (audioUrl) => {
-    if (!audioUrl) return null;
-
-    console.log('Original audio_url:', audioUrl);
-
-    // Handle common archive.org URL patterns
-    const urlPatterns = [
-      // Matches /details/ or /download/ and extracts the identifier
-      /archive\.org\/(?:details|download)\/([^\/]+)/,
-      // Matches direct file URLs and extracts the identifier from the path
-      /archive\.org\/download\/([^\/]+)\/[^\/]+\.(mp3|wav|ogg)/,
-    ];
-
-    for (const pattern of urlPatterns) {
-      const match = audioUrl.match(pattern);
-      if (match) {
-        const identifier = match[1];
-        const embedUrl = `https://archive.org/embed/${identifier}`;
-        console.log('Transformed embed URL:', embedUrl);
-        return embedUrl;
-      }
-    }
-
-    // Fallback: assume the audio_url is already an identifier or invalid
-    const fallbackEmbedUrl = `https://archive.org/embed/${audioUrl.split('/').pop().split('.')[0]}`;
-    console.log('Fallback embed URL:', fallbackEmbedUrl);
-    return fallbackEmbedUrl;
-  };
-
   // PDF loading progress bar with green gradient
   const PdfLoadingProgress = () => {
     const [progress, setProgress] = useState(0);
@@ -411,20 +381,13 @@ function Song() {
                   <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '0.5rem' }}>
                     Listen to an audio preview of {song.title}
                   </p>
-                  <iframe
-                    src={getEmbedUrl(song.audio_url)}
-                    width="500"
-                    height="60"
-                    frameBorder="0"
-                    webkitallowfullscreen="true"
-                    mozallowfullscreen="true"
-                    allowFullScreen
-                    style={{ maxWidth: '100%', borderRadius: '4px' }}
-                    onError={() => console.error('Iframe failed to load:', getEmbedUrl(song.audio_url))}
-                  ></iframe>
-                  {getEmbedUrl(song.audio_url) && (
+                  <div
+                    dangerouslySetInnerHTML={{ __html: song.audio_url }}
+                    style={{ maxWidth: '100%' }}
+                  />
+                  {!song.audio_url.includes('iframe') && (
                     <p style={{ fontSize: '0.8rem', color: '#999', marginTop: '0.5rem' }}>
-                      If the player doesn’t load, check the audio URL in the admin panel.
+                      Audio player not displayed. Please paste a valid &lt;iframe&gt; code in the admin panel.
                     </p>
                   )}
                 </div>

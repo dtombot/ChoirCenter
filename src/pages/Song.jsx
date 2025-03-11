@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+// src/pages/Song.jsx
+import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../supabase';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { Document, Page, pdfjs } from 'react-pdf';
@@ -26,6 +27,10 @@ function Song() {
   const [numPages, setNumPages] = useState(null);
   const [scale, setScale] = useState(1.0);
   const [pdfProgress, setPdfProgress] = useState(0);
+  const [audioUrl, setAudioUrl] = useState(null);
+  const audioRef = useRef(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
     let interval;
@@ -39,7 +44,9 @@ function Song() {
     }
 
     const fetchSong = async () => {
-      let query = supabase.from('songs').select('id, title, composer, google_drive_file_id, downloads, is_public, permalink');
+      let query = supabase
+        .from('songs')
+        .select('id, title, composer, google_drive_file_id, downloads, is_public, permalink, audio_url'); // Added audio_url
       
       if (/^\d+$/.test(id)) {
         query = query.eq('id', parseInt(id, 10));
@@ -56,6 +63,7 @@ function Song() {
       } else {
         console.log('Initial song:', JSON.stringify(data, null, 2));
         setSong(data);
+        setAudioUrl(data.audio_url); // Set audio URL from fetched data
         setPdfProgress(100);
       }
     };
@@ -263,7 +271,7 @@ function Song() {
 
       const { data: updatedSong, error: postUpdateFetchError } = await supabase
         .from('songs')
-        .select('id, title, composer, google_drive_file_id, downloads, is_public, permalink')
+        .select('id, title, composer, google_drive_file_id, downloads, is_public, permalink, audio_url')
         .eq('id', numericSongId)
         .single();
       if (postUpdateFetchError) {
@@ -272,6 +280,7 @@ function Song() {
       }
       console.log('Fetched song after update:', JSON.stringify(updatedSong, null, 2));
       setSong(updatedSong);
+      setAudioUrl(updatedSong.audio_url);
     } catch (err) {
       console.error('Download error:', err.message);
       setError('Failed to download or update count: ' + err.message);
@@ -299,6 +308,29 @@ function Song() {
 
   const onDocumentLoadSuccess = ({ numPages }) => {
     setNumPages(numPages);
+  };
+
+  // Audio Player Controls
+  const togglePlay = () => {
+    if (isPlaying) {
+      audioRef.current.pause();
+    } else {
+      audioRef.current.play();
+    }
+    setIsPlaying(!isPlaying);
+  };
+
+  const stopAudio = () => {
+    audioRef.current.pause();
+    audioRef.current.currentTime = 0;
+    setIsPlaying(false);
+    setProgress(0);
+  };
+
+  const updateProgress = () => {
+    const duration = audioRef.current.duration;
+    const currentTime = audioRef.current.currentTime;
+    setProgress((currentTime / duration) * 100);
   };
 
   // PDF loading progress bar with green gradient
@@ -370,6 +402,71 @@ function Song() {
               <h1 className="song-title-modern">{song.title}</h1>
               <p className="song-composer-modern">{song.composer || 'Unknown Composer'}</p>
               <p className="song-downloads-modern">Downloaded {song.downloads || 0} times</p>
+
+              {/* Audio Player Section */}
+              {audioUrl && (
+                <div className="song-preview-modern">
+                  <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '0.5rem' }}>
+                    Download and listen to an audio preview of {song.title}
+                  </p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+                    <button
+                      onClick={togglePlay}
+                      className="download-button-modern"
+                      style={{ padding: '0.5rem 1rem', minWidth: '80px' }}
+                    >
+                      {isPlaying ? 'Pause' : 'Play'}
+                    </button>
+                    <button
+                      onClick={stopAudio}
+                      className="share-button-modern"
+                      style={{ padding: '0.5rem 1rem', minWidth: '80px' }}
+                    >
+                      Stop
+                    </button>
+                    <a
+                      href={audioUrl}
+                      download={`${song.title}-preview.mp3`}
+                      className="download-button-modern"
+                      style={{ padding: '0.5rem 1rem', minWidth: '100px', textDecoration: 'none', textAlign: 'center' }}
+                    >
+                      Download
+                    </a>
+                    <div style={{ flex: '1', minWidth: '200px' }}>
+                      <div
+                        style={{
+                          height: '5px',
+                          background: '#e0e0e0',
+                          borderRadius: '2px',
+                          width: '100%',
+                          position: 'relative',
+                        }}
+                      >
+                        <div
+                          style={{
+                            height: '100%',
+                            width: `${progress}%`,
+                            background: '#3cb371',
+                            borderRadius: '2px',
+                            transition: 'width 0.1s linear',
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <audio
+                    ref={audioRef}
+                    src={audioUrl}
+                    onTimeUpdate={updateProgress}
+                    onEnded={() => {
+                      setIsPlaying(false);
+                      setProgress(100);
+                    }}
+                    style={{ display: 'none' }}
+                  />
+                </div>
+              )}
+
               <div className="song-preview-modern">
                 <Document
                   file={`/.netlify/functions/proxy-pdf?fileId=${song.google_drive_file_id}`}

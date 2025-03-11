@@ -11,7 +11,7 @@
       connect-src 'self' https://*.supabase.co https://drive.google.com https://www.google.com https://*.netlify.app;
       frame-src 'self' https://open.spotify.com https://www.google.com https://archive.org;
       worker-src 'self' blob:;
-      media-src 'self' https://archive.org https://drive.google.com;
+      media-src 'self' *.archive.org https://drive.google.com;
     """
 
 [[redirects]]

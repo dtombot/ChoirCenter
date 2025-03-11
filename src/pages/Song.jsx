@@ -1,5 +1,5 @@
 // src/pages/Song.jsx
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../supabase';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { Document, Page, pdfjs } from 'react-pdf';
@@ -28,6 +28,7 @@ function Song() {
   const [scale, setScale] = useState(1.0);
   const [pdfProgress, setPdfProgress] = useState(0);
   const navigate = useNavigate();
+  const shadowHostRef = useRef(null);
 
   useEffect(() => {
     let interval;
@@ -83,6 +84,14 @@ function Song() {
       window.removeEventListener('resize', updateScale);
     };
   }, [id]);
+
+  useEffect(() => {
+    if (song?.audio_url && shadowHostRef.current) {
+      // Create a shadow root to isolate the iframe
+      const shadowRoot = shadowHostRef.current.attachShadow({ mode: 'open' });
+      shadowRoot.innerHTML = song.audio_url;
+    }
+  }, [song]);
 
   const handleDownload = async () => {
     if (!song) return;
@@ -382,7 +391,7 @@ function Song() {
                     Listen to an audio preview of {song.title}
                   </p>
                   <div
-                    dangerouslySetInnerHTML={{ __html: song.audio_url }}
+                    ref={shadowHostRef}
                     style={{ maxWidth: '100%' }}
                   />
                   {!song.audio_url.includes('iframe') && (

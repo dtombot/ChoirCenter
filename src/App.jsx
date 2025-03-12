@@ -23,17 +23,24 @@ function initGoogleAnalytics() {
   function gtag() { window.dataLayer.push(arguments); }
   window.gtag = gtag;
   gtag('js', new Date());
-  gtag('config', 'G-0VEW528YY9', { page_path: window.location.pathname });
+  // Initial config without page_path to avoid overriding subsequent updates
+  gtag('config', 'G-0VEW528YY9');
 }
 
-// Component to track page views
+// Component to track page views with correct page paths
 function AnalyticsTracker() {
   const location = useLocation();
+
   useEffect(() => {
     if (window.gtag) {
-      window.gtag('config', 'G-0VEW528YY9', { page_path: location.pathname });
+      // Send page_view event with the current pathname
+      window.gtag('event', 'page_view', {
+        page_path: location.pathname,
+        page_title: document.title, // Optional: include page title
+      });
     }
-  }, [location]);
+  }, [location.pathname]); // Trigger only on pathname change
+
   return null;
 }
 
@@ -168,7 +175,6 @@ function App() {
       setCookiesAccepted(true);
     }
 
-    // Start visit timer and track clicks
     setVisitStartTime(Date.now());
     const handleClick = (e) => {
       if (cookiesAccepted) {
@@ -180,7 +186,6 @@ function App() {
     };
     document.addEventListener('click', handleClick);
 
-    // Track visit on unload
     const trackVisit = async () => {
       if (!cookiesAccepted || !visitStartTime) return;
       const duration = Math.round((Date.now() - visitStartTime) / 1000);

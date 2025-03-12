@@ -101,9 +101,7 @@ function App() {
     };
 
     loadRecaptchaScript();
-    if (cookiesAccepted) {
-      loadGoogleAnalyticsScript();
-    }
+    loadGoogleAnalyticsScript(); // Load GA unconditionally
 
     const fetchUserAndProfile = async () => {
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();

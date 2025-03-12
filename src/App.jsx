@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { BrowserRouter as Router, Route, Routes, Link, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Link, Navigate, useLocation } from 'react-router-dom';
 import { supabase } from './supabase';
 import './styles.css';
 import Home from './pages/Home';
@@ -16,6 +16,26 @@ import Blog from './pages/Blog';
 import BlogPost from './pages/BlogPost';
 import Song from './pages/Song';
 import Search from './pages/Search';
+
+// Google Analytics initialization function
+function initGoogleAnalytics() {
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { window.dataLayer.push(arguments); }
+  window.gtag = gtag;
+  gtag('js', new Date());
+  gtag('config', 'G-0VEW528YY9', { page_path: window.location.pathname });
+}
+
+// Component to track page views
+function AnalyticsTracker() {
+  const location = useLocation();
+  useEffect(() => {
+    if (window.gtag) {
+      window.gtag('config', 'G-0VEW528YY9', { page_path: location.pathname });
+    }
+  }, [location]);
+  return null;
+}
 
 function CookieConsent({ onAccept }) {
   const [isVisible, setIsVisible] = useState(false);
@@ -70,7 +90,20 @@ function App() {
       }
     };
 
+    const loadGoogleAnalyticsScript = () => {
+      if (!document.querySelector('script[src="https://www.googletagmanager.com/gtag/js?id=G-0VEW528YY9"]')) {
+        const script = document.createElement('script');
+        script.src = 'https://www.googletagmanager.com/gtag/js?id=G-0VEW528YY9';
+        script.async = true;
+        script.onload = () => initGoogleAnalytics();
+        document.head.appendChild(script);
+      }
+    };
+
     loadRecaptchaScript();
+    if (cookiesAccepted) {
+      loadGoogleAnalyticsScript();
+    }
 
     const fetchUserAndProfile = async () => {
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
@@ -183,6 +216,7 @@ function App() {
 
   return (
     <Router>
+      <AnalyticsTracker />
       <header className="header">
         <Link to="/" className="header-link">
           <h1 className="header-title">Choir Center</h1>

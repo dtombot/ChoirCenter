@@ -43,6 +43,17 @@ function AnalyticsTracker() {
   return null;
 }
 
+// Component to scroll to top on route change
+function ScrollToTop() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+
+  return null;
+}
+
 function CookieConsent({ onAccept }) {
   const [isVisible, setIsVisible] = useState(false);
 
@@ -214,6 +225,7 @@ function App() {
   return (
     <HelmetProvider>
       <Router>
+        <ScrollToTop /> {/* Added here to reset scroll on route change */}
         <AnalyticsTracker />
         <header className="header">
           <Link to="/" className="header-link">

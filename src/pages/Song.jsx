@@ -24,6 +24,7 @@ function Song() {
   const [relatedSongs, setRelatedSongs] = useState([]);
   const [error, setError] = useState(null);
   const [downloadPrompt, setDownloadPrompt] = useState(null);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false); // New state for login prompt
   const [numPages, setNumPages] = useState(null);
   const [scale, setScale] = useState(1.0);
   const [pdfProgress, setPdfProgress] = useState(0);
@@ -222,7 +223,12 @@ function Song() {
     }
   }, [song]);
 
-  const togglePlay = () => {
+  const togglePlay = async () => {
+    const { data: sessionData, error } = await supabase.auth.getSession();
+    if (error || !sessionData?.session) {
+      setShowLoginPrompt(true); // Show login prompt if not authenticated
+      return;
+    }
     if (audioRef.current) {
       console.log('Attempting to play audio from URL:', audioRef.current.src);
       if (isPlaying) {
@@ -301,7 +307,7 @@ function Song() {
         const { data: userData, error: userError } = await supabase.auth.getUser();
         if (userError) {
           console.error('User fetch error:', userError.message);
-          throw error;
+          throw userError;
         }
         const userId = userData.user.id;
         const { data: limitData, error: limitError } = await supabase
@@ -599,6 +605,7 @@ function Song() {
               </div>
             )}
 
+            {/* Download Prompt Modal */}
             {downloadPrompt && (
               <div className="modal-overlay">
                 <div className="modal-content download-modal">
@@ -611,6 +618,25 @@ function Song() {
                     <Link to="/signup" className="modal-link">Just Sign up</Link>
                   </button>{' '}
                   <button onClick={() => setDownloadPrompt(null)} className="cancel-button">Close</button>
+                </div>
+              </div>
+            )}
+
+            {/* Login Prompt Modal */}
+            {showLoginPrompt && (
+              <div className="modal-overlay">
+                <div className="modal-content download-modal">
+                  <h3 className="modal-title">Login Required</h3>
+                  <p className="modal-text">
+                    Please sign up or log in to play this song. It’s free and quick—join our choir community today! 🎶
+                  </p>
+                  <button className="signup-button">
+                    <Link to="/signup" className="modal-link">Sign Up</Link>
+                  </button>{' '}
+                  <button className="signup-button">
+                    <Link to="/login" className="modal-link">Log In</Link>
+                  </button>{' '}
+                  <button onClick={() => setShowLoginPrompt(false)} className="cancel-button">Close</button>
                 </div>
               </div>
             )}

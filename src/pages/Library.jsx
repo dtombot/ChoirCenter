@@ -28,7 +28,7 @@ function Library() {
     const fetchSongs = async () => {
       const { data: songData, error: songError } = await supabase
         .from('songs')
-        .select('id, title, composer, google_drive_file_id, permalink, is_public, downloads, created_at') // Added created_at
+        .select('id, title, composer, google_drive_file_id, permalink, is_public, downloads, created_at')
         .order(sortBy, { ascending: sortOrder === 'asc' });
       if (songError) {
         console.error('Initial song fetch error:', songError.message);
@@ -236,7 +236,7 @@ function Library() {
 
       const { data: updatedSong, error: postUpdateFetchError } = await supabase
         .from('songs')
-        .select('id, title, composer, google_drive_file_id, downloads, is_public, permalink, created_at') // Added created_at
+        .select('id, title, composer, google_drive_file_id, downloads, is_public, permalink, created_at')
         .eq('id', numericSongId)
         .single();
       if (postUpdateFetchError) {
@@ -247,7 +247,7 @@ function Library() {
 
       const { data: updatedSongs, error: refetchError } = await supabase
         .from('songs')
-        .select('id, title, composer, google_drive_file_id, permalink, is_public, downloads, created_at') // Added created_at
+        .select('id, title, composer, google_drive_file_id, permalink, is_public, downloads, created_at')
         .order(sortBy, { ascending: sortOrder === 'asc' });
       if (refetchError) {
         console.error('Refetch error:', refetchError.message);
@@ -305,6 +305,49 @@ function Library() {
     setCurrentPage(1);
   };
 
+  // Function to generate modern pagination range
+  const getPaginationRange = () => {
+    const range = [];
+    const maxVisiblePages = 5; // Show current page ± 2, plus first and last
+    const sideRange = 2; // Pages to show on either side of currentPage
+
+    if (totalPages <= maxVisiblePages) {
+      // If total pages are few, show all
+      for (let i = 1; i <= totalPages; i++) {
+        range.push(i);
+      }
+    } else {
+      // Always include first page
+      range.push(1);
+
+      // Add ellipsis if gap between 1 and start of range
+      const startRange = Math.max(2, currentPage - sideRange);
+      if (startRange > 2) {
+        range.push('...');
+      }
+
+      // Add pages around currentPage
+      for (let i = startRange; i <= Math.min(totalPages - 1, currentPage + sideRange); i++) {
+        range.push(i);
+      }
+
+      // Add ellipsis if gap between end of range and last page
+      const endRange = Math.min(totalPages - 1, currentPage + sideRange);
+      if (endRange < totalPages - 1) {
+        range.push('...');
+      }
+
+      // Always include last page
+      if (totalPages > 1) {
+        range.push(totalPages);
+      }
+    }
+
+    return range;
+  };
+
+  const paginationRange = getPaginationRange();
+
   return (
     <div className="library-container">
       <section className="ad-section">
@@ -339,20 +382,53 @@ function Library() {
         </select>
         <input type="text" name="honeypot" className="honeypot" />
       </form>
-      <div className="pagination-controls">
-        <label htmlFor="itemsPerPage">Items per page:</label>
-        <select
-          id="itemsPerPage"
-          value={itemsPerPage}
-          onChange={handleItemsPerPageChange}
-          className="pagination-select"
-        >
-          <option value={25}>25</option>
-          <option value={50}>50</option>
-          <option value={100}>100</option>
-          <option value={200}>200</option>
-        </select>
-      </div>
+      {totalItems > itemsPerPage && (
+        <div className="pagination-top">
+          <div className="pagination-controls">
+            <label htmlFor="itemsPerPage">Items per page:</label>
+            <select
+              id="itemsPerPage"
+              value={itemsPerPage}
+              onChange={handleItemsPerPageChange}
+              className="pagination-select"
+            >
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+              <option value={200}>200</option>
+            </select>
+          </div>
+          <div className="pagination">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="pagination-button"
+            >
+              Previous
+            </button>
+            {paginationRange.map((item, index) => (
+              item === '...' ? (
+                <span key={index} className="pagination-ellipsis">...</span>
+              ) : (
+                <button
+                  key={index}
+                  onClick={() => handlePageChange(item)}
+                  className={`pagination-button ${currentPage === item ? 'active' : ''}`}
+                >
+                  {item}
+                </button>
+              )
+            ))}
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="pagination-button"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
       {error && <p className="error-message">{error}</p>}
       {songs.length === 0 && !error ? (
         <p>No songs available.</p>
@@ -397,30 +473,36 @@ function Library() {
         </div>
       )}
       {totalItems > itemsPerPage && (
-        <div className="pagination">
-          <button
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-            className="pagination-button"
-          >
-            Previous
-          </button>
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+        <div className="pagination-bottom">
+          <div className="pagination">
             <button
-              key={page}
-              onClick={() => handlePageChange(page)}
-              className={`pagination-button ${currentPage === page ? 'active' : ''}`}
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="pagination-button"
             >
-              {page}
+              Previous
             </button>
-          ))}
-          <button
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === totalPages}
-            className="pagination-button"
-          >
-            Next
-          </button>
+            {paginationRange.map((item, index) => (
+              item === '...' ? (
+                <span key={index} className="pagination-ellipsis">...</span>
+              ) : (
+                <button
+                  key={index}
+                  onClick={() => handlePageChange(item)}
+                  className={`pagination-button ${currentPage === item ? 'active' : ''}`}
+                >
+                  {item}
+                </button>
+              )
+            ))}
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="pagination-button"
+            >
+              Next
+            </button>
+          </div>
         </div>
       )}
       {downloadPrompt && (

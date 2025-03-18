@@ -2738,3 +2738,116 @@ input[type="range"]:hover {
     font-size: 1.5rem; /* Adjust title size on mobile if needed */
   }
 }
+
+
+
+/* Modern Audio Player Styles */
+.modern-audio-player {
+  width: 100%;
+  max-width: 500px;
+  margin: 20px auto;
+}
+
+.player-container {
+  display: flex;
+  align-items: center;
+  background: linear-gradient(135deg, #1A3C34 0%, #2E5C52 100%);
+  border-radius: 20px;
+  padding: 10px 15px;
+  height: 50px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.player-container:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+}
+
+.player-button {
+  background: none;
+  border: none;
+  color: #FFFFFF;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 0 10px;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.player-button:hover {
+  transform: scale(1.2);
+  color: #D4A017;
+}
+
+.song-title-container {
+  flex: 1;
+  overflow: hidden;
+  margin: 0 10px;
+  height: 20px;
+  position: relative;
+}
+
+.song-title-text {
+  color: #FFFFFF;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  position: absolute;
+  top: 0;
+  left: 0;
+  opacity: 0;
+  animation: fadeIn 0.5s forwards, marquee 10s linear infinite;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes marquee {
+  0% { transform: translateX(100%); }
+  10% { transform: translateX(0); }
+  90% { transform: translateX(0); }
+  100% { transform: translateX(-100%); }
+}
+
+.progress-bar {
+  width: 120px;
+  height: 6px;
+  background: #4A7C6D;
+  border-radius: 3px;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  margin-left: 10px;
+  transition: background 0.3s ease;
+}
+
+.progress-bar::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  background: #D4A017;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.progress-bar::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  background: #D4A017;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.progress-bar:hover {
+  background: #6DAE9E;
+}
+
+.progress-bar::-webkit-slider-thumb:hover,
+.progress-bar::-moz-range-thumb:hover {
+  transform: scale(1.3);
+}

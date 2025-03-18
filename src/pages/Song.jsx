@@ -31,6 +31,86 @@ function Song() {
   const navigate = useNavigate();
   const shadowHostRef = useRef(null);
 
+  // Function to set SEO meta tags for a song
+  const setSongMetaTags = (song) => {
+    document.title = `${song.title} by ${song.composer || 'Unknown Composer'} | Choir Center`;
+
+    let metaDescription = document.querySelector('meta[name="description"]');
+    if (!metaDescription) {
+      metaDescription = document.createElement('meta');
+      metaDescription.name = "description";
+      document.head.appendChild(metaDescription);
+    }
+    metaDescription.content = `Download and view the sheet music for ${song.title} by ${song.composer || 'Unknown Composer'}.`;
+
+    // Open Graph tags
+    let ogTitle = document.querySelector('meta[property="og:title"]');
+    if (!ogTitle) {
+      ogTitle = document.createElement('meta');
+      ogTitle.property = "og:title";
+      document.head.appendChild(ogTitle);
+    }
+    ogTitle.content = song.title;
+
+    let ogDescription = document.querySelector('meta[property="og:description"]');
+    if (!ogDescription) {
+      ogDescription = document.createElement('meta');
+      ogDescription.property = "og:description";
+      document.head.appendChild(ogDescription);
+    }
+    ogDescription.content = `Download and view the sheet music for ${song.title} by ${song.composer || 'Unknown Composer'}.`;
+
+    let ogUrl = document.querySelector('meta[property="og:url"]');
+    if (!ogUrl) {
+      ogUrl = document.createElement('meta');
+      ogUrl.property = "og:url";
+      document.head.appendChild(ogUrl);
+    }
+    ogUrl.content = window.location.href;
+
+    let ogImage = document.querySelector('meta[property="og:image"]');
+    if (!ogImage) {
+      ogImage = document.createElement('meta');
+      ogImage.property = "og:image";
+      document.head.appendChild(ogImage);
+    }
+    ogImage.content = 'https://choircenter.com/path-to-default-image.jpg'; // Replace with your default image URL
+
+    // Twitter tags
+    let twitterTitle = document.querySelector('meta[name="twitter:title"]');
+    if (!twitterTitle) {
+      twitterTitle = document.createElement('meta');
+      twitterTitle.name = "twitter:title";
+      document.head.appendChild(twitterTitle);
+    }
+    twitterTitle.content = song.title;
+
+    let twitterDescription = document.querySelector('meta[name="twitter:description"]');
+    if (!twitterDescription) {
+      twitterDescription = document.createElement('meta');
+      twitterDescription.name = "twitter:description";
+      document.head.appendChild(twitterDescription);
+    }
+    twitterDescription.content = `Download and view the sheet music for ${song.title} by ${song.composer || 'Unknown Composer'}.`;
+
+    let twitterImage = document.querySelector('meta[name="twitter:image"]');
+    if (!twitterImage) {
+      twitterImage = document.createElement('meta');
+      twitterImage.name = "twitter:image";
+      document.head.appendChild(twitterImage);
+    }
+    twitterImage.content = 'https://choircenter.com/path-to-default-image.jpg'; // Replace with your default image URL
+
+    // Canonical URL
+    let canonicalLink = document.querySelector('link[rel="canonical"]');
+    if (!canonicalLink) {
+      canonicalLink = document.createElement('link');
+      canonicalLink.rel = "canonical";
+      document.head.appendChild(canonicalLink);
+    }
+    canonicalLink.href = `${window.location.origin}/song/${song.permalink || song.id}`;
+  };
+
   useEffect(() => {
     let interval;
     if (!song) {
@@ -58,11 +138,28 @@ function Song() {
       if (songError) {
         console.error('Initial song fetch error:', songError.message);
         setError('Failed to load song: ' + songError.message);
+        document.title = 'Error | Choir Center';
+        let metaDescription = document.querySelector('meta[name="description"]');
+        if (!metaDescription) {
+          metaDescription = document.createElement('meta');
+          metaDescription.name = "description";
+          document.head.appendChild(metaDescription);
+        }
+        metaDescription.content = "An error occurred while loading the song.";
       } else if (!songData.is_public) {
         setError('This song is private and cannot be viewed.');
+        document.title = 'Private Song | Choir Center';
+        let metaDescription = document.querySelector('meta[name="description"]');
+        if (!metaDescription) {
+          metaDescription = document.createElement('meta');
+          metaDescription.name = "description";
+          document.head.appendChild(metaDescription);
+        }
+        metaDescription.content = "This song is private and cannot be viewed.";
       } else {
         console.log('Initial song:', JSON.stringify(songData, null, 2));
         setSong(songData);
+        setSongMetaTags(songData);
         setPdfProgress(100);
       }
 

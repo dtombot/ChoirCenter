@@ -69,7 +69,7 @@ function Song() {
       ogImage.property = "og:image";
       document.head.appendChild(ogImage);
     }
-    ogImage.content = 'https://choircenter.com/images/choir1.jpg'; // Replace with your default image URL
+    ogImage.content = 'https://choircenter.com/path-to-default-image.jpg'; // Replace with your default image URL
     let twitterTitle = document.querySelector('meta[name="twitter:title"]');
     if (!twitterTitle) {
       twitterTitle = document.createElement('meta');
@@ -90,7 +90,7 @@ function Song() {
       twitterImage.name = "twitter:image";
       document.head.appendChild(twitterImage);
     }
-    twitterImage.content = 'https://choircenter.com/images/choir1.jpg'; // Replace with your default image URL
+    twitterImage.content = 'https://choircenter.com/path-to-default-image.jpg'; // Replace with your default image URL
     let canonicalLink = document.querySelector('link[rel="canonical"]');
     if (!canonicalLink) {
       canonicalLink = document.createElement('link');
@@ -564,22 +564,6 @@ function Song() {
                 </ul>
               </div>
             )}
-
-            {/* Navigation Links */}
-            <div className="song-navigation" style={{ marginTop: '2rem', textAlign: 'center' }}>
-              <Link to="/" className="nav-link" style={{ margin: '0 1rem', color: '#007bff', textDecoration: 'none' }}>
-                Home
-              </Link>
-              <Link to="/library" className="nav-link" style={{ margin: '0 1rem', color: '#007bff', textDecoration: 'none' }}>
-                Song Library
-              </Link>
-              <Link to="/blog" className="nav-link" style={{ margin: '0 1rem', color: '#007bff', textDecoration: 'none' }}>
-                Blog
-              </Link>
-              <Link to="/contact" className="nav-link" style={{ margin: '0 1rem', color: '#007bff', textDecoration: 'none' }}>
-                Contact Us
-              </Link>
-            </div>
 
             {downloadPrompt && (
               <div className="modal-overlay">

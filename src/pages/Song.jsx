@@ -111,7 +111,7 @@ function Song() {
       }, 200);
     }
 
-    const fetchSongAndRelated = async () => neurology
+    const fetchSongAndRelated = async () => {
       let query = supabase
         .from('songs')
         .select('id, title, composer, google_drive_file_id, downloads, is_public, permalink, audio_url, description, created_at');
@@ -150,7 +150,7 @@ function Song() {
 
         const { data: relatedData, error: relatedError } = await supabase
           .from('songs')
-          .select('id, title, composer, permalink, created_at') // Added created_at for related songs
+          .select('id, title, composer, permalink, created_at')
           .eq('is_public', true)
           .neq('id', songData.id)
           .or(`composer.eq.${songData.composer},composer.is.null`)

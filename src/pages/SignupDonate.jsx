@@ -6,6 +6,11 @@ import '../styles.css';
 function SignupDonate({ recaptchaLoaded }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState(''); // New field
+  const [choirName, setChoirName] = useState(''); // New field
+  const [churchName, setChurchName] = useState(''); // New field
+  const [country, setCountry] = useState(''); // New field
+  const [state, setState] = useState(''); // New field
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -99,9 +104,28 @@ function SignupDonate({ recaptchaLoaded }) {
       if (error) throw error;
 
       setUserId(data.user.id);
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .upsert({
+          id: data.user.id,
+          email: data.user.email,
+          full_name: fullName, // New field
+          choir_name: choirName || null, // Optional
+          church_name: churchName || null, // Optional
+          country: country || null, // Optional
+          state: state || null, // Optional
+          is_admin: false,
+        });
+      if (profileError) throw profileError;
+
       setSuccess('Signup successful! Redirecting to donation page...');
       setEmail('');
       setPassword('');
+      setFullName(''); // Reset new field
+      setChoirName(''); // Reset new field
+      setChurchName(''); // Reset new field
+      setCountry(''); // Reset new field
+      setState(''); // Reset new field
 
       setTimeout(() => {
         window.location.href = 'https://paystack.com/pay/choircenterdonation';
@@ -162,6 +186,18 @@ function SignupDonate({ recaptchaLoaded }) {
         {!success && (
           <form onSubmit={handleSignup} className="auth-form">
             <div className="form-group">
+              <label htmlFor="fullName">Full Name</label>
+              <input
+                type="text"
+                id="fullName"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                className="auth-input"
+                required
+                disabled={loading}
+              />
+            </div>
+            <div className="form-group">
               <label htmlFor="email">Email</label>
               <input
                 type="email"
@@ -182,6 +218,50 @@ function SignupDonate({ recaptchaLoaded }) {
                 onChange={(e) => setPassword(e.target.value)}
                 className="auth-input"
                 required
+                disabled={loading}
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="choirName">Choir Name (Optional)</label>
+              <input
+                type="text"
+                id="choirName"
+                value={choirName}
+                onChange={(e) => setChoirName(e.target.value)}
+                className="auth-input"
+                disabled={loading}
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="churchName">Church Name (Optional)</label>
+              <input
+                type="text"
+                id="churchName"
+                value={churchName}
+                onChange={(e) => setChurchName(e.target.value)}
+                className="auth-input"
+                disabled={loading}
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="country">Country (Optional)</label>
+              <input
+                type="text"
+                id="country"
+                value={country}
+                onChange={(e) => setCountry(e.target.value)}
+                className="auth-input"
+                disabled={loading}
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="state">State/Region (Optional)</label>
+              <input
+                type="text"
+                id="state"
+                value={state}
+                onChange={(e) => setState(e.target.value)}
+                className="auth-input"
                 disabled={loading}
               />
             </div>

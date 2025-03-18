@@ -27,9 +27,11 @@ function Song() {
   const [numPages, setNumPages] = useState(null);
   const [scale, setScale] = useState(1.0);
   const [pdfProgress, setPdfProgress] = useState(0);
-  const [hasDonated, setHasDonated] = useState(null); // Still tracked for other potential uses
+  const [hasDonated, setHasDonated] = useState(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const audioRef = useRef(null);
   const navigate = useNavigate();
-  const shadowHostRef = useRef(null);
 
   // Function to set SEO meta tags for a song
   const setSongMetaTags = (song) => {
@@ -111,7 +113,6 @@ function Song() {
     }
 
     const fetchSongAndRelated = async () => {
-      // Fetch current song
       let query = supabase
         .from('songs')
         .select('id, title, composer, google_drive_file_id, downloads, is_public, permalink, audio_url, description');
@@ -148,15 +149,14 @@ function Song() {
         setSongMetaTags(songData);
         setPdfProgress(100);
 
-        // Fetch related songs (same composer or random public songs)
         const { data: relatedData, error: relatedError } = await supabase
           .from('songs')
           .select('id, title, composer, permalink')
           .eq('is_public', true)
-          .neq('id', songData.id) // Exclude current song
-          .or(`composer.eq.${songData.composer},composer.is.null`) // Prefer same composer, fallback to any
-          .order('downloads', { ascending: false }) // Sort by popularity
-          .limit(5); // Limit to 5 songs
+          .neq('id', songData.id)
+          .or(`composer.eq.${songData.composer},composer.is.null`)
+          .order('downloads', { ascending: false })
+          .limit(5);
         if (relatedError) {
           console.error('Related songs fetch error:', relatedError.message);
         } else {
@@ -164,7 +164,6 @@ function Song() {
         }
       }
 
-      // Fetch donation status (still useful for other features, e.g., download limits)
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       if (sessionError || !sessionData?.session) {
         setHasDonated(false);
@@ -209,13 +208,46 @@ function Song() {
     };
   }, [id]);
 
-  // Render audio player for all users when song.audio_url exists
   useEffect(() => {
-    if (song?.audio_url && shadowHostRef.current) {
-      const shadowRoot = shadowHostRef.current.attachShadow({ mode: 'open' });
-      shadowRoot.innerHTML = song.audio_url;
+    const audio = audioRef.current;
+    if (audio) {
+      const updateProgress = () => {
+        if (audio.duration) {
+          const progressValue = (audio.currentTime / audio.duration) * 100;
+          setProgress(progressValue);
+        }
+      };
+      audio.addEventListener('timeupdate', updateProgress);
+      return () => audio.removeEventListener('timeupdate', updateProgress);
     }
   }, [song]);
+
+  const togglePlay = () => {
+    if (audioRef.current) {
+      console.log('Attempting to play audio from URL:', audioRef.current.src);
+      if (isPlaying) {
+        audioRef.current.pause();
+      } else {
+        audioRef.current.play().catch((err) => {
+          console.error('Play failed for URL:', audioRef.current.src, 'Error:', err.message);
+          setError(`Failed to play audio. Check the URL (${audioRef.current.src}) or browser console for details.`);
+        });
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
+
+  const rewind = () => {
+    if (audioRef.current) {
+      console.log('Rewinding audio from URL:', audioRef.current.src);
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().catch((err) => {
+        console.error('Play failed for URL:', audioRef.current.src, 'Error:', err.message);
+        setError(`Failed to play audio. Check the URL (${audioRef.current.src}) or browser console for details.`);
+      });
+      setIsPlaying(true);
+    }
+  };
 
   const handleDownload = async () => {
     if (!song) return;
@@ -269,7 +301,7 @@ function Song() {
         const { data: userData, error: userError } = await supabase.auth.getUser();
         if (userError) {
           console.error('User fetch error:', userError.message);
-          throw userError;
+          throw error;
         }
         const userId = userData.user.id;
         const { data: limitData, error: limitError } = await supabase
@@ -451,7 +483,7 @@ function Song() {
             <p className="error-message">{error}</p>
             <Link to="/library" className="action-button">Back to Library</Link>
           </>
-        ) : !song ? ( // Removed hasDonated === null from condition since audio player no longer depends on it
+        ) : !song ? (
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px' }}>
             <svg width="60" height="60" viewBox="0 0 60 60">
               <circle cx="30" cy="30" r="25" fill="none" stroke="#ccc" strokeWidth="4" />
@@ -464,16 +496,48 @@ function Song() {
             <p className="song-composer-modern">{song.composer || 'Unknown Composer'}</p>
             <p className="song-downloads-modern">Downloaded {song.downloads || 0} times</p>
 
-            {/* Internet Archive Embedded Audio Player - Now available to all */}
+            {/* Modern Audio Player */}
             {song.audio_url && (
               <div className="song-preview-modern">
                 <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '0.5rem' }}>
                   Listen to an audio preview of {song.title}
                 </p>
-                <div ref={shadowHostRef} style={{ maxWidth: '100%' }} />
-                {!song.audio_url.includes('iframe') && (
+                <div className="modern-audio-player">
+                  <div className="player-container">
+                    <button onClick={rewind} className="player-button rewind" aria-label="Rewind song">
+                      <span role="img" aria-label="rewind">⏪</span>
+                    </button>
+                    <button onClick={togglePlay} className="player-button play-pause" aria-label={isPlaying ? "Pause song" : "Play song"}>
+                      <span role="img" aria-label="play/pause">{isPlaying ? '⏸' : '▶'}</span>
+                    </button>
+                    <div className="song-title-container">
+                      <span className="song-title-text">{song.title}</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      value={progress}
+                      onChange={(e) => {
+                        if (audioRef.current) {
+                          const newTime = (e.target.value / 100) * audioRef.current.duration;
+                          audioRef.current.currentTime = newTime;
+                          setProgress(e.target.value);
+                        }
+                      }}
+                      className="progress-bar"
+                      aria-label="Audio progress"
+                    />
+                  </div>
+                  <audio
+                    ref={audioRef}
+                    src={song.audio_url}
+                    onError={(e) => console.error('Audio error for URL:', song.audio_url, 'Error:', e.target.error)}
+                  />
+                </div>
+                {!song.audio_url.includes('.mp3') && !song.audio_url.includes('.wav') && (
                   <p style={{ fontSize: '0.8rem', color: '#999', marginTop: '0.5rem' }}>
-                    Audio player not displayed. Please paste a valid iframe code in the admin panel.
+                    Audio player not displayed. Please use a direct audio file URL (e.g., .mp3) in the admin panel.
                   </p>
                 )}
                 {/* Song Description */}

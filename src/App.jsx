@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Route, Routes, Link, Navigate, useLocation } from 'react-router-dom';
-import { HelmetProvider } from 'react-helmet-async'; // Add this import
+import { HelmetProvider } from 'react-helmet-async';
 import { supabase } from './supabase';
 import './styles.css';
 import Home from './pages/Home';
@@ -164,7 +164,6 @@ function App() {
       }
     });
 
-
     const consent = localStorage.getItem('cookieConsent');
     if (consent === 'accepted') {
       setCookiesAccepted(true);
@@ -213,12 +212,15 @@ function App() {
   };
 
   return (
-    <HelmetProvider> {/* Wrap the app with HelmetProvider */}
+    <HelmetProvider>
       <Router>
         <AnalyticsTracker />
         <header className="header">
           <Link to="/" className="header-link">
-            <h1 className="header-title">Choir Center</h1>
+            <div className="header-logo-title">
+              <img src="/logo.png" alt="Choir Center Logo" className="header-logo" />
+              <h1 className="header-title">Choir Center</h1>
+            </div>
           </Link>
           <nav className="header-nav">
             {!user ? (

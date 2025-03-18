@@ -1,4 +1,3 @@
-// src/pages/Song.jsx
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../supabase';
 import { Link, useParams, useNavigate } from 'react-router-dom';
@@ -28,7 +27,7 @@ function Song() {
   const [numPages, setNumPages] = useState(null);
   const [scale, setScale] = useState(1.0);
   const [pdfProgress, setPdfProgress] = useState(0);
-  const [hasDonated, setHasDonated] = useState(null);
+  const [hasDonated, setHasDonated] = useState(null); // Still tracked for other potential uses
   const navigate = useNavigate();
   const shadowHostRef = useRef(null);
 
@@ -165,7 +164,7 @@ function Song() {
         }
       }
 
-      // Fetch donation status
+      // Fetch donation status (still useful for other features, e.g., download limits)
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       if (sessionError || !sessionData?.session) {
         setHasDonated(false);
@@ -210,14 +209,13 @@ function Song() {
     };
   }, [id]);
 
+  // Render audio player for all users when song.audio_url exists
   useEffect(() => {
-    if (song?.audio_url && shadowHostRef.current && hasDonated !== null) {
-      if (hasDonated) {
-        const shadowRoot = shadowHostRef.current.attachShadow({ mode: 'open' });
-        shadowRoot.innerHTML = song.audio_url;
-      }
+    if (song?.audio_url && shadowHostRef.current) {
+      const shadowRoot = shadowHostRef.current.attachShadow({ mode: 'open' });
+      shadowRoot.innerHTML = song.audio_url;
     }
-  }, [song, hasDonated]);
+  }, [song]);
 
   const handleDownload = async () => {
     if (!song) return;
@@ -453,7 +451,7 @@ function Song() {
             <p className="error-message">{error}</p>
             <Link to="/library" className="action-button">Back to Library</Link>
           </>
-        ) : !song || hasDonated === null ? (
+        ) : !song ? ( // Removed hasDonated === null from condition since audio player no longer depends on it
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px' }}>
             <svg width="60" height="60" viewBox="0 0 60 60">
               <circle cx="30" cy="30" r="25" fill="none" stroke="#ccc" strokeWidth="4" />
@@ -466,41 +464,13 @@ function Song() {
             <p className="song-composer-modern">{song.composer || 'Unknown Composer'}</p>
             <p className="song-downloads-modern">Downloaded {song.downloads || 0} times</p>
 
-            {/* Internet Archive Embedded Audio Player */}
+            {/* Internet Archive Embedded Audio Player - Now available to all */}
             {song.audio_url && (
               <div className="song-preview-modern">
                 <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '0.5rem' }}>
                   Listen to an audio preview of {song.title}
                 </p>
-                {hasDonated ? (
-                  <div ref={shadowHostRef} style={{ maxWidth: '100%' }} />
-                ) : (
-                  <div
-                    style={{
-                      width: '500px',
-                      height: '60px',
-                      maxWidth: '100%',
-                      background: '#f0f0f0',
-                      borderRadius: '4px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      textAlign: 'center',
-                      padding: '10px',
-                      fontSize: '0.9rem',
-                      color: '#666',
-                      marginLeft: 'auto',
-                      marginRight: 'auto',
-                    }}
-                  >
-                    <span>
-                      Want to hear an audio preview of {song.title} and enjoy unlimited access to Choir Center?{' '}
-                      <Link to="/signup-donate" style={{ color: '#007bff', textDecoration: 'underline' }}>
-                        Buy us a meat pie ☕
-                      </Link>
-                    </span>
-                  </div>
-                )}
+                <div ref={shadowHostRef} style={{ maxWidth: '100%' }} />
                 {!song.audio_url.includes('iframe') && (
                   <p style={{ fontSize: '0.8rem', color: '#999', marginTop: '0.5rem' }}>
                     Audio player not displayed. Please paste a valid iframe code in the admin panel.

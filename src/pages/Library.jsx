@@ -41,6 +41,11 @@ function Library() {
     fetchSongs();
   }, [sortBy, sortOrder]);
 
+  // Scroll to top when currentPage changes
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [currentPage]);
+
   const handleFilterSubmit = (e) => {
     e.preventDefault();
     const honeypot = e.target.elements.honeypot.value;

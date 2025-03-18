@@ -36,7 +36,7 @@ function Home() {
       console.log('Fetching all data');
       const { data: songData, error: songError } = await supabase
         .from('songs')
-        .select('id, title, composer, google_drive_file_id, permalink, is_public, downloads')
+        .select('id, title, composer, google_drive_file_id, permalink, is_public, downloads, created_at') // Added created_at
         .eq('is_public', true)
         .order('created_at', { ascending: false });
       if (songError) {
@@ -387,7 +387,7 @@ function Home() {
 
       const { data: updatedSong, error: postUpdateFetchError } = await supabase
         .from('songs')
-        .select('id, title, composer, google_drive_file_id, downloads, is_public, permalink')
+        .select('id, title, composer, google_drive_file_id, downloads, is_public, permalink, created_at') // Added created_at
         .eq('id', numericSongId)
         .single();
       if (postUpdateFetchError) {
@@ -398,7 +398,7 @@ function Home() {
 
       const { data: updatedSongs, error: refetchError } = await supabase
         .from('songs')
-        .select('id, title, composer, google_drive_file_id, permalink, is_public, downloads')
+        .select('id, title, composer, google_drive_file_id, permalink, is_public, downloads, created_at') // Added created_at
         .eq('is_public', true)
         .order('created_at', { ascending: false });
       if (refetchError) {
@@ -538,8 +538,11 @@ function Home() {
                 >
                   <div className="song-card-content">
                     <h3 className="song-card-title-modern">{song.title}</h3>
-                    <p className="song-card-composer-modern">{song.composer}</p>
+                    <p className="song-card-composer-modern">{song.composer || 'Unknown Composer'}</p>
                     <p className="song-card-downloads-modern">Downloaded {song.downloads || 0} times</p>
+                    <p className="song-timestamp-modern">
+                      Added on {new Date(song.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                    </p>
                   </div>
                   <div className="song-card-actions-modern">
                     <button

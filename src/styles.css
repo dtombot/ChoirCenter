@@ -2851,3 +2851,11 @@ input[type="range"]:hover {
 .progress-bar::-moz-range-thumb:hover {
   transform: scale(1.3);
 }
+
+
+
+.song-timestamp-modern {
+  font-size: 0.9rem;
+  color: #666;
+  margin: 0.5rem 0;
+}

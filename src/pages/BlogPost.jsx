@@ -7,7 +7,6 @@ import '../styles.css';
 
 function BlogPost() {
   const [post, setPost] = useState(null);
-  const [relatedPosts, setRelatedPosts] = useState([]);
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
   const [user, setUser] = useState(null);
@@ -19,16 +18,20 @@ function BlogPost() {
   // Function to set SEO meta tags for a blog post
   const setPostMetaTags = (post) => {
     document.title = `${post.title} | Choir Center Blog`;
+
     let metaDescription = document.querySelector('meta[name="description"]');
     if (!metaDescription) {
       metaDescription = document.createElement('meta');
       metaDescription.name = "description";
       document.head.appendChild(metaDescription);
     }
+    // Strip HTML tags and truncate content for description
     const plainTextContent = post.content.replace(/<[^>]+>/g, '');
     metaDescription.content = plainTextContent.length > 160 
       ? `${plainTextContent.substring(0, 157)}...` 
       : plainTextContent;
+
+    // Open Graph tags
     let ogTitle = document.querySelector('meta[property="og:title"]');
     if (!ogTitle) {
       ogTitle = document.createElement('meta');
@@ -36,6 +39,7 @@ function BlogPost() {
       document.head.appendChild(ogTitle);
     }
     ogTitle.content = post.title;
+
     let ogDescription = document.querySelector('meta[property="og:description"]');
     if (!ogDescription) {
       ogDescription = document.createElement('meta');
@@ -45,6 +49,7 @@ function BlogPost() {
     ogDescription.content = plainTextContent.length > 160 
       ? `${plainTextContent.substring(0, 157)}...` 
       : plainTextContent;
+
     let ogUrl = document.querySelector('meta[property="og:url"]');
     if (!ogUrl) {
       ogUrl = document.createElement('meta');
@@ -52,6 +57,7 @@ function BlogPost() {
       document.head.appendChild(ogUrl);
     }
     ogUrl.content = window.location.href;
+
     let ogImage = document.querySelector('meta[property="og:image"]');
     if (!ogImage) {
       ogImage = document.createElement('meta');
@@ -59,6 +65,8 @@ function BlogPost() {
       document.head.appendChild(ogImage);
     }
     ogImage.content = 'https://choircenter.com/path-to-default-image.jpg'; // Replace with your default image URL
+
+    // Twitter tags
     let twitterTitle = document.querySelector('meta[name="twitter:title"]');
     if (!twitterTitle) {
       twitterTitle = document.createElement('meta');
@@ -66,6 +74,7 @@ function BlogPost() {
       document.head.appendChild(twitterTitle);
     }
     twitterTitle.content = post.title;
+
     let twitterDescription = document.querySelector('meta[name="twitter:description"]');
     if (!twitterDescription) {
       twitterDescription = document.createElement('meta');
@@ -75,6 +84,7 @@ function BlogPost() {
     twitterDescription.content = plainTextContent.length > 160 
       ? `${plainTextContent.substring(0, 157)}...` 
       : plainTextContent;
+
     let twitterImage = document.querySelector('meta[name="twitter:image"]');
     if (!twitterImage) {
       twitterImage = document.createElement('meta');
@@ -82,6 +92,8 @@ function BlogPost() {
       document.head.appendChild(twitterImage);
     }
     twitterImage.content = 'https://choircenter.com/path-to-default-image.jpg'; // Replace with your default image URL
+
+    // Canonical URL
     let canonicalLink = document.querySelector('link[rel="canonical"]');
     if (!canonicalLink) {
       canonicalLink = document.createElement('link');
@@ -92,7 +104,7 @@ function BlogPost() {
   };
 
   useEffect(() => {
-    const fetchPostAndRelated = async () => {
+    const fetchPost = async () => {
       if (!permalink || permalink === 'undefined') {
         setError('Invalid post URL');
         document.title = 'Invalid URL | Choir Center Blog';
@@ -137,19 +149,6 @@ function BlogPost() {
       }
       setPost(data);
       setPostMetaTags(data);
-
-      // Fetch related posts (recent posts excluding current)
-      const { data: relatedData, error: relatedError } = await supabase
-        .from('blog_posts')
-        .select('id, title, permalink, created_at')
-        .neq('id', data.id) // Exclude current post
-        .order('created_at', { ascending: false }) // Sort by most recent
-        .limit(5); // Limit to 5 posts
-      if (relatedError) {
-        console.error('Related posts fetch error:', relatedError.message);
-      } else {
-        setRelatedPosts(relatedData);
-      }
     };
 
     const fetchComments = async () => {
@@ -164,6 +163,7 @@ function BlogPost() {
         setError('Failed to load comments: ' + commentError.message);
         return;
       }
+
       const userIds = commentData.map(comment => comment.user_id);
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
@@ -174,6 +174,7 @@ function BlogPost() {
         setError('Failed to load user data: ' + profileError.message);
         return;
       }
+
       const enrichedComments = commentData.map(comment => ({
         ...comment,
         profiles: profileData.find(profile => profile.id === comment.user_id) || { email: 'Unknown' }
@@ -196,7 +197,7 @@ function BlogPost() {
       }
     };
 
-    fetchPostAndRelated();
+    fetchPost();
     fetchUser();
   }, [permalink]);
 
@@ -215,6 +216,7 @@ function BlogPost() {
       setError('Failed to load comments: ' + commentError.message);
       return;
     }
+
     const userIds = commentData.map(comment => comment.user_id);
     const { data: profileData, error: profileError } = await supabase
       .from('profiles')
@@ -225,6 +227,7 @@ function BlogPost() {
       setError('Failed to load user data: ' + profileError.message);
       return;
     }
+
     const enrichedComments = commentData.map(comment => ({
       ...comment,
       profiles: profileData.find(profile => profile.id === comment.user_id) || { email: 'Unknown' }
@@ -349,26 +352,6 @@ function BlogPost() {
               </div>
             )}
           </div>
-
-          {/* Related Posts Section */}
-          {relatedPosts.length > 0 && (
-            <div className="related-posts" style={{ marginTop: '2rem' }}>
-              <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Explore More Posts</h2>
-              <ul style={{ listStyle: 'none', padding: 0 }}>
-                {relatedPosts.map((relatedPost) => (
-                  <li key={relatedPost.id} style={{ marginBottom: '0.5rem' }}>
-                    <Link
-                      to={`/blog/${relatedPost.permalink}`}
-                      className="post-link"
-                      style={{ color: '#007bff', textDecoration: 'none' }}
-                    >
-                      {relatedPost.title}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
         </>
       )}
     </div>

@@ -17,7 +17,7 @@
     "react-router-dom": "^6.22.0",
     "googleapis": "^134.0.0",
     "node-fetch": "^2.6.12",
-    "nodemailer": "^6.9.13"
+    "nodemailer": "^6.9.13",
     "react-helmet-async": "^2.0.4"
   },
   "devDependencies": {

@@ -2,6 +2,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../supabase';
 import { Link, useNavigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import AdBanner from '../components/AdBanner';
 import '../styles.css';
 
@@ -24,10 +25,10 @@ function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [downloadPrompt, setDownloadPrompt] = useState(null);
   const [songOfTheWeek, setSongOfTheWeek] = useState(null);
-  const [songTitle, setSongTitle] = useState(''); // Fetched from Supabase
-  const [songComposer, setSongComposer] = useState(''); // Fetched from Supabase
+  const [songTitle, setSongTitle] = useState('');
+  const [songComposer, setSongComposer] = useState('');
   const [isPlaying, setIsPlaying] = useState(false);
-  const [progress, setProgress] = useState(0); // Track playback progress (0-100)
+  const [progress, setProgress] = useState(0);
   const audioRef = useRef(null);
   const navigate = useNavigate();
 
@@ -87,7 +88,6 @@ function Home() {
     return () => clearInterval(slideInterval);
   }, []);
 
-  // Update progress bar as audio plays
   useEffect(() => {
     const audio = audioRef.current;
     if (audio) {
@@ -102,7 +102,6 @@ function Home() {
     }
   }, [songOfTheWeek]);
 
-  // Audio player functions
   const togglePlay = () => {
     if (audioRef.current) {
       console.log('Attempting to play audio from URL:', audioRef.current.src);
@@ -434,299 +433,315 @@ function Home() {
   };
 
   return (
-    <div className="home-container">
-      <section className="hero-section full-width">
-        <div className="hero-slideshow">
-          {[1, 2, 3, 4, 5].map(num => (
-            <img
-              key={num}
-              src={`/images/choir${num}.jpg`}
-              alt={`Choir ${num}`}
-              className={`hero-slide-img ${currentSlide === num - 1 ? 'active' : ''}`}
-            />
-          ))}
-        </div>
-        <div className="hero-overlay"></div>
-        <div className="hero-content">
-          <h1 className="hero-title animate-text">Everything your choir needs in one place</h1>
-          <p className="hero-text animate-text">Discover and find choir music resources</p>
-          <form onSubmit={handleSearch} className="search-form">
-            <input
-              type="text"
-              placeholder="Search songs and posts..."
-              value={searchQuery}
-              onChange={handleSearchChange}
-              onKeyPress={handleKeyPress}
-              className="search-input animate-input"
-            />
-            <input type="text" name="honeypot" className="honeypot" />
-          </form>
-          <div className="button-group">
-            <Link to="/library" className="action-button animate-button">Explore Library</Link>
-            <Link to="/blog" className="action-button animate-button">Latest Insights</Link>
+    <>
+      <Helmet>
+        <title>Choir Center - Free Choir Music, Songs & Resources</title>
+        <meta
+          name="description"
+          content="Discover free choir music, songs in solfa notation, and resources for choristers at Choir Center. Explore our library, blog, and song of the week!"
+        />
+        <meta
+          name="keywords"
+          content="choir music, free choir songs, solfa notation, chorister resources, choir library, vocal tips"
+        />
+        <meta name="robots" content="index, follow" />
+        <link rel="icon" href="/favicon.ico" />
+      </Helmet>
+      <header className="home-container">
+        <section className="hero-section full-width">
+          <div className="hero-slideshow">
+            {[1, 2, 3, 4, 5].map(num => (
+              <img
+                key={num}
+                src={`/images/choir${num}.jpg`}
+                alt={`Choir performance ${num}`}
+                className={`hero-slide-img ${currentSlide === num - 1 ? 'active' : ''}`}
+              />
+            ))}
           </div>
-        </div>
-      </section>
-      <section className="ad-section">
-        <AdBanner position="home_above_sotw" />
-      </section>
-      <section className="song-of-the-week">
-        <h2 className="section-title animate-text">Song of the Week</h2>
-        {songOfTheWeek ? (
-          <div className="audio-player animate-text" style={{ width: '600px' }}>
-            <div
-              className="audio-controls"
-              style={{
-                backgroundColor: '#1A3C34',
-                borderRadius: '10px',
-                padding: '15px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                color: '#FFFFFF',
-                height: '90px',
-                transition: 'all 0.3s ease',
-              }}
-            >
-              {/* Song Title and Composer with Animation */}
-              <div
-                className="song-info"
-                style={{
-                  fontSize: '18px',
-                  opacity: 0,
-                  animation: 'fadeInSlideUp 0.5s forwards',
-                }}
-              >
-                <div className="song-title" style={{ fontWeight: 'bold' }}>{songTitle}</div>
-                <div className="song-composer" style={{ fontSize: '14px', color: '#D4A017' }}>
-                  {songComposer}
-                </div>
-              </div>
-
-              {/* Rewind Button */}
-              <button
-                onClick={rewind}
-                className="control-button"
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  color: '#FFFFFF',
-                  fontSize: '24px',
-                  transition: 'transform 0.3s ease, color 0.3s ease',
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.transform = 'scale(1.2)';
-                  e.target.style.color = '#D4A017';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.transform = 'scale(1)';
-                  e.target.style.color = '#FFFFFF';
-                }}
-              >
-                <span role="img" aria-label="rewind">◄</span>
-              </button>
-
-              {/* Play/Pause Button */}
-              <button
-                onClick={togglePlay}
-                className="control-button"
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontSize: '36px',
-                  color: '#FFFFFF',
-                  transition: 'transform 0.3s ease, color 0.3s ease',
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.transform = 'scale(1.2)';
-                  e.target.style.color = '#D4A017';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.transform = 'scale(1)';
-                  e.target.style.color = '#FFFFFF';
-                }}
-              >
-                <span role="img" aria-label="play/pause">{isPlaying ? '||' : '▶'}</span>
-              </button>
-
-              {/* Forward Button (Placeholder) */}
-              <button
-                className="control-button"
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  color: '#FFFFFF',
-                  fontSize: '24px',
-                  transition: 'transform 0.3s ease, color 0.3s ease',
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.transform = 'scale(1.2)';
-                  e.target.style.color = '#D4A017';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.transform = 'scale(1)';
-                  e.target.style.color = '#FFFFFF';
-                }}
-              >
-                <span role="img" aria-label="forward">►</span>
-              </button>
-
-              {/* Like Button */}
-              <button
-                className="control-button"
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  color: '#D4A017',
-                  fontSize: '24px',
-                  transition: 'transform 0.3s ease, color 0.3s ease',
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.transform = 'scale(1.2)';
-                  e.target.style.color = '#FFD700';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.transform = 'scale(1)';
-                  e.target.style.color = '#D4A017';
-                }}
-              >
-                <span role="img" aria-label="like">♥</span>
-              </button>
-
-              {/* Progress Bar */}
+          <div className="hero-overlay"></div>
+          <div className="hero-content">
+            <img src="/logo.png" alt="Choir Center Logo" className="hero-logo" style={{ maxWidth: '300px', marginBottom: '1rem' }} />
+            <h1 className="hero-title animate-text">Everything Your Choir Needs in One Place</h1>
+            <p className="hero-text animate-text">Discover free choir music and resources for choristers</p>
+            <form onSubmit={handleSearch} className="search-form">
               <input
-                type="range"
-                min="0"
-                max="100"
-                value={progress}
-                onChange={(e) => {
-                  if (audioRef.current) {
-                    const newTime = (e.target.value / 100) * audioRef.current.duration;
-                    audioRef.current.currentTime = newTime;
-                    setProgress(e.target.value);
-                  }
-                }}
+                type="text"
+                placeholder="Search choir songs and posts..."
+                value={searchQuery}
+                onChange={handleSearchChange}
+                onKeyPress={handleKeyPress}
+                className="search-input animate-input"
+                aria-label="Search choir songs and posts"
+              />
+              <input type="text" name="honeypot" className="honeypot" />
+            </form>
+            <div className="button-group">
+              <Link to="/library" className="action-button animate-button">Explore Choir Library</Link>
+              <Link to="/blog" className="action-button animate-button">Latest Choir Insights</Link>
+            </div>
+          </div>
+        </section>
+      </header>
+      <main>
+        <section className="ad-section">
+          <AdBanner position="home_above_sotw" />
+        </section>
+        <section className="song-of-the-week">
+          <h2 className="section-title animate-text">Song of the Week</h2>
+          {songOfTheWeek ? (
+            <div className="audio-player animate-text" style={{ width: '600px' }}>
+              <div
+                className="audio-controls"
                 style={{
-                  width: '150px',
-                  backgroundColor: '#4A7C6D',
-                  cursor: 'pointer',
-                  height: '20px',
-                  transition: 'background-color 0.3s ease',
+                  backgroundColor: '#1A3C34',
+                  borderRadius: '10px',
+                  padding: '15px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  color: '#FFFFFF',
+                  height: '90px',
+                  transition: 'all 0.3s ease',
                 }}
-                onMouseEnter={(e) => (e.target.style.backgroundColor = '#6DAE9E')}
-                onMouseLeave={(e) => (e.target.style.backgroundColor = '#4A7C6D')}
+              >
+                <div
+                  className="song-info"
+                  style={{
+                    fontSize: '18px',
+                    opacity: 0,
+                    animation: 'fadeInSlideUp 0.5s forwards',
+                  }}
+                >
+                  <div className="song-title" style={{ fontWeight: 'bold' }}>{songTitle}</div>
+                  <div className="song-composer" style={{ fontSize: '14px', color: '#D4A017' }}>
+                    {songComposer}
+                  </div>
+                </div>
+                <button
+                  onClick={rewind}
+                  className="control-button"
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: '#FFFFFF',
+                    fontSize: '24px',
+                    transition: 'transform 0.3s ease, color 0.3s ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.transform = 'scale(1.2)';
+                    e.target.style.color = '#D4A017';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.transform = 'scale(1)';
+                    e.target.style.color = '#FFFFFF';
+                  }}
+                  aria-label="Rewind song"
+                >
+                  <span role="img" aria-label="rewind">◄</span>
+                </button>
+                <button
+                  onClick={togglePlay}
+                  className="control-button"
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: '36px',
+                    color: '#FFFFFF',
+                    transition: 'transform 0.3s ease, color 0.3s ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.transform = 'scale(1.2)';
+                    e.target.style.color = '#D4A017';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.transform = 'scale(1)';
+                    e.target.style.color = '#FFFFFF';
+                  }}
+                  aria-label={isPlaying ? "Pause song" : "Play song"}
+                >
+                  <span role="img" aria-label="play/pause">{isPlaying ? '||' : '▶'}</span>
+                </button>
+                <button
+                  className="control-button"
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: '#FFFFFF',
+                    fontSize: '24px',
+                    transition: 'transform 0.3s ease, color 0.3s ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.transform = 'scale(1.2)';
+                    e.target.style.color = '#D4A017';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.transform = 'scale(1)';
+                    e.target.style.color = '#FFFFFF';
+                  }}
+                  aria-label="Forward song (placeholder)"
+                >
+                  <span role="img" aria-label="forward">►</span>
+                </button>
+                <button
+                  className="control-button"
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: '#D4A017',
+                    fontSize: '24px',
+                    transition: 'transform 0.3s ease, color 0.3s ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.transform = 'scale(1.2)';
+                    e.target.style.color = '#FFD700';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.transform = 'scale(1)';
+                    e.target.style.color = '#D4A017';
+                  }}
+                  aria-label="Like song"
+                >
+                  <span role="img" aria-label="like">♥</span>
+                </button>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={progress}
+                  onChange={(e) => {
+                    if (audioRef.current) {
+                      const newTime = (e.target.value / 100) * audioRef.current.duration;
+                      audioRef.current.currentTime = newTime;
+                      setProgress(e.target.value);
+                    }
+                  }}
+                  style={{
+                    width: '150px',
+                    backgroundColor: '#4A7C6D',
+                    cursor: 'pointer',
+                    height: '20px',
+                    transition: 'background-color 0.3s ease',
+                  }}
+                  onMouseEnter={(e) => (e.target.style.backgroundColor = '#6DAE9E')}
+                  onMouseLeave={(e) => (e.target.style.backgroundColor = '#4A7C6D')}
+                  aria-label="Audio progress"
+                />
+              </div>
+              <audio
+                ref={audioRef}
+                src={songOfTheWeek}
+                onError={(e) => console.error('Audio error for URL:', songOfTheWeek, 'Error:', e.target.error)}
               />
             </div>
-            <audio
-              ref={audioRef}
-              src={songOfTheWeek}
-              onError={(e) => console.error('Audio error for URL:', songOfTheWeek, 'Error:', e.target.error)}
-            />
-          </div>
-        ) : (
-          <p className="animate-text">No song selected for this week.</p>
-        )}
-      </section>
-      {error && <p className="error-message">{error}</p>}
-      <section className="latest-additions">
-        <h2 className="section-title animate-text">Latest Additions</h2>
-        <div className="song-grid">
-          {filteredSongs.length > 0 ? (
-            filteredSongs.map((song, index) => (
-              <div
-                key={song.id}
-                className={`song-card-modern ${index % 2 === 0 ? 'variant-1' : 'variant-2'}`}
-                onClick={() => handleSongClick(song)}
-              >
-                <div className="song-card-content">
-                  <h3 className="song-card-title-modern">{song.title}</h3>
-                  <p className="song-card-composer-modern">{song.composer}</p>
-                  <p className="song-card-downloads-modern">Downloaded {song.downloads || 0} times</p>
-                </div>
-                <div className="song-card-actions-modern">
-                  <button
-                    className="download-button-modern"
-                    onClick={(e) => { e.stopPropagation(); handleDownload(song.id, song.google_drive_file_id); }}
-                  >
-                    Download
-                  </button>
-                  <button
-                    className="share-button-modern"
-                    onClick={(e) => { e.stopPropagation(); handleShare(song.title, song.permalink || song.id); }}
-                  >
-                    Share
-                  </button>
-                </div>
-              </div>
-            ))
           ) : (
-            <p>No songs available.</p>
+            <p className="animate-text">No song selected for this week.</p>
           )}
-        </div>
-        <div style={{ textAlign: 'center', paddingTop: '20px' }}>
-          <Link to="/library" className="action-button">View More Songs</Link>
-        </div>
-      </section>
-      <hr className="section-separator" />
-      <section className="blog-list-container">
-        <h2 className="section-title animate-text">Latest Insights</h2>
-        <div className="blog-list">
-          {filteredPosts.length > 0 ? (
-            filteredPosts.map((post, index) => (
-              <Link
-                key={post.id}
-                to={`/blog/${post.permalink || `post-${post.id}`}`}
-                className={`blog-card-modern ${index % 2 === 0 ? 'variant-1' : 'variant-2'}`}
-              >
-                <h3 className="blog-card-title-modern">{post.title}</h3>
-              </Link>
-            ))
-          ) : (
-            <p>No blog posts available.</p>
-          )}
-        </div>
-        <div style={{ textAlign: 'center', paddingTop: '20px' }}>
-          <Link to="/blog" className="action-button">View More Posts</Link>
-        </div>
-      </section>
-      <hr className="section-separator" />
-      <section className="faq-section">
-        <h2 className="section-title animate-text">Frequently Asked Questions</h2>
-        <div className="faq-grid">
-          <div className="faq-item animate-card">
-            <h3 className="faq-question">Why should I join a choir?</h3>
-            <p className="faq-answer">Joining a choir boosts your confidence, builds community, and enhances your musical skills—pure joy in every note!</p>
+        </section>
+        {error && <p className="error-message">{error}</p>}
+        <section className="latest-additions">
+          <h2 className="section-title animate-text">Latest Choir Songs</h2>
+          <div className="song-grid">
+            {filteredSongs.length > 0 ? (
+              filteredSongs.map((song, index) => (
+                <article
+                  key={song.id}
+                  className={`song-card-modern ${index % 2 === 0 ? 'variant-1' : 'variant-2'}`}
+                  onClick={() => handleSongClick(song)}
+                >
+                  <div className="song-card-content">
+                    <h3 className="song-card-title-modern">{song.title}</h3>
+                    <p className="song-card-composer-modern">{song.composer}</p>
+                    <p className="song-card-downloads-modern">Downloaded {song.downloads || 0} times</p>
+                  </div>
+                  <div className="song-card-actions-modern">
+                    <button
+                      className="download-button-modern"
+                      onClick={(e) => { e.stopPropagation(); handleDownload(song.id, song.google_drive_file_id); }}
+                      aria-label={`Download ${song.title}`}
+                    >
+                      Download
+                    </button>
+                    <button
+                      className="share-button-modern"
+                      onClick={(e) => { e.stopPropagation(); handleShare(song.title, song.permalink || song.id); }}
+                      aria-label={`Share ${song.title}`}
+                    >
+                      Share
+                    </button>
+                  </div>
+                </article>
+              ))
+            ) : (
+              <p>No choir songs available.</p>
+            )}
           </div>
-          <div className="faq-item animate-card">
-            <h3 className="faq-question">Does singing in a choir enhance spirituality?</h3>
-            <p className="faq-answer">Yes, it uplifts your spirit, fosters peace, and connects you deeply through harmonious expression.</p>
+          <div style={{ textAlign: 'center', paddingTop: '20px' }}>
+            <Link to="/library" className="action-button">View More Choir Songs</Link>
           </div>
-          <div className="faq-item animate-card">
-            <h3 className="faq-question">What are the key qualities of a good chorister?</h3>
-            <p className="faq-answer">Dedication, teamwork, a strong ear, and a passion for singing make an exceptional chorister.</p>
+        </section>
+        <hr className="section-separator" />
+        <section className="blog-list-container">
+          <h2 className="section-title animate-text">Latest Choir Insights</h2>
+          <div className="blog-list">
+            {filteredPosts.length > 0 ? (
+              filteredPosts.map((post, index) => (
+                <article
+                  key={post.id}
+                  className={`blog-card-modern ${index % 2 === 0 ? 'variant-1' : 'variant-2'}`}
+                >
+                  <Link to={`/blog/${post.permalink || `post-${post.id}`}`} className="blog-card-link">
+                    <h3 className="blog-card-title-modern">{post.title}</h3>
+                  </Link>
+                </article>
+              ))
+            ) : (
+              <p>No blog posts available.</p>
+            )}
           </div>
-          <div className="faq-item animate-card">
-            <h3 className="faq-question">Which vocal tips can improve my singing?</h3>
-            <p className="faq-answer">Practice breathing, warm up daily, hydrate, and focus on posture for a clearer, stronger voice.</p>
+          <div style={{ textAlign: 'center', paddingTop: '20px' }}>
+            <Link to="/blog" className="action-button">View More Posts</Link>
           </div>
-          <div className="faq-item animate-card">
-            <h3 className="faq-question">How can I find choirs near me?</h3>
-            <p className="faq-answer">Search online, check local churches, or join Choir Center to connect with nearby groups easily!</p>
+        </section>
+        <hr className="section-separator" />
+        <section className="faq-section">
+          <h2 className="section-title animate-text">Choir FAQs</h2>
+          <div className="faq-grid">
+            <article className="faq-item animate-card">
+              <h3 className="faq-question">Why should I join a choir?</h3>
+              <p className="faq-answer">Joining a choir boosts your confidence, builds community, and enhances your musical skills—pure joy in every note!</p>
+            </article>
+            <article className="faq-item animate-card">
+              <h3 className="faq-question">Does singing in a choir enhance spirituality?</h3>
+              <p className="faq-answer">Yes, it uplifts your spirit, fosters peace, and connects you deeply through harmonious expression.</p>
+            </article>
+            <article className="faq-item animate-card">
+              <h3 className="faq-question">What are the key qualities of a good chorister?</h3>
+              <p className="faq-answer">Dedication, teamwork, a strong ear, and a passion for singing make an exceptional chorister.</p>
+            </article>
+            <article className="faq-item animate-card">
+              <h3 className="faq-question">Which vocal tips can improve my singing?</h3>
+              <p className="faq-answer">Practice breathing, warm up daily, hydrate, and focus on posture for a clearer, stronger voice.</p>
+            </article>
+            <article className="faq-item animate-card">
+              <h3 className="faq-question">How can I find choirs near me?</h3>
+              <p className="faq-answer">Search online, check local churches, or join Choir Center to connect with nearby groups easily!</p>
+            </article>
+            <article className="faq-item animate-card">
+              <h3 className="faq-question">Where can I find choir songs in solfa notation?</h3>
+              <p className="faq-answer">Choir Center offers free solfa notation downloads—perfect for learning and singing!</p>
+            </article>
+            <article className="faq-item animate-card">
+              <h3 className="faq-question">How can I improve my sight-singing skills?</h3>
+              <p className="faq-answer">Practice scales, use solfa, and sing along with sheet music from Choir Center to master it quickly.</p>
+            </article>
           </div>
-          <div className="faq-item animate-card">
-            <h3 className="faq-question">Where can I find choir songs in solfa notation?</h3>
-            <p className="faq-answer">Choir Center offers free solfa notation downloads—perfect for learning and singing!</p>
-          </div>
-          <div className="faq-item animate-card">
-            <h3 className="faq-question">How can I improve my sight-singing skills?</h3>
-            <p className="faq-answer">Practice scales, use solfa, and sing along with sheet music from Choir Center to master it quickly.</p>
-          </div>
-        </div>
-      </section>
+        </section>
+      </main>
       {downloadPrompt && (
         <div className="modal-overlay">
           <div className="modal-content download-modal">
@@ -742,7 +757,7 @@ function Home() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
 

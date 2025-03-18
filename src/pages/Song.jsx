@@ -30,6 +30,7 @@ function Song() {
   const [hasDonated, setHasDonated] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [isAdmin, setIsAdmin] = useState(false); // Added for admin check
   const audioRef = useRef(null);
   const navigate = useNavigate();
 
@@ -166,12 +167,14 @@ function Song() {
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       if (sessionError || !sessionData?.session) {
         setHasDonated(false);
+        setIsAdmin(false); // No session, not an admin
         return;
       }
       const { data: userData, error: userError } = await supabase.auth.getUser();
       if (userError) {
         console.error('User fetch error:', userError.message);
         setHasDonated(false);
+        setIsAdmin(false); // Error fetching user, not an admin
         return;
       }
       const { data: profileData, error: profileError } = await supabase
@@ -185,6 +188,14 @@ function Song() {
       } else {
         setHasDonated(profileData.has_donated || false);
       }
+
+      // Check if user is an admin
+      const { data: adminData, error: adminError } = await supabase
+        .from('admins')
+        .select('user_id')
+        .eq('user_id', userData.user.id)
+        .single();
+      setIsAdmin(!!adminData && !adminError); // Set true if user is in admins table
     };
     fetchSongAndRelated();
 
@@ -578,6 +589,14 @@ function Song() {
               <button onClick={handleDownload} className="download-button-modern">Download</button>
               <button onClick={handleShare} className="share-button-modern">Share</button>
               <Link to="/library" className="back-button-modern">Back to Library</Link>
+              {isAdmin && (
+                <Link
+                  to={`/admin?tab=songs&editSongId=${song.id}`}
+                  className="download-button-modern" // Reusing existing style
+                >
+                  Edit Song
+                </Link>
+              )}
             </div>
 
             {relatedSongs.length > 0 && (

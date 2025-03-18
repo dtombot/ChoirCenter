@@ -9,7 +9,6 @@ import '../styles.css';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
 
-// Simple UUID generator
 const generateUUID = () => {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
     const r = Math.random() * 16 | 0;
@@ -24,7 +23,7 @@ function Song() {
   const [relatedSongs, setRelatedSongs] = useState([]);
   const [error, setError] = useState(null);
   const [downloadPrompt, setDownloadPrompt] = useState(null);
-  const [showLoginPrompt, setShowLoginPrompt] = useState(false); // New state for login prompt
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [numPages, setNumPages] = useState(null);
   const [scale, setScale] = useState(1.0);
   const [pdfProgress, setPdfProgress] = useState(0);
@@ -34,7 +33,6 @@ function Song() {
   const audioRef = useRef(null);
   const navigate = useNavigate();
 
-  // Function to set SEO meta tags for a song
   const setSongMetaTags = (song) => {
     document.title = `${song.title} ${song.composer || 'Unknown Composer'} | Choir Center`;
     let metaDescription = document.querySelector('meta[name="description"]');
@@ -71,7 +69,7 @@ function Song() {
       ogImage.property = "og:image";
       document.head.appendChild(ogImage);
     }
-    ogImage.content = 'https://choircenter.com/path-to-default-image.jpg'; // Replace with your default image URL
+    ogImage.content = 'https://choircenter.com/path-to-default-image.jpg';
     let twitterTitle = document.querySelector('meta[name="twitter:title"]');
     if (!twitterTitle) {
       twitterTitle = document.createElement('meta');
@@ -92,7 +90,7 @@ function Song() {
       twitterImage.name = "twitter:image";
       document.head.appendChild(twitterImage);
     }
-    twitterImage.content = 'https://choircenter.com/path-to-default-image.jpg'; // Replace with your default image URL
+    twitterImage.content = 'https://choircenter.com/path-to-default-image.jpg';
     let canonicalLink = document.querySelector('link[rel="canonical"]');
     if (!canonicalLink) {
       canonicalLink = document.createElement('link');
@@ -113,10 +111,10 @@ function Song() {
       }, 200);
     }
 
-    const fetchSongAndRelated = async () => {
+    const fetchSongAndRelated = async () => neurology
       let query = supabase
         .from('songs')
-        .select('id, title, composer, google_drive_file_id, downloads, is_public, permalink, audio_url, description');
+        .select('id, title, composer, google_drive_file_id, downloads, is_public, permalink, audio_url, description, created_at');
       if (/^\d+$/.test(id)) {
         query = query.eq('id', parseInt(id, 10));
       } else {
@@ -152,7 +150,7 @@ function Song() {
 
         const { data: relatedData, error: relatedError } = await supabase
           .from('songs')
-          .select('id, title, composer, permalink')
+          .select('id, title, composer, permalink, created_at') // Added created_at for related songs
           .eq('is_public', true)
           .neq('id', songData.id)
           .or(`composer.eq.${songData.composer},composer.is.null`)
@@ -226,7 +224,7 @@ function Song() {
   const togglePlay = async () => {
     const { data: sessionData, error } = await supabase.auth.getSession();
     if (error || !sessionData?.session) {
-      setShowLoginPrompt(true); // Show login prompt if not authenticated
+      setShowLoginPrompt(true);
       return;
     }
     if (audioRef.current) {
@@ -417,7 +415,7 @@ function Song() {
       console.log('New downloads value from RPC:', newDownloads);
       const { data: updatedSong, error: postUpdateFetchError } = await supabase
         .from('songs')
-        .select('id, title, composer, google_drive_file_id, downloads, is_public, permalink, audio_url, description')
+        .select('id, title, composer, google_drive_file_id, downloads, is_public, permalink, audio_url, description, created_at')
         .eq('id', numericSongId)
         .single();
       if (postUpdateFetchError) {
@@ -501,8 +499,8 @@ function Song() {
             <h1 className="song-title-modern">{song.title}</h1>
             <p className="song-composer-modern">{song.composer || 'Unknown Composer'}</p>
             <p className="song-downloads-modern">Downloaded {song.downloads || 0} times</p>
+            <p className="song-timestamp-modern">Added on {new Date(song.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
 
-            {/* Modern Audio Player */}
             {song.audio_url && (
               <div className="song-preview-modern">
                 <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '0.5rem' }}>
@@ -546,7 +544,6 @@ function Song() {
                     Audio player not displayed. Please use a direct audio file URL (e.g., .mp3) in the admin panel.
                   </p>
                 )}
-                {/* Song Description */}
                 {song.description && (
                   <div
                     style={{
@@ -563,7 +560,6 @@ function Song() {
               </div>
             )}
 
-            {/* PDF Preview */}
             <div className="song-preview-modern">
               <Document
                 file={`/.netlify/functions/proxy-pdf?fileId=${song.google_drive_file_id}`}
@@ -578,14 +574,12 @@ function Song() {
               )}
             </div>
 
-            {/* Song Actions */}
             <div className="song-actions-modern">
               <button onClick={handleDownload} className="download-button-modern">Download</button>
               <button onClick={handleShare} className="share-button-modern">Share</button>
               <Link to="/library" className="back-button-modern">Back to Library</Link>
             </div>
 
-            {/* Related Songs Section */}
             {relatedSongs.length > 0 && (
               <div className="related-songs" style={{ marginTop: '2rem' }}>
                 <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Explore More Songs</h2>
@@ -599,13 +593,15 @@ function Song() {
                       >
                         {relatedSong.title} {relatedSong.composer || 'Unknown Composer'}
                       </Link>
+                      <span style={{ fontSize: '0.8rem', color: '#666', marginLeft: '0.5rem' }}>
+                        (Added on {new Date(relatedSong.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })})
+                      </span>
                     </li>
                   ))}
                 </ul>
               </div>
             )}
 
-            {/* Download Prompt Modal */}
             {downloadPrompt && (
               <div className="modal-overlay">
                 <div className="modal-content download-modal">
@@ -622,7 +618,6 @@ function Song() {
               </div>
             )}
 
-            {/* Login Prompt Modal */}
             {showLoginPrompt && (
               <div className="modal-overlay">
                 <div className="modal-content download-modal">

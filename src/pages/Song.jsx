@@ -34,14 +34,14 @@ function Song() {
 
   // Function to set SEO meta tags for a song
   const setSongMetaTags = (song) => {
-    document.title = `${song.title} by ${song.composer || 'Unknown Composer'} | Choir Center`;
+    document.title = `${song.title} ${song.composer || 'Unknown Composer'} | Choir Center`;
     let metaDescription = document.querySelector('meta[name="description"]');
     if (!metaDescription) {
       metaDescription = document.createElement('meta');
       metaDescription.name = "description";
       document.head.appendChild(metaDescription);
     }
-    metaDescription.content = `Download and view the sheet music for ${song.title} by ${song.composer || 'Unknown Composer'}.`;
+    metaDescription.content = `Download and view the sheet music for ${song.title} ${song.composer || 'Unknown Composer'}.`;
     let ogTitle = document.querySelector('meta[property="og:title"]');
     if (!ogTitle) {
       ogTitle = document.createElement('meta');
@@ -55,7 +55,7 @@ function Song() {
       ogDescription.property = "og:description";
       document.head.appendChild(ogDescription);
     }
-    ogDescription.content = `Download and view the sheet music for ${song.title} by ${song.composer || 'Unknown Composer'}.`;
+    ogDescription.content = `Download and view the sheet music for ${song.title} ${song.composer || 'Unknown Composer'}.`;
     let ogUrl = document.querySelector('meta[property="og:url"]');
     if (!ogUrl) {
       ogUrl = document.createElement('meta');
@@ -83,7 +83,7 @@ function Song() {
       twitterDescription.name = "twitter:description";
       document.head.appendChild(twitterDescription);
     }
-    twitterDescription.content = `Download and view the sheet music for ${song.title} by ${song.composer || 'Unknown Composer'}.`;
+    twitterDescription.content = `Download and view the sheet music for ${song.title} ${song.composer || 'Unknown Composer'}.`;
     let twitterImage = document.querySelector('meta[name="twitter:image"]');
     if (!twitterImage) {
       twitterImage = document.createElement('meta');
@@ -557,7 +557,7 @@ function Song() {
                         className="song-link"
                         style={{ color: '#007bff', textDecoration: 'none' }}
                       >
-                        {relatedSong.title} by {relatedSong.composer || 'Unknown Composer'}
+                        {relatedSong.title} {relatedSong.composer || 'Unknown Composer'}
                       </Link>
                     </li>
                   ))}

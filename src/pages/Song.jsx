@@ -22,6 +22,7 @@ const generateUUID = () => {
 function Song() {
   const { id } = useParams();
   const [song, setSong] = useState(null);
+  const [relatedSongs, setRelatedSongs] = useState([]);
   const [error, setError] = useState(null);
   const [downloadPrompt, setDownloadPrompt] = useState(null);
   const [numPages, setNumPages] = useState(null);
@@ -34,7 +35,6 @@ function Song() {
   // Function to set SEO meta tags for a song
   const setSongMetaTags = (song) => {
     document.title = `${song.title} by ${song.composer || 'Unknown Composer'} | Choir Center`;
-
     let metaDescription = document.querySelector('meta[name="description"]');
     if (!metaDescription) {
       metaDescription = document.createElement('meta');
@@ -42,8 +42,6 @@ function Song() {
       document.head.appendChild(metaDescription);
     }
     metaDescription.content = `Download and view the sheet music for ${song.title} by ${song.composer || 'Unknown Composer'}.`;
-
-    // Open Graph tags
     let ogTitle = document.querySelector('meta[property="og:title"]');
     if (!ogTitle) {
       ogTitle = document.createElement('meta');
@@ -51,7 +49,6 @@ function Song() {
       document.head.appendChild(ogTitle);
     }
     ogTitle.content = song.title;
-
     let ogDescription = document.querySelector('meta[property="og:description"]');
     if (!ogDescription) {
       ogDescription = document.createElement('meta');
@@ -59,7 +56,6 @@ function Song() {
       document.head.appendChild(ogDescription);
     }
     ogDescription.content = `Download and view the sheet music for ${song.title} by ${song.composer || 'Unknown Composer'}.`;
-
     let ogUrl = document.querySelector('meta[property="og:url"]');
     if (!ogUrl) {
       ogUrl = document.createElement('meta');
@@ -67,7 +63,6 @@ function Song() {
       document.head.appendChild(ogUrl);
     }
     ogUrl.content = window.location.href;
-
     let ogImage = document.querySelector('meta[property="og:image"]');
     if (!ogImage) {
       ogImage = document.createElement('meta');
@@ -75,8 +70,6 @@ function Song() {
       document.head.appendChild(ogImage);
     }
     ogImage.content = 'https://choircenter.com/images/choir1.jpg'; // Replace with your default image URL
-
-    // Twitter tags
     let twitterTitle = document.querySelector('meta[name="twitter:title"]');
     if (!twitterTitle) {
       twitterTitle = document.createElement('meta');
@@ -84,7 +77,6 @@ function Song() {
       document.head.appendChild(twitterTitle);
     }
     twitterTitle.content = song.title;
-
     let twitterDescription = document.querySelector('meta[name="twitter:description"]');
     if (!twitterDescription) {
       twitterDescription = document.createElement('meta');
@@ -92,7 +84,6 @@ function Song() {
       document.head.appendChild(twitterDescription);
     }
     twitterDescription.content = `Download and view the sheet music for ${song.title} by ${song.composer || 'Unknown Composer'}.`;
-
     let twitterImage = document.querySelector('meta[name="twitter:image"]');
     if (!twitterImage) {
       twitterImage = document.createElement('meta');
@@ -100,8 +91,6 @@ function Song() {
       document.head.appendChild(twitterImage);
     }
     twitterImage.content = 'https://choircenter.com/images/choir1.jpg'; // Replace with your default image URL
-
-    // Canonical URL
     let canonicalLink = document.querySelector('link[rel="canonical"]');
     if (!canonicalLink) {
       canonicalLink = document.createElement('link');
@@ -122,18 +111,16 @@ function Song() {
       }, 200);
     }
 
-    const fetchSongAndDonationStatus = async () => {
-      // Fetch song with description
+    const fetchSongAndRelated = async () => {
+      // Fetch current song
       let query = supabase
         .from('songs')
         .select('id, title, composer, google_drive_file_id, downloads, is_public, permalink, audio_url, description');
-      
       if (/^\d+$/.test(id)) {
         query = query.eq('id', parseInt(id, 10));
       } else {
         query = query.eq('permalink', id);
       }
-
       const { data: songData, error: songError } = await query.single();
       if (songError) {
         console.error('Initial song fetch error:', songError.message);
@@ -161,6 +148,21 @@ function Song() {
         setSong(songData);
         setSongMetaTags(songData);
         setPdfProgress(100);
+
+        // Fetch related songs (same composer or random public songs)
+        const { data: relatedData, error: relatedError } = await supabase
+          .from('songs')
+          .select('id, title, composer, permalink')
+          .eq('is_public', true)
+          .neq('id', songData.id) // Exclude current song
+          .or(`composer.eq.${songData.composer},composer.is.null`) // Prefer same composer, fallback to any
+          .order('downloads', { ascending: false }) // Sort by popularity
+          .limit(5); // Limit to 5 songs
+        if (relatedError) {
+          console.error('Related songs fetch error:', relatedError.message);
+        } else {
+          setRelatedSongs(relatedData);
+        }
       }
 
       // Fetch donation status
@@ -169,14 +171,12 @@ function Song() {
         setHasDonated(false);
         return;
       }
-
       const { data: userData, error: userError } = await supabase.auth.getUser();
       if (userError) {
         console.error('User fetch error:', userError.message);
         setHasDonated(false);
         return;
       }
-
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('has_donated')
@@ -189,7 +189,7 @@ function Song() {
         setHasDonated(profileData.has_donated || false);
       }
     };
-    fetchSongAndDonationStatus();
+    fetchSongAndRelated();
 
     const updateScale = () => {
       const width = window.innerWidth;
@@ -221,10 +221,8 @@ function Song() {
 
   const handleDownload = async () => {
     if (!song) return;
-
     try {
       console.log('handleDownload started - songId:', song.id, 'fileId:', song.google_drive_file_id);
-
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       if (sessionError) {
         console.error('Session fetch error:', sessionError.message);
@@ -232,7 +230,6 @@ function Song() {
       }
       const isAuthenticated = !!sessionData?.session;
       console.log('Authenticated:', isAuthenticated);
-
       const now = new Date();
       const year = now.getFullYear();
       const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -242,24 +239,20 @@ function Song() {
       const storedReset = localStorage.getItem(lastResetKey);
       const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
       const monthName = now.toLocaleString('default', { month: 'long' });
-
       if (!storedReset || storedReset !== currentMonthStart) {
         localStorage.setItem(downloadKey, '0');
         localStorage.setItem(lastResetKey, currentMonthStart);
       }
-
       let downloadCount = parseInt(localStorage.getItem(downloadKey) || '0', 10);
       const maxDownloads = isAuthenticated ? 6 : 3;
       const clientIdKey = 'client_id';
       let clientId = localStorage.getItem(clientIdKey);
-
       if (!isAuthenticated) {
         if (!clientId) {
           clientId = generateUUID();
           localStorage.setItem(clientIdKey, clientId);
           console.log('Generated client ID:', clientId);
         }
-
         const { data: limitData, error: limitError } = await supabase
           .from('download_limits')
           .select('download_count')
@@ -267,7 +260,6 @@ function Song() {
           .eq('year_month', yearMonth)
           .eq('is_authenticated', false)
           .single();
-
         if (limitError && limitError.code !== 'PGRST116') {
           console.error('Fetch download_limits error:', limitError.message);
         } else if (limitData) {
@@ -282,7 +274,6 @@ function Song() {
           throw userError;
         }
         const userId = userData.user.id;
-
         const { data: limitData, error: limitError } = await supabase
           .from('download_limits')
           .select('download_count')
@@ -290,7 +281,6 @@ function Song() {
           .eq('year_month', yearMonth)
           .eq('is_authenticated', true)
           .single();
-
         if (limitError && limitError.code !== 'PGRST116') {
           console.error('Fetch download_limits error for user:', limitError.message);
         } else if (limitData) {
@@ -299,11 +289,9 @@ function Song() {
           console.log('Synced server download count for user:', downloadCount);
         }
       }
-
       console.log('Download count before check:', downloadCount);
       const downloadsUsed = downloadCount;
       const downloadsRemaining = maxDownloads - downloadsUsed;
-
       if (!isAuthenticated && downloadCount >= 3) {
         setDownloadPrompt(`Download Limit Reached for ${monthName}! This resets on the 1st of every month. You’re allowed 3 downloads per month, have used ${downloadsUsed}, and have ${downloadsRemaining} remaining. Want to keep downloading? Buy us a Meat Pie ☕ to help sustain the site and enjoy unlimited access, or Just Sign up for additional downloads. Every little bit helps keep the site running! 🤗`);
         return;
@@ -313,7 +301,6 @@ function Song() {
           console.error('User fetch error:', userError.message);
           throw userError;
         }
-
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('has_donated')
@@ -324,17 +311,14 @@ function Song() {
           throw profileError;
         }
         console.log('Profile data:', JSON.stringify(profileData, null, 2));
-
         if (!profileData?.has_donated && downloadCount >= 6) {
           setDownloadPrompt(`Download Limit Reached for ${monthName}! This resets on the 1st of every month. You’re allowed 6 downloads per month, have used ${downloadsUsed}, and have ${downloadsRemaining} remaining. Want to keep downloading? Buy us a Meat Pie ☕ to help sustain the site and enjoy unlimited access, or Just Sign up for additional downloads. Every little bit helps keep the site running! 🤗`);
           return;
         }
       }
-
       downloadCount += 1;
       localStorage.setItem(downloadKey, downloadCount.toString());
       console.log('Download count after:', downloadCount);
-
       if (!isAuthenticated && clientId) {
         const { error: upsertError } = await supabase
           .from('download_limits')
@@ -366,11 +350,9 @@ function Song() {
           console.log('Updated server download count for authenticated user:', downloadCount);
         }
       }
-
       const numericSongId = parseInt(song.id, 10);
       if (isNaN(numericSongId)) throw new Error('Invalid song ID');
       console.log('Parsed song ID:', numericSongId);
-
       const url = `https://drive.google.com/uc?export=download&id=${song.google_drive_file_id}`;
       const link = document.createElement('a');
       link.href = url;
@@ -379,7 +361,6 @@ function Song() {
       link.click();
       document.body.removeChild(link);
       console.log('File download triggered');
-
       const { data: songData, error: fetchError } = await supabase
         .from('songs')
         .select('id, downloads')
@@ -391,7 +372,6 @@ function Song() {
       }
       const currentDownloads = songData.downloads || 0;
       console.log('Downloads before update:', currentDownloads);
-
       const { data: newDownloads, error: updateError } = await supabase
         .rpc('update_song_downloads', { p_song_id: numericSongId });
       if (updateError) {
@@ -399,7 +379,6 @@ function Song() {
         throw updateError;
       }
       console.log('New downloads value from RPC:', newDownloads);
-
       const { data: updatedSong, error: postUpdateFetchError } = await supabase
         .from('songs')
         .select('id, title, composer, google_drive_file_id, downloads, is_public, permalink, audio_url, description')
@@ -419,10 +398,8 @@ function Song() {
 
   const handleShare = () => {
     if (!song) return;
-
     const shareUrl = `${window.location.origin}/song/${song.permalink || song.id}`;
     const shareText = `Check out "${song.title}" on Choir Center!`;
-    
     if (navigator.share) {
       navigator.share({
         title: song.title,
@@ -442,7 +419,6 @@ function Song() {
 
   const PdfLoadingProgress = () => {
     const [progress, setProgress] = useState(0);
-
     useEffect(() => {
       const interval = setInterval(() => {
         setProgress((prev) => {
@@ -452,7 +428,6 @@ function Song() {
       }, 200);
       return () => clearInterval(interval);
     }, []);
-
     return (
       <div style={{ width: '100%', height: '20px', background: '#e0e0e0', borderRadius: '4px', overflow: 'hidden' }}>
         <div
@@ -562,10 +537,48 @@ function Song() {
                 <p className="preview-note-modern">Previewing page 1 of {numPages}. Download to view the full song.</p>
               )}
             </div>
+
+            {/* Song Actions */}
             <div className="song-actions-modern">
               <button onClick={handleDownload} className="download-button-modern">Download</button>
               <button onClick={handleShare} className="share-button-modern">Share</button>
               <Link to="/library" className="back-button-modern">Back to Library</Link>
+            </div>
+
+            {/* Related Songs Section */}
+            {relatedSongs.length > 0 && (
+              <div className="related-songs" style={{ marginTop: '2rem' }}>
+                <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Explore More Songs</h2>
+                <ul style={{ listStyle: 'none', padding: 0 }}>
+                  {relatedSongs.map((relatedSong) => (
+                    <li key={relatedSong.id} style={{ marginBottom: '0.5rem' }}>
+                      <Link
+                        to={`/song/${relatedSong.permalink || relatedSong.id}`}
+                        className="song-link"
+                        style={{ color: '#007bff', textDecoration: 'none' }}
+                      >
+                        {relatedSong.title} by {relatedSong.composer || 'Unknown Composer'}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Navigation Links */}
+            <div className="song-navigation" style={{ marginTop: '2rem', textAlign: 'center' }}>
+              <Link to="/" className="nav-link" style={{ margin: '0 1rem', color: '#007bff', textDecoration: 'none' }}>
+                Home
+              </Link>
+              <Link to="/library" className="nav-link" style={{ margin: '0 1rem', color: '#007bff', textDecoration: 'none' }}>
+                Song Library
+              </Link>
+              <Link to="/blog" className="nav-link" style={{ margin: '0 1rem', color: '#007bff', textDecoration: 'none' }}>
+                Blog
+              </Link>
+              <Link to="/contact" className="nav-link" style={{ margin: '0 1rem', color: '#007bff', textDecoration: 'none' }}>
+                Contact Us
+              </Link>
             </div>
 
             {downloadPrompt && (

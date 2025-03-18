@@ -28,6 +28,7 @@ function Home() {
   const [songComposer, setSongComposer] = useState('');
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [expandedFaq, setExpandedFaq] = useState(null); // New state for collapsible FAQs
   const audioRef = useRef(null);
   const navigate = useNavigate();
 
@@ -36,7 +37,7 @@ function Home() {
       console.log('Fetching all data');
       const { data: songData, error: songError } = await supabase
         .from('songs')
-        .select('id, title, composer, google_drive_file_id, permalink, is_public, downloads, created_at') // Added created_at
+        .select('id, title, composer, google_drive_file_id, permalink, is_public, downloads, created_at')
         .eq('is_public', true)
         .order('created_at', { ascending: false });
       if (songError) {
@@ -387,7 +388,7 @@ function Home() {
 
       const { data: updatedSong, error: postUpdateFetchError } = await supabase
         .from('songs')
-        .select('id, title, composer, google_drive_file_id, downloads, is_public, permalink, created_at') // Added created_at
+        .select('id, title, composer, google_drive_file_id, downloads, is_public, permalink, created_at')
         .eq('id', numericSongId)
         .single();
       if (postUpdateFetchError) {
@@ -398,7 +399,7 @@ function Home() {
 
       const { data: updatedSongs, error: refetchError } = await supabase
         .from('songs')
-        .select('id, title, composer, google_drive_file_id, permalink, is_public, downloads, created_at') // Added created_at
+        .select('id, title, composer, google_drive_file_id, permalink, is_public, downloads, created_at')
         .eq('is_public', true)
         .order('created_at', { ascending: false });
       if (refetchError) {
@@ -429,6 +430,11 @@ function Home() {
         .then(() => alert('Link copied to clipboard! Share it manually.'))
         .catch(err => console.error('Clipboard error:', err));
     }
+  };
+
+  // Function to toggle FAQ expansion
+  const toggleFaq = (index) => {
+    setExpandedFaq(expandedFaq === index ? null : index);
   };
 
   return (
@@ -597,34 +603,58 @@ function Home() {
         <section className="faq-section">
           <h2 className="section-title animate-text">Choir FAQs</h2>
           <div className="faq-grid">
-            <article className="faq-item animate-card">
-              <h3 className="faq-question">Why should I join a choir?</h3>
-              <p className="faq-answer">Joining a choir boosts your confidence, builds community, and enhances your musical skills—pure joy in every note!</p>
-            </article>
-            <article className="faq-item animate-card">
-              <h3 className="faq-question">Does singing in a choir enhance spirituality?</h3>
-              <p className="faq-answer">Yes, it uplifts your spirit, fosters peace, and connects you deeply through harmonious expression.</p>
-            </article>
-            <article className="faq-item animate-card">
-              <h3 className="faq-question">What are the key qualities of a good chorister?</h3>
-              <p className="faq-answer">Dedication, teamwork, a strong ear, and a passion for singing make an exceptional chorister.</p>
-            </article>
-            <article className="faq-item animate-card">
-              <h3 className="faq-question">Which vocal tips can improve my singing?</h3>
-              <p className="faq-answer">Practice breathing, warm up daily, hydrate, and focus on posture for a clearer, stronger voice.</p>
-            </article>
-            <article className="faq-item animate-card">
-              <h3 className="faq-question">How can I find choirs near me?</h3>
-              <p className="faq-answer">Search online, check local churches, or join Choir Center to connect with nearby groups easily!</p>
-            </article>
-            <article className="faq-item animate-card">
-              <h3 className="faq-question">Where can I find choir songs in solfa notation?</h3>
-              <p className="faq-answer">Choir Center offers free solfa notation downloads—perfect for learning and singing!</p>
-            </article>
-            <article className="faq-item animate-card">
-              <h3 className="faq-question">How can I improve my sight-singing skills?</h3>
-              <p className="faq-answer">Practice scales, use solfa, and sing along with sheet music from Choir Center to master it quickly.</p>
-            </article>
+            {[
+              {
+                question: "Why should I join a choir?",
+                answer: "Joining a choir boosts your confidence, builds community, and enhances your musical skills—pure joy in every note!"
+              },
+              {
+                question: "Does singing in a choir enhance spirituality?",
+                answer: "Yes, it uplifts your spirit, fosters peace, and connects you deeply through harmonious expression."
+              },
+              {
+                question: "What are the key qualities of a good chorister?",
+                answer: "Dedication, teamwork, a strong ear, and a passion for singing make an exceptional chorister."
+              },
+              {
+                question: "Which vocal tips can improve my singing?",
+                answer: "Practice breathing, warm up daily, hydrate, and focus on posture for a clearer, stronger voice."
+              },
+              {
+                question: "How can I find choirs near me?",
+                answer: "Search online, check local churches, or join Choir Center to connect with nearby groups easily!"
+              },
+              {
+                question: "Where can I find choir songs in solfa notation?",
+                answer: "Choir Center offers free solfa notation downloads—perfect for learning and singing!"
+              },
+              {
+                question: "How can I improve my sight-singing skills?",
+                answer: "Practice scales, use solfa, and sing along with sheet music from Choir Center to master it quickly."
+              }
+            ].map((faq, index) => (
+              <article key={index} className="faq-item animate-card">
+                <h3
+                  className="faq-question"
+                  onClick={() => toggleFaq(index)}
+                  style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                >
+                  {faq.question}
+                  <span>{expandedFaq === index ? '−' : '+'}</span>
+                </h3>
+                <div
+                  className="faq-answer"
+                  style={{
+                    maxHeight: expandedFaq === index ? '200px' : '0',
+                    overflow: 'hidden',
+                    transition: 'max-height 0.3s ease',
+                    padding: expandedFaq === index ? '0.5rem 0' : '0'
+                  }}
+                >
+                  {faq.answer}
+                </div>
+              </article>
+            ))}
           </div>
         </section>
       </main>

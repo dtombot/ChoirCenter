@@ -345,7 +345,7 @@ function Home() {
             year_month: yearMonth,
             is_authenticated: true,
             user_id: userData.user.id,
-          }, { onConflict: 'id' });
+          }, { onConflict:  'id' });
         if (upsertError) {
           console.error('Upsert download_limits error for user:', upsertError.message);
         } else {
@@ -461,7 +461,6 @@ function Home() {
           </div>
           <div className="hero-overlay"></div>
           <div className="hero-content">
-            <img src="/logo.png" alt="Choir Center Logo" className="hero-logo" style={{ maxWidth: '300px', marginBottom: '1rem' }} />
             <h1 className="hero-title animate-text">Everything Your Choir Needs in One Place</h1>
             <p className="hero-text animate-text">Discover free choir music and resources for choristers</p>
             <form onSubmit={handleSearch} className="search-form">

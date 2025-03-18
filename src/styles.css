@@ -2711,3 +2711,30 @@ input[type="range"]:hover {
 .hero-logo:hover {
   transform: scale(1.05);
 }
+
+
+
+.header-logo-title {
+  display: flex;
+  align-items: center;
+  gap: 10px; /* Space between logo and text */
+}
+
+.header-logo {
+  height: 40px; /* Adjust based on your logo's aspect ratio */
+  width: auto;
+  transition: transform 0.3s ease;
+}
+
+.header-logo:hover {
+  transform: scale(1.05);
+}
+
+@media (max-width: 600px) {
+  .header-logo {
+    height: 30px; /* Smaller logo on mobile */
+  }
+  .header-title {
+    font-size: 1.5rem; /* Adjust title size on mobile if needed */
+  }
+}

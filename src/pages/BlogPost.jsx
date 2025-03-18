@@ -1,3 +1,4 @@
+// src/pages/BlogPost.jsx
 import { useEffect, useState } from 'react';
 import { supabase } from '../supabase';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -14,10 +15,106 @@ function BlogPost() {
   const { permalink } = useParams();
   const navigate = useNavigate();
 
+  // Function to set SEO meta tags for a blog post
+  const setPostMetaTags = (post) => {
+    document.title = `${post.title} | Choir Center Blog`;
+
+    let metaDescription = document.querySelector('meta[name="description"]');
+    if (!metaDescription) {
+      metaDescription = document.createElement('meta');
+      metaDescription.name = "description";
+      document.head.appendChild(metaDescription);
+    }
+    // Strip HTML tags and truncate content for description
+    const plainTextContent = post.content.replace(/<[^>]+>/g, '');
+    metaDescription.content = plainTextContent.length > 160 
+      ? `${plainTextContent.substring(0, 157)}...` 
+      : plainTextContent;
+
+    // Open Graph tags
+    let ogTitle = document.querySelector('meta[property="og:title"]');
+    if (!ogTitle) {
+      ogTitle = document.createElement('meta');
+      ogTitle.property = "og:title";
+      document.head.appendChild(ogTitle);
+    }
+    ogTitle.content = post.title;
+
+    let ogDescription = document.querySelector('meta[property="og:description"]');
+    if (!ogDescription) {
+      ogDescription = document.createElement('meta');
+      ogDescription.property = "og:description";
+      document.head.appendChild(ogDescription);
+    }
+    ogDescription.content = plainTextContent.length > 160 
+      ? `${plainTextContent.substring(0, 157)}...` 
+      : plainTextContent;
+
+    let ogUrl = document.querySelector('meta[property="og:url"]');
+    if (!ogUrl) {
+      ogUrl = document.createElement('meta');
+      ogUrl.property = "og:url";
+      document.head.appendChild(ogUrl);
+    }
+    ogUrl.content = window.location.href;
+
+    let ogImage = document.querySelector('meta[property="og:image"]');
+    if (!ogImage) {
+      ogImage = document.createElement('meta');
+      ogImage.property = "og:image";
+      document.head.appendChild(ogImage);
+    }
+    ogImage.content = 'https://choircenter.com/images/choir3.jpg'; // Replace with your default image URL
+
+    // Twitter tags
+    let twitterTitle = document.querySelector('meta[name="twitter:title"]');
+    if (!twitterTitle) {
+      twitterTitle = document.createElement('meta');
+      twitterTitle.name = "twitter:title";
+      document.head.appendChild(twitterTitle);
+    }
+    twitterTitle.content = post.title;
+
+    let twitterDescription = document.querySelector('meta[name="twitter:description"]');
+    if (!twitterDescription) {
+      twitterDescription = document.createElement('meta');
+      twitterDescription.name = "twitter:description";
+      document.head.appendChild(twitterDescription);
+    }
+    twitterDescription.content = plainTextContent.length > 160 
+      ? `${plainTextContent.substring(0, 157)}...` 
+      : plainTextContent;
+
+    let twitterImage = document.querySelector('meta[name="twitter:image"]');
+    if (!twitterImage) {
+      twitterImage = document.createElement('meta');
+      twitterImage.name = "twitter:image";
+      document.head.appendChild(twitterImage);
+    }
+    twitterImage.content = 'https://choircenter.com/images/choir3.jpg'; // Replace with your default image URL
+
+    // Canonical URL
+    let canonicalLink = document.querySelector('link[rel="canonical"]');
+    if (!canonicalLink) {
+      canonicalLink = document.createElement('link');
+      canonicalLink.rel = "canonical";
+      document.head.appendChild(canonicalLink);
+    }
+    canonicalLink.href = `${window.location.origin}/blog/${post.permalink}`;
+  };
+
   useEffect(() => {
     const fetchPost = async () => {
       if (!permalink || permalink === 'undefined') {
         setError('Invalid post URL');
+        document.title = 'Invalid URL | Choir Center Blog';
+        let metaDescription = document.querySelector('meta[name="description"]');
+        if (!metaDescription) {
+          metaDescription = document.createElement('meta');
+          metaDescription.name = "description";
+          document.head.appendChild(metaDescription);
+        }
+        metaDescription.content = "The requested blog post URL is invalid.";
         return;
       }
       const { data, error } = await supabase
@@ -28,13 +125,30 @@ function BlogPost() {
       if (error) {
         console.error('Fetch post error:', error.message);
         setError(`Failed to load post: ${error.message}`);
+        document.title = 'Error | Choir Center Blog';
+        let metaDescription = document.querySelector('meta[name="description"]');
+        if (!metaDescription) {
+          metaDescription = document.createElement('meta');
+          metaDescription.name = "description";
+          document.head.appendChild(metaDescription);
+        }
+        metaDescription.content = "An error occurred while loading the blog post.";
         return;
       }
       if (!data) {
         setError('Post not found');
+        document.title = 'Post Not Found | Choir Center Blog';
+        let metaDescription = document.querySelector('meta[name="description"]');
+        if (!metaDescription) {
+          metaDescription = document.createElement('meta');
+          metaDescription.name = "description";
+          document.head.appendChild(metaDescription);
+        }
+        metaDescription.content = "The requested blog post could not be found.";
         return;
       }
       setPost(data);
+      setPostMetaTags(data);
     };
 
     const fetchComments = async () => {
@@ -85,7 +199,7 @@ function BlogPost() {
 
     fetchPost();
     fetchUser();
-  }, [permalink, navigate]);
+  }, [permalink]);
 
   useEffect(() => {
     if (post) fetchComments();

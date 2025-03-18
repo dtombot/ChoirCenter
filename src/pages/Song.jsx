@@ -74,7 +74,7 @@ function Song() {
       ogImage.property = "og:image";
       document.head.appendChild(ogImage);
     }
-    ogImage.content = 'https://choircenter.com/public/images/choir1.jpg'; // Replace with your default image URL
+    ogImage.content = 'https://choircenter.com/images/choir1.jpg'; // Replace with your default image URL
 
     // Twitter tags
     let twitterTitle = document.querySelector('meta[name="twitter:title"]');
@@ -99,7 +99,7 @@ function Song() {
       twitterImage.name = "twitter:image";
       document.head.appendChild(twitterImage);
     }
-    twitterImage.content = 'https://choircenter.com/public/images/choir1.jpg'; // Replace with your default image URL
+    twitterImage.content = 'https://choircenter.com/images/choir1.jpg'; // Replace with your default image URL
 
     // Canonical URL
     let canonicalLink = document.querySelector('link[rel="canonical"]');

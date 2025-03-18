@@ -373,16 +373,16 @@ body {
 .song-card-modern:hover {
   transform: translateY(-8px) scale(1.02);
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
-  background: linear-gradient(135deg, #66d966, #b2fab2);
+  background: linear-gradient(135deg, rgba(245, 245, 245, 0.9), rgba(230, 244, 234, 0.9));
 }
 
 .song-card-modern:hover .song-card-title-modern {
-  color: #fff;
+  color: #2f4f2f;
 }
 
 .song-card-modern:hover .song-card-composer-modern,
 .song-card-modern:hover .song-card-downloads-modern {
-  color: #f9fafb;
+  color: #666;
 }
 
 .song-card-content {
@@ -624,17 +624,17 @@ body {
 .blog-card-modern:hover {
   transform: translateY(-8px) scale(1.02);
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
-  background: linear-gradient(135deg, #66d966, #b2fab2);
+  background: linear-gradient(135deg, rgba(245, 245, 245, 0.9), rgba(230, 244, 234, 0.9));
 }
 
 .blog-card-modern:hover .blog-card-title-modern {
-  color: #fff;
+  color: #2f4f2f;
 }
 
 .blog-card-modern:hover .blog-card-excerpt-modern,
 .blog-card-modern:hover .blog-card-date-modern,
 .blog-card-modern:hover .blog-card-readmore-modern {
-  color: #f9fafb;
+  color: #666;
 }
 
 .blog-card-content {

@@ -1,4 +1,3 @@
-// src/pages/Home.jsx
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../supabase';
 import { Link, useNavigate } from 'react-router-dom';
@@ -345,7 +344,7 @@ function Home() {
             year_month: yearMonth,
             is_authenticated: true,
             user_id: userData.user.id,
-          }, { onConflict:  'id' });
+          }, { onConflict: 'id' });
         if (upsertError) {
           console.error('Upsert download_limits error for user:', upsertError.message);
         } else {
@@ -489,124 +488,17 @@ function Home() {
         <section className="song-of-the-week">
           <h2 className="section-title animate-text">Song of the Week</h2>
           {songOfTheWeek ? (
-            <div className="audio-player animate-text" style={{ width: '600px' }}>
-              <div
-                className="audio-controls"
-                style={{
-                  backgroundColor: '#1A3C34',
-                  borderRadius: '10px',
-                  padding: '15px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  color: '#FFFFFF',
-                  height: '90px',
-                  transition: 'all 0.3s ease',
-                }}
-              >
-                <div
-                  className="song-info"
-                  style={{
-                    fontSize: '18px',
-                    opacity: 0,
-                    animation: 'fadeInSlideUp 0.5s forwards',
-                  }}
-                >
-                  <div className="song-title" style={{ fontWeight: 'bold' }}>{songTitle}</div>
-                  <div className="song-composer" style={{ fontSize: '14px', color: '#D4A017' }}>
-                    {songComposer}
-                  </div>
+            <div className="modern-audio-player">
+              <div className="player-container">
+                <button onClick={rewind} className="player-button rewind" aria-label="Rewind song">
+                  <span role="img" aria-label="rewind">⏪</span>
+                </button>
+                <button onClick={togglePlay} className="player-button play-pause" aria-label={isPlaying ? "Pause song" : "Play song"}>
+                  <span role="img" aria-label="play/pause">{isPlaying ? '⏸' : '▶'}</span>
+                </button>
+                <div className="song-title-container">
+                  <span className="song-title-text">{songTitle}</span>
                 </div>
-                <button
-                  onClick={rewind}
-                  className="control-button"
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    color: '#FFFFFF',
-                    fontSize: '24px',
-                    transition: 'transform 0.3s ease, color 0.3s ease',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.transform = 'scale(1.2)';
-                    e.target.style.color = '#D4A017';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.transform = 'scale(1)';
-                    e.target.style.color = '#FFFFFF';
-                  }}
-                  aria-label="Rewind song"
-                >
-                  <span role="img" aria-label="rewind">◄</span>
-                </button>
-                <button
-                  onClick={togglePlay}
-                  className="control-button"
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    fontSize: '36px',
-                    color: '#FFFFFF',
-                    transition: 'transform 0.3s ease, color 0.3s ease',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.transform = 'scale(1.2)';
-                    e.target.style.color = '#D4A017';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.transform = 'scale(1)';
-                    e.target.style.color = '#FFFFFF';
-                  }}
-                  aria-label={isPlaying ? "Pause song" : "Play song"}
-                >
-                  <span role="img" aria-label="play/pause">{isPlaying ? '||' : '▶'}</span>
-                </button>
-                <button
-                  className="control-button"
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    color: '#FFFFFF',
-                    fontSize: '24px',
-                    transition: 'transform 0.3s ease, color 0.3s ease',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.transform = 'scale(1.2)';
-                    e.target.style.color = '#D4A017';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.transform = 'scale(1)';
-                    e.target.style.color = '#FFFFFF';
-                  }}
-                  aria-label="Forward song (placeholder)"
-                >
-                  <span role="img" aria-label="forward">►</span>
-                </button>
-                <button
-                  className="control-button"
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    color: '#D4A017',
-                    fontSize: '24px',
-                    transition: 'transform 0.3s ease, color 0.3s ease',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.transform = 'scale(1.2)';
-                    e.target.style.color = '#FFD700';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.transform = 'scale(1)';
-                    e.target.style.color = '#D4A017';
-                  }}
-                  aria-label="Like song"
-                >
-                  <span role="img" aria-label="like">♥</span>
-                </button>
                 <input
                   type="range"
                   min="0"
@@ -619,15 +511,7 @@ function Home() {
                       setProgress(e.target.value);
                     }
                   }}
-                  style={{
-                    width: '150px',
-                    backgroundColor: '#4A7C6D',
-                    cursor: 'pointer',
-                    height: '20px',
-                    transition: 'background-color 0.3s ease',
-                  }}
-                  onMouseEnter={(e) => (e.target.style.backgroundColor = '#6DAE9E')}
-                  onMouseLeave={(e) => (e.target.style.backgroundColor = '#4A7C6D')}
+                  className="progress-bar"
                   aria-label="Audio progress"
                 />
               </div>

@@ -28,7 +28,7 @@ function Library() {
     const fetchSongs = async () => {
       const { data: songData, error: songError } = await supabase
         .from('songs')
-        .select('id, title, composer, google_drive_file_id, permalink, is_public, downloads')
+        .select('id, title, composer, google_drive_file_id, permalink, is_public, downloads, created_at') // Added created_at
         .order(sortBy, { ascending: sortOrder === 'asc' });
       if (songError) {
         console.error('Initial song fetch error:', songError.message);
@@ -236,7 +236,7 @@ function Library() {
 
       const { data: updatedSong, error: postUpdateFetchError } = await supabase
         .from('songs')
-        .select('id, title, composer, google_drive_file_id, downloads, is_public, permalink')
+        .select('id, title, composer, google_drive_file_id, downloads, is_public, permalink, created_at') // Added created_at
         .eq('id', numericSongId)
         .single();
       if (postUpdateFetchError) {
@@ -247,7 +247,7 @@ function Library() {
 
       const { data: updatedSongs, error: refetchError } = await supabase
         .from('songs')
-        .select('id, title, composer, google_drive_file_id, permalink, is_public, downloads')
+        .select('id, title, composer, google_drive_file_id, permalink, is_public, downloads, created_at') // Added created_at
         .order(sortBy, { ascending: sortOrder === 'asc' });
       if (refetchError) {
         console.error('Refetch error:', refetchError.message);
@@ -368,6 +368,9 @@ function Library() {
                 <h2 className="song-card-title-modern">{song.title}</h2>
                 <p className="song-card-composer-modern">{song.composer || 'Unknown Composer'}</p>
                 <p className="song-card-downloads-modern">Downloaded {song.downloads || 0} times</p>
+                <p className="song-timestamp-modern">
+                  Added on {new Date(song.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                </p>
               </div>
               <div className="song-card-actions-modern">
                 <button

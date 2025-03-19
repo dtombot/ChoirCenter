@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../supabase';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import '../styles.css';
@@ -51,6 +51,7 @@ function Admin() {
   const [songSearch, setSongSearch] = useState('');
   const [songFilter, setSongFilter] = useState('all');
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -136,7 +137,6 @@ function Admin() {
       };
       fetchVisitors();
 
-      // Real-time visitor subscription
       const visitorSubscription = supabase
         .channel('visitors')
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'visitors' }, (payload) => {
@@ -179,12 +179,32 @@ function Admin() {
       };
       fetchSongOfTheWeek();
 
+      const params = new URLSearchParams(location.search);
+      const tab = params.get('tab');
+      const editSongId = params.get('editSongId');
+      if (tab === 'songs' && editSongId) {
+        setActiveTab('songs');
+        const songToEdit = songs.find(song => song.id === parseInt(editSongId, 10));
+        if (songToEdit) {
+          editSong(songToEdit);
+        } else {
+          const { data: songData, error: songError } = await supabase
+            .from('songs')
+            .select('*')
+            .eq('id', parseInt(editSongId, 10))
+            .single();
+          if (!songError && songData) {
+            editSong(songData);
+          }
+        }
+      }
+
       return () => {
         supabase.removeChannel(visitorSubscription);
       };
     };
     fetchUser();
-  }, [navigate]);
+  }, [navigate, location.search]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -1045,12 +1065,15 @@ function Admin() {
                     <td>{u.id}</td>
                     <td>{u.email}</td>
                     <td>
-                      <button onClick={() => toggleUserAdmin(u.id, u.is_admin)} className={`admin-toggle-button ${u.is_admin ? 'active' : ''}`} disabled={u.id === user.id}>
-                        {u.is_admin ? 'Yes' : 'No'}
+                      <button 
+                        onClick={() => toggleUserAdmin(u.id, u.role === 'admin')} 
+                        className={`admin-toggle-button ${u.role === 'admin' ? 'active' : ''}`}
+                      >
+                        {u.role === 'admin' ? 'Yes' : 'No'}
                       </button>
                     </td>
                     <td>
-                      <button onClick={() => deleteUser(u.id)} className="admin-delete-button" disabled={u.id === user.id}>Delete</button>
+                      <button onClick={() => deleteUser(u.id)} className="admin-delete-button">Delete</button>
                     </td>
                   </tr>
                 ))}
@@ -1059,89 +1082,68 @@ function Admin() {
           </div>
         )}
         {activeTab === 'songOfTheWeek' && (
-          <div className="admin-form-card">
-            <h3 className="admin-form-title">Song of the Week</h3>
-            <form onSubmit={handleSongOfTheWeekSubmit} className="admin-form-grid">
-              <div className="admin-form-group full-width">
-                <label htmlFor="audioUrl">Audio URL</label>
-                <input
-                  id="audioUrl"
-                  type="text"
-                  placeholder="e.g., https://archive.org/download/.../song.mp3"
-                  value={songOfTheWeekHtml}
-                  onChange={(e) => setSongOfTheWeekHtml(e.target.value)}
-                  className="admin-form-input"
-                />
-              </div>
-              <button type="submit" className="admin-form-submit">Update Song of the Week</button>
-            </form>
-            <p className="admin-note">Paste the direct URL to an audio file (e.g., .mp3). Leave blank to remove the player.</p>
-          </div>
+          <form onSubmit={handleSongOfTheWeekSubmit} className="admin-form-grid">
+            <textarea 
+              placeholder="Song of the Week HTML" 
+              value={songOfTheWeekHtml} 
+              onChange={(e) => setSongOfTheWeekHtml(e.target.value)} 
+              className="admin-form-input" 
+              rows="5"
+            />
+            <button type="submit" className="admin-form-submit">Update Song of the Week</button>
+          </form>
         )}
         {activeTab === 'advert' && (
-          <div className="admin-advert-tab">
-            <div className="admin-form-card">
-              <h3 className="admin-form-title">{editingAdId ? 'Edit Advertisement' : 'Add New Advertisement'}</h3>
-              <form onSubmit={handleAdSubmit} className="admin-form-grid">
-                <div className="admin-form-group">
-                  <label htmlFor="adName">Ad Name *</label>
-                  <input
-                    id="adName"
-                    type="text"
-                    placeholder="e.g., Home Banner"
-                    value={adForm.name}
-                    onChange={(e) => setAdForm({ ...adForm, name: e.target.value })}
-                    className="admin-form-input"
-                    required
-                  />
-                </div>
-                <div className="admin-form-group full-width">
-                  <label htmlFor="adCode">Ad Code *</label>
-                  <textarea
-                    id="adCode"
-                    placeholder="Paste your ad script here (e.g., Google AdSense code)"
-                    value={adForm.code}
-                    onChange={(e) => setAdForm({ ...adForm, code: e.target.value })}
-                    className="admin-form-input"
-                    rows="4"
-                    required
-                  />
-                </div>
-                <div className="admin-form-group">
-                  <label htmlFor="adPosition">Position</label>
-                  <select
-                    id="adPosition"
-                    value={adForm.position}
-                    onChange={(e) => setAdForm({ ...adForm, position: e.target.value })}
-                    className="admin-form-input"
-                  >
-                    <option value="home_above_sotw">Home - Above Song of the Week</option>
-                    <option value="other_pages_below_header">Other Pages - Below Header</option>
-                    <option value="song_page_below_header">Song Pages - Below Header</option>
-                  </select>
-                </div>
-                <label className="admin-checkbox">
-                  <input
-                    type="checkbox"
-                    checked={adForm.is_active}
-                    onChange={(e) => setAdForm({ ...adForm, is_active: e.target.checked })}
-                  />
-                  Active
-                </label>
-                <div className="admin-form-actions">
-                  <button type="submit" className="admin-form-submit">{editingAdId ? 'Update Ad' : 'Add Ad'}</button>
-                  {editingAdId && (
-                    <button
-                      type="button"
-                      className="admin-cancel-button"
-                      onClick={() => { setAdForm({ name: '', code: '', position: 'home_above_sotw', is_active: true }); setEditingAdId(null); }}
-                    >
-                      Cancel
-                    </button>
-                  )}
-                </div>
-              </form>
-            </div>
+          <>
+            <form onSubmit={handleAdSubmit} className="admin-form-grid">
+              <input 
+                type="text" 
+                placeholder="Ad Name" 
+                value={adForm.name} 
+                onChange={(e) => setAdForm({ ...adForm, name: e.target.value })} 
+                className="admin-form-input" 
+                required 
+              />
+              <textarea 
+                placeholder="Ad Code" 
+                value={adForm.code} 
+                onChange={(e) => setAdForm({ ...adForm, code: e.target.value })} 
+                className="admin-form-input" 
+                rows="5" 
+                required 
+              />
+              <select 
+                value={adForm.position} 
+                onChange={(e) => setAdForm({ ...adForm, position: e.target.value })} 
+                className="admin-form-input"
+              >
+                <option value="home_above_sotw">Home - Above Song of the Week</option>
+                <option value="home_below_sotw">Home - Below Song of the Week</option>
+                <option value="song_page_below_header">Song Page - Below Header</option>
+                <option value="blog_page_below_header">Blog Page - Below Header</option>
+              </select>
+              <label className="admin-checkbox">
+                <input 
+                  type="checkbox" 
+                  checked={adForm.is_active} 
+                  onChange={(e) => setAdForm({ ...adForm, is_active: e.target.checked })} 
+                />
+                Active
+              </label>
+              <button type="submit" className="admin-form-submit">{editingAdId ? 'Update Ad' : 'Add Ad'}</button>
+              {editingAdId && (
+                <button 
+                  type="button" 
+                  className="admin-cancel-button" 
+                  onClick={() => { 
+                    setAdForm({ name: '', code: '', position: 'home_above_sotw', is_active: true }); 
+                    setEditingAdId(null); 
+                  }}
+                >
+                  Cancel
+                </button>
+              )}
+            </form>
             <div className="admin-table-container">
               <table className="admin-table">
                 <thead>
@@ -1156,10 +1158,10 @@ function Admin() {
                   {ads.map(ad => (
                     <tr key={ad.id}>
                       <td>{ad.name}</td>
-                      <td>{ad.position === 'home_above_sotw' ? 'Home - Above SOTW' : ad.position === 'other_pages_below_header' ? 'Other Pages - Below Header' : 'Song Pages - Below Header'}</td>
+                      <td>{ad.position}</td>
                       <td>
-                        <button
-                          onClick={() => toggleAdActive(ad.id, ad.is_active)}
+                        <button 
+                          onClick={() => toggleAdActive(ad.id, ad.is_active)} 
                           className={`admin-toggle-button ${ad.is_active ? 'active' : ''}`}
                         >
                           {ad.is_active ? 'Yes' : 'No'}
@@ -1174,7 +1176,7 @@ function Admin() {
                 </tbody>
               </table>
             </div>
-          </div>
+          </>
         )}
       </div>
     </div>

@@ -18,7 +18,8 @@
     "googleapis": "^134.0.0",
     "node-fetch": "^2.6.12",
     "nodemailer": "^6.9.13",
-    "react-helmet-async": "^2.0.4"
+    "react-helmet-async": "^2.0.4",
+    "pdf-lib": "^1.17.1"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.2.1",

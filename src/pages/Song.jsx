@@ -20,6 +20,7 @@ function Song() {
   const [downloadPrompt, setDownloadPrompt] = useState(null);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [numPages, setNumPages] = useState(null);
+  const [firstPageImage, setFirstPageImage] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -129,13 +130,23 @@ function Song() {
         setSong(songData);
         setSongMetaTags(songData);
 
-        // Fetch page count from Netlify function
-        fetch(`/.netlify/functions/get-pdf-page-count?fileId=${songData.google_drive_file_id}`)
+        // Fetch first page preview and page count
+        fetch(`/.netlify/functions/get-pdf-first-page?fileId=${songData.google_drive_file_id}`)
           .then(res => res.json())
-          .then(data => setNumPages(data.pageCount || null))
+          .then(data => {
+            if (data.error) {
+              console.error('Preview fetch error:', data.error);
+              setNumPages(null);
+              setFirstPageImage(null);
+            } else {
+              setNumPages(data.pageCount);
+              setFirstPageImage(data.firstPageBase64);
+            }
+          })
           .catch(err => {
-            console.error('Page count fetch error:', err);
+            console.error('Preview fetch error:', err);
             setNumPages(null);
+            setFirstPageImage(null);
           });
 
         const { data: relatedData, error: relatedError } = await supabase
@@ -457,26 +468,32 @@ function Song() {
             )}
 
             <div className="song-preview-modern">
-              {/* Replace iframe with a static placeholder */}
-              <div
-                style={{
-                  width: '100%',
-                  height: '500px',
-                  backgroundColor: '#f0f0f0',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  textAlign: 'center',
-                  color: '#666',
-                  fontSize: '1.2rem',
-                  border: '1px solid #ddd',
-                }}
-              >
-                PDF Preview Not Available<br />
-                Download to view the full sheet music
-              </div>
+              {firstPageImage ? (
+                <img
+                  src={firstPageImage}
+                  alt={`${song.title} - Page 1 Preview`}
+                  style={{ width: '100%', maxHeight: '500px', objectFit: 'contain' }}
+                />
+              ) : (
+                <div
+                  style={{
+                    width: '100%',
+                    height: '500px',
+                    backgroundColor: '#f0f0f0',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    textAlign: 'center',
+                    color: '#666',
+                    fontSize: '1.2rem',
+                    border: '1px solid #ddd',
+                  }}
+                >
+                  Loading preview...
+                </div>
+              )}
               <p className="preview-note-modern">
-                Page count: {numPages !== null ? `${numPages} page${numPages === 1 ? '' : 's'}` : 'Loading...'}.{' '}
+                Previewing page 1{numPages ? ` of ${numPages}` : ''}.{' '}
                 <span onClick={handleDownload} style={{ color: '#007bff', cursor: 'pointer', textDecoration: 'underline' }}>
                   Download
                 </span>{' '}

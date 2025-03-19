@@ -1,5 +1,4 @@
 const fetch = require('node-fetch');
-const { PDFDocument } = require('pdf-lib');
 
 exports.handler = async (event) => {
   const { fileId } = event.queryStringParameters;
@@ -22,15 +21,17 @@ exports.handler = async (event) => {
       throw new Error(`Failed to fetch PDF: ${response.statusText}`);
     }
 
-    const buffer = await response.buffer();
-    console.log('Parsing PDF to get page count');
-    const pdfDoc = await PDFDocument.load(buffer);
-    const pageCount = pdfDoc.getPageCount();
-    console.log(`Page count: ${pageCount}`);
+    const pdfBuffer = await response.buffer();
+    console.log('PDF fetched successfully');
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ pageCount }),
+      headers: {
+        'Content-Type': 'application/pdf',
+        'Access-Control-Allow-Origin': '*', // Allow CORS for the client
+      },
+      body: pdfBuffer.toString('base64'),
+      isBase64Encoded: true,
     };
   } catch (error) {
     console.error('Function error:', error.message, error.stack);

@@ -1,5 +1,5 @@
 const fetch = require('node-fetch');
-const { PDFDocument } = require('pdf-lib');
+const pdfjsLib = require('pdfjs-dist/build/pdf');
 
 exports.handler = async (event) => {
   const { fileId } = event.queryStringParameters;
@@ -22,25 +22,51 @@ exports.handler = async (event) => {
       throw new Error(`Failed to fetch PDF: ${response.statusText}`);
     }
 
-    const buffer = await response.buffer();
+    const pdfData = await response.arrayBuffer();
     console.log('Loading PDF document');
-    const pdfDoc = await PDFDocument.load(buffer);
-
-    // Get the total page count
-    const pageCount = pdfDoc.getPageCount();
+    const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
+    const pageCount = pdf.numPages;
     console.log(`Total page count: ${pageCount}`);
 
     if (pageCount === 0) {
       throw new Error('PDF has no pages');
     }
 
-    // Create a new PDF with only the first page
-    const newPdfDoc = await PDFDocument.create();
-    const [firstPage] = await newPdfDoc.copyPages(pdfDoc, [0]);
-    newPdfDoc.addPage(firstPage);
+    // Render the first page
+    const page = await pdf.getPage(1);
+    const scale = 1.5; // Adjust scale for better resolution
+    const viewport = page.getViewport({ scale });
+    
+    // Create a canvas to render the page
+    const canvas = { width: viewport.width, height: viewport.height };
+    const context = {
+      getImageData: () => null, // Mock for simplicity; pdfjs doesn't need this
+      putImageData: () => null,
+      drawImage: () => null,
+      canvas: canvas,
+      getContext: () => ({
+        drawImage: () => null, // Mock; we'll handle this manually
+        canvas: canvas,
+      }),
+    };
+    
+    // Use Node.js canvas-like approach (we'll simulate this with pdfjs output)
+    const renderContext = {
+      canvasContext: context.getContext('2d'),
+      viewport: viewport,
+    };
 
-    // Render the first page as PNG
-    const pngImage = await newPdfDoc.saveAsBase64({ dataUri: false });
+    // Render the page to a canvas
+    await page.render(renderContext).promise;
+
+    // Convert to base64 PNG (using a helper function since Node doesn’t have native canvas)
+    const canvasNode = require('canvas').createCanvas(viewport.width, viewport.height);
+    const ctx = canvasNode.getContext('2d');
+    const imageData = await page.render({
+      canvasContext: ctx,
+      viewport: viewport,
+    }).promise;
+    const base64Image = canvasNode.toDataURL('image/png');
     console.log('First page rendered as base64 PNG');
 
     return {
@@ -50,7 +76,7 @@ exports.handler = async (event) => {
       },
       body: JSON.stringify({
         pageCount,
-        firstPageBase64: `data:image/png;base64,${pngImage}`,
+        firstPageBase64: base64Image,
       }),
     };
   } catch (error) {

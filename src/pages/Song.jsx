@@ -20,7 +20,6 @@ function Song() {
   const [downloadPrompt, setDownloadPrompt] = useState(null);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [numPages, setNumPages] = useState(null);
-  const [firstPageImage, setFirstPageImage] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -130,8 +129,7 @@ function Song() {
         setSong(songData);
         setSongMetaTags(songData);
 
-        // Fetch first page preview and page count
-        console.log(`Fetching preview for fileId: ${songData.google_drive_file_id}`);
+        // Fetch page count
         fetch(`/.netlify/functions/get-pdf-first-page?fileId=${songData.google_drive_file_id}`)
           .then(res => {
             console.log('Fetch response status:', res.status);
@@ -143,18 +141,15 @@ function Song() {
           .then(data => {
             console.log('Fetch response data:', data);
             if (data.error) {
-              console.error('Preview fetch error:', data.error);
+              console.error('Page count fetch error:', data.error);
               setNumPages(null);
-              setFirstPageImage(null);
             } else {
               setNumPages(data.pageCount);
-              setFirstPageImage(data.firstPageBase64);
             }
           })
           .catch(err => {
-            console.error('Preview fetch error:', err);
+            console.error('Page count fetch error:', err);
             setNumPages(null);
-            setFirstPageImage(null);
           });
 
         const { data: relatedData, error: relatedError } = await supabase
@@ -220,10 +215,6 @@ function Song() {
       return () => audio.removeEventListener('timeupdate', updateProgress);
     }
   }, [song]);
-
-  useEffect(() => {
-    console.log('firstPageImage updated:', firstPageImage ? 'Image set' : 'No image');
-  }, [firstPageImage]);
 
   const togglePlay = async () => {
     const { data: sessionData, error } = await supabase.auth.getSession();
@@ -363,7 +354,7 @@ function Song() {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-    const numericSongId = parseInt(song.id, 10) || song.id;
+      const numericSongId = parseInt(song.id, 10) || song.id;
       const { data: songData, error: fetchError } = await supabase
         .from('songs')
         .select('id, downloads')
@@ -480,12 +471,11 @@ function Song() {
             )}
 
             <div className="song-preview-modern">
-              {firstPageImage ? (
-                <img
-                  src={firstPageImage}
-                  alt={`${song.title} - Page 1 Preview`}
-                  style={{ width: '100%', maxHeight: '500px', objectFit: 'contain' }}
-                  onError={(e) => console.error('Image failed to load:', e)}
+              {song.google_drive_file_id ? (
+                <iframe
+                  src={`https://drive.google.com/file/d/${song.google_drive_file_id}/preview`}
+                  style={{ width: '100%', height: '500px', border: '1px solid #ddd' }}
+                  title={`${song.title} - Page 1 Preview`}
                 />
               ) : (
                 <div
@@ -502,15 +492,11 @@ function Song() {
                     border: '1px solid #ddd',
                   }}
                 >
-                  Loading preview...
+                  Preview unavailable
                 </div>
               )}
               <p className="preview-note-modern">
-                Previewing page 1{numPages ? ` of ${numPages}` : ''}.{' '}
-                <span onClick={handleDownload} style={{ color: '#007bff', cursor: 'pointer', textDecoration: 'underline' }}>
-                  Download
-                </span>{' '}
-                to view the full song.
+                Previewing page 1{numPages ? ` of ${numPages}` : ''}. Click the Download button to view the full song.
               </p>
             </div>
 

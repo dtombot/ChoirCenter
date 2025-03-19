@@ -4,36 +4,40 @@ exports.handler = async (event) => {
   const { fileId } = event.queryStringParameters;
 
   if (!fileId) {
+    console.log('Missing fileId parameter');
     return {
       statusCode: 400,
-      body: JSON.stringify({ error: 'Missing fileId parameter' }),
+      body: JSON.stringify({ error: 'fileId parameter is required' }),
     };
   }
 
   const url = `https://drive.google.com/uc?export=download&id=${fileId}`;
 
   try {
+    console.log(`Fetching PDF from: ${url}`);
     const response = await fetch(url);
     if (!response.ok) {
-      throw new Error(`Google Drive responded with status: ${response.status}`);
+      console.error(`Fetch failed with status: ${response.status}, ${response.statusText}`);
+      throw new Error(`Failed to fetch PDF: ${response.statusText}`);
     }
 
-    const buffer = await response.buffer();
+    const pdfBuffer = await response.buffer();
+    console.log('PDF fetched successfully');
 
     return {
       statusCode: 200,
       headers: {
         'Content-Type': 'application/pdf',
-        'Access-Control-Allow-Origin': '*', // Allow all origins (or restrict to choircenter.com)
+        'Access-Control-Allow-Origin': '*', // Allow CORS for the client
       },
-      body: buffer.toString('base64'),
+      body: pdfBuffer.toString('base64'),
       isBase64Encoded: true,
     };
   } catch (error) {
-    console.error('Error fetching PDF:', error);
+    console.error('Function error:', error.message, error.stack);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: 'Failed to fetch PDF' }),
+      body: JSON.stringify({ error: error.message }),
     };
   }
 };

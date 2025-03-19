@@ -133,7 +133,10 @@ function Song() {
         fetch(`/.netlify/functions/get-pdf-page-count?fileId=${songData.google_drive_file_id}`)
           .then(res => res.json())
           .then(data => setNumPages(data.pageCount || null))
-          .catch(() => setNumPages(null));
+          .catch(err => {
+            console.error('Page count fetch error:', err);
+            setNumPages(null);
+          });
 
         const { data: relatedData, error: relatedError } = await supabase
           .from('songs')
@@ -454,16 +457,26 @@ function Song() {
             )}
 
             <div className="song-preview-modern">
-              <iframe
-                src={`https://drive.google.com/file/d/${song.google_drive_file_id}/preview?page=1`}
-                width="100%"
-                height="500px"
-                frameBorder="0"
-                title={`${song.title} Preview`}
-                onError={() => setError('Failed to load PDF preview')}
-              />
+              {/* Replace iframe with a static placeholder */}
+              <div
+                style={{
+                  width: '100%',
+                  height: '500px',
+                  backgroundColor: '#f0f0f0',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  textAlign: 'center',
+                  color: '#666',
+                  fontSize: '1.2rem',
+                  border: '1px solid #ddd',
+                }}
+              >
+                PDF Preview Not Available<br />
+                Download to view the full sheet music
+              </div>
               <p className="preview-note-modern">
-                Previewing page 1{numPages ? ` of ${numPages}` : ''}.{' '}
+                Page count: {numPages !== null ? `${numPages} page${numPages === 1 ? '' : 's'}` : 'Loading...'}.{' '}
                 <span onClick={handleDownload} style={{ color: '#007bff', cursor: 'pointer', textDecoration: 'underline' }}>
                   Download
                 </span>{' '}

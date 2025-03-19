@@ -131,9 +131,17 @@ function Song() {
         setSongMetaTags(songData);
 
         // Fetch first page preview and page count
+        console.log(`Fetching preview for fileId: ${songData.google_drive_file_id}`);
         fetch(`/.netlify/functions/get-pdf-first-page?fileId=${songData.google_drive_file_id}`)
-          .then(res => res.json())
+          .then(res => {
+            console.log('Fetch response status:', res.status);
+            if (!res.ok) {
+              throw new Error(`HTTP error! status: ${res.status}`);
+            }
+            return res.json();
+          })
           .then(data => {
+            console.log('Fetch response data:', data);
             if (data.error) {
               console.error('Preview fetch error:', data.error);
               setNumPages(null);
@@ -212,6 +220,10 @@ function Song() {
       return () => audio.removeEventListener('timeupdate', updateProgress);
     }
   }, [song]);
+
+  useEffect(() => {
+    console.log('firstPageImage updated:', firstPageImage ? 'Image set' : 'No image');
+  }, [firstPageImage]);
 
   const togglePlay = async () => {
     const { data: sessionData, error } = await supabase.auth.getSession();
@@ -351,7 +363,7 @@ function Song() {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      const numericSongId = parseInt(song.id, 10) || song.id;
+    const numericSongId = parseInt(song.id, 10) || song.id;
       const { data: songData, error: fetchError } = await supabase
         .from('songs')
         .select('id, downloads')
@@ -473,6 +485,7 @@ function Song() {
                   src={firstPageImage}
                   alt={`${song.title} - Page 1 Preview`}
                   style={{ width: '100%', maxHeight: '500px', objectFit: 'contain' }}
+                  onError={(e) => console.error('Image failed to load:', e)}
                 />
               ) : (
                 <div

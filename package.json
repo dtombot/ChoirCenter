@@ -19,7 +19,8 @@
     "nodemailer": "^6.9.13",
     "react-helmet-async": "^2.0.4",
     "pdf-lib": "^1.17.1",
-    "pdfjs-dist": "^3.11.174"
+    "pdfjs-dist": "^3.11.174",
+    "canvas": "^2.11.2"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.2.1",

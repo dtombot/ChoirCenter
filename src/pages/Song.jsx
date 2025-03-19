@@ -2,7 +2,11 @@ import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../supabase';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import AdBanner from '../components/AdBanner';
+import { Document, Page, pdfjs } from 'react-pdf';
 import '../styles.css';
+
+// Set the workerSrc for react-pdf
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
 
 const generateUUID = () => {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
@@ -128,29 +132,6 @@ function Song() {
       } else {
         setSong(songData);
         setSongMetaTags(songData);
-
-        // Fetch page count
-        fetch(`/.netlify/functions/get-pdf-first-page?fileId=${songData.google_drive_file_id}`)
-          .then(res => {
-            console.log('Fetch response status:', res.status);
-            if (!res.ok) {
-              throw new Error(`HTTP error! status: ${res.status}`);
-            }
-            return res.json();
-          })
-          .then(data => {
-            console.log('Fetch response data:', data);
-            if (data.error) {
-              console.error('Page count fetch error:', data.error);
-              setNumPages(null);
-            } else {
-              setNumPages(data.pageCount);
-            }
-          })
-          .catch(err => {
-            console.error('Page count fetch error:', err);
-            setNumPages(null);
-          });
 
         const { data: relatedData, error: relatedError } = await supabase
           .from('songs')
@@ -395,6 +376,10 @@ function Song() {
 
   const [hasDonated, setHasDonated] = useState(null);
 
+  const onDocumentLoadSuccess = ({ numPages }) => {
+    setNumPages(numPages);
+  };
+
   return (
     <>
       <section className="ad-section">
@@ -472,11 +457,13 @@ function Song() {
 
             <div className="song-preview-modern">
               {song.google_drive_file_id ? (
-                <iframe
-                  src={`https://drive.google.com/file/d/${song.google_drive_file_id}/preview`}
-                  style={{ width: '100%', height: '500px', border: '1px solid #ddd' }}
-                  title={`${song.title} - Page 1 Preview`}
-                />
+                <Document
+                  file={`https://drive.google.com/uc?export=download&id=${song.google_drive_file_id}`}
+                  onLoadSuccess={onDocumentLoadSuccess}
+                  onLoadError={(err) => console.error('PDF load error:', err)}
+                >
+                  <Page pageNumber={1} width={600} />
+                </Document>
               ) : (
                 <div
                   style={{

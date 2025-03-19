@@ -1,13 +1,8 @@
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../supabase';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { Document, Page, pdfjs } from 'react-pdf';
 import AdBanner from '../components/AdBanner';
-import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
-import 'react-pdf/dist/esm/Page/TextLayer.css';
 import '../styles.css';
-
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
 
 const generateUUID = () => {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
@@ -25,12 +20,9 @@ function Song() {
   const [downloadPrompt, setDownloadPrompt] = useState(null);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [numPages, setNumPages] = useState(null);
-  const [scale, setScale] = useState(1.0);
-  const [pdfProgress, setPdfProgress] = useState(0);
-  const [hasDonated, setHasDonated] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [isAdmin, setIsAdmin] = useState(false); // Added for admin check
+  const [isAdmin, setIsAdmin] = useState(false);
   const audioRef = useRef(null);
   const navigate = useNavigate();
 
@@ -102,16 +94,6 @@ function Song() {
   };
 
   useEffect(() => {
-    let interval;
-    if (!song) {
-      interval = setInterval(() => {
-        setPdfProgress((prev) => {
-          if (prev >= 90) return prev;
-          return prev + 10;
-        });
-      }, 200);
-    }
-
     const fetchSongAndRelated = async () => {
       let query = supabase
         .from('songs')
@@ -144,10 +126,24 @@ function Song() {
         }
         metaDescription.content = "This song is private and cannot be viewed.";
       } else {
-        console.log('Initial song:', JSON.stringify(songData, null, 2));
         setSong(songData);
         setSongMetaTags(songData);
-        setPdfProgress(100);
+
+        // Fetch page count from Google Drive PDF metadata (simulated via iframe onload)
+        const iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        iframe.src = `https://drive.google.com/file/d/${songData.google_drive_file_id}/preview`;
+        iframe.onload = () => {
+          // Note: Direct page count access is limited client-side; simulate or use API if needed
+          // Here, we assume a fetch or default to null if not directly accessible
+          setNumPages(null); // Placeholder; replace with API call if available
+          document.body.removeChild(iframe);
+        };
+        iframe.onerror = () => {
+          setError('Failed to load PDF preview');
+          document.body.removeChild(iframe);
+        };
+        document.body.appendChild(iframe);
 
         const { data: relatedData, error: relatedError } = await supabase
           .from('songs')
@@ -167,14 +163,14 @@ function Song() {
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       if (sessionError || !sessionData?.session) {
         setHasDonated(false);
-        setIsAdmin(false); // No session, not an admin
+        setIsAdmin(false);
         return;
       }
       const { data: userData, error: userError } = await supabase.auth.getUser();
       if (userError) {
         console.error('User fetch error:', userError.message);
         setHasDonated(false);
-        setIsAdmin(false); // Error fetching user, not an admin
+        setIsAdmin(false);
         return;
       }
       const { data: profileData, error: profileError } = await supabase
@@ -189,33 +185,14 @@ function Song() {
         setHasDonated(profileData.has_donated || false);
       }
 
-      // Check if user is an admin
       const { data: adminData, error: adminError } = await supabase
         .from('admins')
         .select('user_id')
         .eq('user_id', userData.user.id)
         .single();
-      setIsAdmin(!!adminData && !adminError); // Set true if user is in admins table
+      setIsAdmin(!!adminData && !adminError);
     };
     fetchSongAndRelated();
-
-    const updateScale = () => {
-      const width = window.innerWidth;
-      if (width <= 480) {
-        setScale(0.5);
-      } else if (width <= 768) {
-        setScale(0.75);
-      } else {
-        setScale(1.0);
-      }
-    };
-    updateScale();
-    window.addEventListener('resize', updateScale);
-
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener('resize', updateScale);
-    };
   }, [id]);
 
   useEffect(() => {
@@ -239,13 +216,12 @@ function Song() {
       return;
     }
     if (audioRef.current) {
-      console.log('Attempting to play audio from URL:', audioRef.current.src);
       if (isPlaying) {
         audioRef.current.pause();
       } else {
         audioRef.current.play().catch((err) => {
-          console.error('Play failed for URL:', audioRef.current.src, 'Error:', err.message);
-          setError(`Failed to play audio. Check the URL (${audioRef.current.src}) or browser console for details.`);
+          console.error('Play failed:', err.message);
+          setError('Failed to play audio: ' + err.message);
         });
       }
       setIsPlaying(!isPlaying);
@@ -254,11 +230,10 @@ function Song() {
 
   const rewind = () => {
     if (audioRef.current) {
-      console.log('Rewinding audio from URL:', audioRef.current.src);
       audioRef.current.currentTime = 0;
       audioRef.current.play().catch((err) => {
-        console.error('Play failed for URL:', audioRef.current.src, 'Error:', err.message);
-        setError(`Failed to play audio. Check the URL (${audioRef.current.src}) or browser console for details.`);
+        console.error('Play failed:', err.message);
+        setError('Failed to play audio: ' + err.message);
       });
       setIsPlaying(true);
     }
@@ -267,18 +242,11 @@ function Song() {
   const handleDownload = async () => {
     if (!song) return;
     try {
-      console.log('handleDownload started - songId:', song.id, 'fileId:', song.google_drive_file_id);
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError) {
-        console.error('Session fetch error:', sessionError.message);
-        throw sessionError;
-      }
+      if (sessionError) throw sessionError;
       const isAuthenticated = !!sessionData?.session;
-      console.log('Authenticated:', isAuthenticated);
       const now = new Date();
-      const year = now.getFullYear();
-      const month = String(now.getMonth() + 1).padStart(2, '0');
-      const yearMonth = `${year}-${month}`;
+      const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
       const downloadKey = `downloads_${yearMonth}`;
       const lastResetKey = `lastReset_${yearMonth}`;
       const storedReset = localStorage.getItem(lastResetKey);
@@ -296,7 +264,6 @@ function Song() {
         if (!clientId) {
           clientId = generateUUID();
           localStorage.setItem(clientIdKey, clientId);
-          console.log('Generated client ID:', clientId);
         }
         const { data: limitData, error: limitError } = await supabase
           .from('download_limits')
@@ -310,14 +277,10 @@ function Song() {
         } else if (limitData) {
           downloadCount = Math.max(downloadCount, limitData.download_count);
           localStorage.setItem(downloadKey, downloadCount.toString());
-          console.log('Synced server download count:', downloadCount);
         }
       } else {
         const { data: userData, error: userError } = await supabase.auth.getUser();
-        if (userError) {
-          console.error('User fetch error:', userError.message);
-          throw userError;
-        }
+        if (userError) throw userError;
         const userId = userData.user.id;
         const { data: limitData, error: limitError } = await supabase
           .from('download_limits')
@@ -327,14 +290,12 @@ function Song() {
           .eq('is_authenticated', true)
           .single();
         if (limitError && limitError.code !== 'PGRST116') {
-          console.error('Fetch download_limits error for user:', limitError.message);
+          console.error('Fetch download_limits error:', limitError.message);
         } else if (limitData) {
           downloadCount = Math.max(downloadCount, limitData.download_count);
           localStorage.setItem(downloadKey, downloadCount.toString());
-          console.log('Synced server download count for user:', downloadCount);
         }
       }
-      console.log('Download count before check:', downloadCount);
       const downloadsUsed = downloadCount;
       const downloadsRemaining = maxDownloads - downloadsUsed;
       if (!isAuthenticated && downloadCount >= 3) {
@@ -342,20 +303,13 @@ function Song() {
         return;
       } else if (isAuthenticated) {
         const { data: userData, error: userError } = await supabase.auth.getUser();
-        if (userError) {
-          console.error('User fetch error:', userError.message);
-          throw userError;
-        }
+        if (userError) throw userError;
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('has_donated')
           .eq('id', userData.user.id)
           .single();
-        if (profileError) {
-          console.error('Profile fetch error:', profileError.message);
-          throw profileError;
-        }
-        console.log('Profile data:', JSON.stringify(profileData, null, 2));
+        if (profileError) throw profileError;
         if (!profileData?.has_donated && downloadCount >= 6) {
           setDownloadPrompt(`Download Limit Reached for ${monthName}! This resets on the 1st of every month. You’re allowed 6 downloads per month, have used ${downloadsUsed}, and have ${downloadsRemaining} remaining. Want to keep downloading? Buy us a Meat Pie ☕ to help sustain the site and enjoy unlimited access, or Just Sign up for additional downloads. Every little bit helps keep the site running! 🤗`);
           return;
@@ -363,7 +317,6 @@ function Song() {
       }
       downloadCount += 1;
       localStorage.setItem(downloadKey, downloadCount.toString());
-      console.log('Download count after:', downloadCount);
       if (!isAuthenticated && clientId) {
         const { error: upsertError } = await supabase
           .from('download_limits')
@@ -373,11 +326,7 @@ function Song() {
             year_month: yearMonth,
             is_authenticated: false,
           }, { onConflict: 'id' });
-        if (upsertError) {
-          console.error('Upsert download_limits error:', upsertError.message);
-        } else {
-          console.log('Updated server download count for anonymous user:', downloadCount);
-        }
+        if (upsertError) console.error('Upsert error:', upsertError.message);
       } else if (isAuthenticated) {
         const { data: userData } = await supabase.auth.getUser();
         const { error: upsertError } = await supabase
@@ -389,15 +338,8 @@ function Song() {
             is_authenticated: true,
             user_id: userData.user.id,
           }, { onConflict: 'id' });
-        if (upsertError) {
-          console.error('Upsert download_limits error for user:', upsertError.message);
-        } else {
-          console.log('Updated server download count for authenticated user:', downloadCount);
-        }
+        if (upsertError) console.error('Upsert error:', upsertError.message);
       }
-      const numericSongId = parseInt(song.id, 10);
-      if (isNaN(numericSongId)) throw new Error('Invalid song ID');
-      console.log('Parsed song ID:', numericSongId);
       const url = `https://drive.google.com/uc?export=download&id=${song.google_drive_file_id}`;
       const link = document.createElement('a');
       link.href = url;
@@ -405,35 +347,21 @@ function Song() {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      console.log('File download triggered');
+      const numericSongId = parseInt(song.id, 10) || song.id;
       const { data: songData, error: fetchError } = await supabase
         .from('songs')
         .select('id, downloads')
         .eq('id', numericSongId)
         .single();
-      if (fetchError) {
-        console.error('Fetch error:', fetchError.message);
-        throw fetchError;
-      }
-      const currentDownloads = songData.downloads || 0;
-      console.log('Downloads before update:', currentDownloads);
-      const { data: newDownloads, error: updateError } = await supabase
+      if (fetchError) throw fetchError;
+      const { error: updateError } = await supabase
         .rpc('update_song_downloads', { p_song_id: numericSongId });
-      if (updateError) {
-        console.error('RPC update error:', JSON.stringify(updateError, null, 2));
-        throw updateError;
-      }
-      console.log('New downloads value from RPC:', newDownloads);
-      const { data: updatedSong, error: postUpdateFetchError } = await supabase
+      if (updateError) throw updateError;
+      const { data: updatedSong } = await supabase
         .from('songs')
         .select('id, title, composer, google_drive_file_id, downloads, is_public, permalink, audio_url, description, created_at')
         .eq('id', numericSongId)
         .single();
-      if (postUpdateFetchError) {
-        console.error('Post-update fetch error:', postUpdateFetchError.message);
-        throw postUpdateFetchError;
-      }
-      console.log('Fetched song after update:', JSON.stringify(updatedSong, null, 2));
       setSong(updatedSong);
     } catch (err) {
       console.error('Download error:', err.message);
@@ -458,34 +386,7 @@ function Song() {
     }
   };
 
-  const onDocumentLoadSuccess = ({ numPages }) => {
-    setNumPages(numPages);
-  };
-
-  const PdfLoadingProgress = () => {
-    const [progress, setProgress] = useState(0);
-    useEffect(() => {
-      const interval = setInterval(() => {
-        setProgress((prev) => {
-          if (prev >= 90) return prev;
-          return prev + 10;
-        });
-      }, 200);
-      return () => clearInterval(interval);
-    }, []);
-    return (
-      <div style={{ width: '100%', height: '20px', background: '#e0e0e0', borderRadius: '4px', overflow: 'hidden' }}>
-        <div
-          style={{
-            width: `${progress}%`,
-            height: '100%',
-            background: 'linear-gradient(90deg, #90EE90 0%, #32CD32 50%, #006400 100%)',
-            transition: 'width 0.2s ease-in-out',
-          }}
-        />
-      </div>
-    );
-  };
+  const [hasDonated, setHasDonated] = useState(null);
 
   return (
     <>
@@ -502,7 +403,7 @@ function Song() {
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px' }}>
             <svg width="60" height="60" viewBox="0 0 60 60">
               <circle cx="30" cy="30" r="25" fill="none" stroke="#ccc" strokeWidth="4" />
-              <circle cx="30" cy="30" r="25" fill="none" stroke="#333" strokeWidth="4" strokeDasharray="157" strokeDashoffset={157 - (157 * pdfProgress) / 100} style={{ transition: 'stroke-dashoffset 0.2s ease-in-out' }} />
+              <circle cx="30" cy="30" r="25" fill="none" stroke="#333" strokeWidth="4" strokeDasharray="157" strokeDashoffset="157" />
             </svg>
           </div>
         ) : (
@@ -544,17 +445,8 @@ function Song() {
                       aria-label="Audio progress"
                     />
                   </div>
-                  <audio
-                    ref={audioRef}
-                    src={song.audio_url}
-                    onError={(e) => console.error('Audio error for URL:', song.audio_url, 'Error:', e.target.error)}
-                  />
+                  <audio ref={audioRef} src={song.audio_url} />
                 </div>
-                {!song.audio_url.includes('.mp3') && !song.audio_url.includes('.wav') && (
-                  <p style={{ fontSize: '0.8rem', color: '#999', marginTop: '0.5rem' }}>
-                    Audio player not displayed. Please use a direct audio file URL (e.g., .mp3) in the admin panel.
-                  </p>
-                )}
                 {song.description && (
                   <div
                     style={{
@@ -572,17 +464,28 @@ function Song() {
             )}
 
             <div className="song-preview-modern">
-              <Document
-                file={`/.netlify/functions/proxy-pdf?fileId=${song.google_drive_file_id}`}
-                onLoadSuccess={onDocumentLoadSuccess}
-                onLoadError={(err) => setError('Failed to load PDF preview: ' + err.message)}
-                loading={<PdfLoadingProgress />}
-              >
-                <Page pageNumber={1} scale={scale} />
-              </Document>
-              {numPages > 1 && (
-                <p className="preview-note-modern">Previewing page 1 of {numPages}. Download to view the full song.</p>
-              )}
+              <iframe
+                src={`https://drive.google.com/file/d/${song.google_drive_file_id}/preview?page=1`}
+                width="100%"
+                height="500px"
+                frameBorder="0"
+                title={`${song.title} Preview`}
+                onLoad={() => {
+                  // Attempt to fetch page count (simulated; requires server-side or API for accuracy)
+                  fetch(`/.netlify/functions/get-pdf-page-count?fileId=${song.google_drive_file_id}`)
+                    .then(res => res.json())
+                    .then(data => setNumPages(data.pageCount || null))
+                    .catch(() => setNumPages(null));
+                }}
+                onError={() => setError('Failed to load PDF preview')}
+              />
+              <p className="preview-note-modern">
+                Previewing page 1{numPages ? ` of ${numPages}` : ''}.{' '}
+                <span onClick={handleDownload} style={{ color: '#007bff', cursor: 'pointer', textDecoration: 'underline' }}>
+                  Download
+                </span>{' '}
+                to view the full song.
+              </p>
             </div>
 
             <div className="song-actions-modern">
@@ -590,10 +493,7 @@ function Song() {
               <button onClick={handleShare} className="share-button-modern">Share</button>
               <Link to="/library" className="back-button-modern">Back to Library</Link>
               {isAdmin && (
-                <Link
-                  to={`/admin?tab=songs&editSongId=${song.id}`}
-                  className="download-button-modern" // Reusing existing style
-                >
+                <Link to={`/admin?tab=songs&editSongId=${song.id}`} className="download-button-modern">
                   Edit Song
                 </Link>
               )}

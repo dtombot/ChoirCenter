@@ -704,6 +704,27 @@ body {
   color: #fff;
 }
 
+
+/* Remove underline from the link */
+.blog-card-link {
+  text-decoration: none;
+  color: inherit; /* Ensures the link inherits color from parent */
+}
+
+/* Ensure the title inside the link has no underline */
+.blog-card-title-modern {
+  text-decoration: none; /* Explicitly remove underline */
+}
+
+/* Optional: Ensure no underline on hover/focus */
+.blog-card-link:hover,
+.blog-card-link:focus {
+  text-decoration: none;
+}
+
+
+
+
 /* Blog Page */
 .blog-container {
   max-width: 1200px;

@@ -458,7 +458,7 @@ function Song() {
             <div className="song-preview-modern">
               {song.google_drive_file_id ? (
                 <Document
-                  file={`https://drive.google.com/uc?export=download&id=${song.google_drive_file_id}`}
+                  file={`/.netlify/functions/get-pdf-first-page?fileId=${song.google_drive_file_id}`}
                   onLoadSuccess={onDocumentLoadSuccess}
                   onLoadError={(err) => console.error('PDF load error:', err)}
                 >

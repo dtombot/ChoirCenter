@@ -129,21 +129,11 @@ function Song() {
         setSong(songData);
         setSongMetaTags(songData);
 
-        // Fetch page count from Google Drive PDF metadata (simulated via iframe onload)
-        const iframe = document.createElement('iframe');
-        iframe.style.display = 'none';
-        iframe.src = `https://drive.google.com/file/d/${songData.google_drive_file_id}/preview`;
-        iframe.onload = () => {
-          // Note: Direct page count access is limited client-side; simulate or use API if needed
-          // Here, we assume a fetch or default to null if not directly accessible
-          setNumPages(null); // Placeholder; replace with API call if available
-          document.body.removeChild(iframe);
-        };
-        iframe.onerror = () => {
-          setError('Failed to load PDF preview');
-          document.body.removeChild(iframe);
-        };
-        document.body.appendChild(iframe);
+        // Fetch page count from Netlify function
+        fetch(`/.netlify/functions/get-pdf-page-count?fileId=${songData.google_drive_file_id}`)
+          .then(res => res.json())
+          .then(data => setNumPages(data.pageCount || null))
+          .catch(() => setNumPages(null));
 
         const { data: relatedData, error: relatedError } = await supabase
           .from('songs')
@@ -470,13 +460,6 @@ function Song() {
                 height="500px"
                 frameBorder="0"
                 title={`${song.title} Preview`}
-                onLoad={() => {
-                  // Attempt to fetch page count (simulated; requires server-side or API for accuracy)
-                  fetch(`/.netlify/functions/get-pdf-page-count?fileId=${song.google_drive_file_id}`)
-                    .then(res => res.json())
-                    .then(data => setNumPages(data.pageCount || null))
-                    .catch(() => setNumPages(null));
-                }}
                 onError={() => setError('Failed to load PDF preview')}
               />
               <p className="preview-note-modern">

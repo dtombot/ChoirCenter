@@ -7,7 +7,7 @@ import '../styles.css';
 
 function Admin() {
   const [user, setUser] = useState(null);
-  const [activeTab, setActiveTab] = useState('songs');
+  const [activeTab, setActiveTab] = useState('overview');
   const [songs, setSongs] = useState([]);
   const [posts, setPosts] = useState([]);
   const [users, setUsers] = useState([]);
@@ -21,7 +21,9 @@ function Admin() {
     is_public: true,
     source: 'google_drive',
     audio_url: '',
-    description: ''
+    description: '',
+    category: '',
+    tags: ''
   });
   const [postForm, setPostForm] = useState({ 
     title: '', 
@@ -50,6 +52,9 @@ function Admin() {
   const [error, setError] = useState(null);
   const [songSearch, setSongSearch] = useState('');
   const [songFilter, setSongFilter] = useState('all');
+  const [songCategoryFilter, setSongCategoryFilter] = useState('all');
+  const [userSearch, setUserSearch] = useState('');
+  const [analyticsSection, setAnalyticsSection] = useState('local');
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -124,7 +129,7 @@ function Admin() {
           setError('Analytics fetch failed: ' + err.message);
         }
       };
-      fetchAnalytics();
+      if (activeTab === 'analytics') fetchAnalytics();
 
       const fetchVisitors = async () => {
         const { data, error } = await supabase
@@ -135,7 +140,7 @@ function Admin() {
         if (error) setError('Failed to load visitor data: ' + error.message);
         else setVisitorData(data || []);
       };
-      fetchVisitors();
+      if (activeTab === 'analytics') fetchVisitors();
 
       const visitorSubscription = supabase
         .channel('visitors')
@@ -204,7 +209,7 @@ function Admin() {
       };
     };
     fetchUser();
-  }, [navigate, location.search]);
+  }, [navigate, location.search, activeTab]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -225,7 +230,9 @@ function Admin() {
             permalink: songForm.permalink, 
             is_public: songForm.is_public,
             audio_url: songForm.audio_url || null,
-            description: songForm.description || null
+            description: songForm.description || null,
+            category: songForm.category || null,
+            tags: songForm.tags ? songForm.tags.split(',').map(tag => tag.trim()) : null
           })
           .eq('id', editingSongId);
         if (error) throw error;
@@ -242,7 +249,9 @@ function Admin() {
             is_public: songForm.is_public, 
             downloads: 0,
             audio_url: songForm.audio_url || null,
-            description: songForm.description || null
+            description: songForm.description || null,
+            category: songForm.category || null,
+            tags: songForm.tags ? songForm.tags.split(',').map(tag => tag.trim()) : null
           }]);
         if (error) throw error;
       }
@@ -255,7 +264,9 @@ function Admin() {
         is_public: true, 
         source: 'google_drive',
         audio_url: '',
-        description: ''
+        description: '',
+        category: '',
+        tags: ''
       });
       const { data } = await supabase.from('songs').select('*');
       setSongs(data || []);
@@ -382,7 +393,9 @@ function Admin() {
       is_public: song.is_public,
       source: song.google_drive_file_id ? 'google_drive' : 'github',
       audio_url: song.audio_url || '',
-      description: song.description || ''
+      description: song.description || '',
+      category: song.category || '',
+      tags: song.tags ? song.tags.join(', ') : ''
     });
     setEditingSongId(song.id);
   };
@@ -502,13 +515,21 @@ function Admin() {
   const filteredSongs = songs.filter(song => {
     const matchesSearch = 
       song.title.toLowerCase().includes(songSearch.toLowerCase()) || 
-      song.composer.toLowerCase().includes(songSearch.toLowerCase());
+      song.composer.toLowerCase().includes(songSearch.toLowerCase()) ||
+      (song.tags && song.tags.some(tag => tag.toLowerCase().includes(songSearch.toLowerCase())));
     const matchesFilter = 
       songFilter === 'all' || 
       (songFilter === 'public' && song.is_public) || 
       (songFilter === 'private' && !song.is_public);
-    return matchesSearch && matchesFilter;
+    const matchesCategory = 
+      songCategoryFilter === 'all' || song.category === songCategoryFilter;
+    return matchesSearch && matchesFilter && matchesCategory;
   });
+
+  const filteredUsers = users.filter(user => 
+    user.full_name.toLowerCase().includes(userSearch.toLowerCase()) ||
+    user.email.toLowerCase().includes(userSearch.toLowerCase())
+  );
 
   const fetchUsers = async () => {
     try {
@@ -529,7 +550,6 @@ function Admin() {
   const totalDownloads = songs.reduce((sum, song) => sum + (song.downloads || 0), 0);
   const publicSongs = songs.filter(song => song.is_public).length;
   const privateSongs = songs.length - publicSongs;
-
   const totalVisits = visitorData.length;
   const uniqueVisitors = new Set(visitorData.map(v => v.ip_address)).size;
   const avgDuration = visitorData.length
@@ -540,17 +560,13 @@ function Admin() {
       acc[v.city] = (acc[v.city] || 0) + 1;
       return acc;
     }, {})
-  )
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5);
+  ).sort((a, b) => b[1] - a[1]).slice(0, 3);
   const topReferrers = Object.entries(
     visitorData.reduce((acc, v) => {
       acc[v.referrer] = (acc[v.referrer] || 0) + 1;
       return acc;
     }, {})
-  )
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5);
+  ).sort((a, b) => b[1] - a[1]).slice(0, 3);
   const deviceTypes = Object.entries(
     visitorData.reduce((acc, v) => {
       acc[v.device_type] = (acc[v.device_type] || 0) + 1;
@@ -565,6 +581,7 @@ function Admin() {
         <button onClick={handleLogout} className="logout-button">Logout</button>
       </div>
       <div className="tab-bar">
+        <button className={`tab-button ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')}>Overview</button>
         <button className={`tab-button ${activeTab === 'songs' ? 'active' : ''}`} onClick={() => setActiveTab('songs')}>Songs</button>
         <button className={`tab-button ${activeTab === 'posts' ? 'active' : ''}`} onClick={() => setActiveTab('posts')}>Blog Posts</button>
         <button className={`tab-button ${activeTab === 'analytics' ? 'active' : ''}`} onClick={() => setActiveTab('analytics')}>Analytics</button>
@@ -573,7 +590,32 @@ function Admin() {
         <button className={`tab-button ${activeTab === 'advert' ? 'active' : ''}`} onClick={() => setActiveTab('advert')}>Advert</button>
       </div>
       <div className="admin-content">
-        {error && <p className="error-message">{error}</p>}
+        {error && (
+          <div className="error-alert">
+            <p>{error}</p>
+            <button onClick={() => setError(null)}>Dismiss</button>
+          </div>
+        )}
+        {activeTab === 'overview' && (
+          <div className="overview-grid">
+            <div className="overview-card">
+              <h3>Total Songs</h3>
+              <p>{songs.length}</p>
+            </div>
+            <div className="overview-card">
+              <h3>Total Downloads</h3>
+              <p>{totalDownloads}</p>
+            </div>
+            <div className="overview-card">
+              <h3>Total Users</h3>
+              <p>{users.length}</p>
+            </div>
+            <div className="overview-card">
+              <h3>Total Blog Posts</h3>
+              <p>{posts.length}</p>
+            </div>
+          </div>
+        )}
         {activeTab === 'songs' && (
           <>
             <form onSubmit={handleSongSubmit} className="admin-form-grid">
@@ -645,6 +687,28 @@ function Admin() {
                 className="admin-form-input" 
                 rows="3"
               />
+              <div className="admin-form-group">
+                <label htmlFor="category">Category</label>
+                <select
+                  id="category"
+                  value={songForm.category}
+                  onChange={(e) => setSongForm({ ...songForm, category: e.target.value })}
+                  className="admin-form-input"
+                >
+                  <option value="">Select Category</option>
+                  <option value="Hymn">Hymn</option>
+                  <option value="Choral">Choral</option>
+                  <option value="Gospel">Gospel</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <input 
+                type="text" 
+                placeholder="Tags (comma-separated, e.g., piano, vocal)" 
+                value={songForm.tags} 
+                onChange={(e) => setSongForm({ ...songForm, tags: e.target.value })} 
+                className="admin-form-input" 
+              />
               <label className="admin-checkbox">
                 <input 
                   type="checkbox" 
@@ -668,7 +732,9 @@ function Admin() {
                       is_public: true, 
                       source: 'google_drive',
                       audio_url: '',
-                      description: ''
+                      description: '',
+                      category: '',
+                      tags: ''
                     }); 
                     setEditingSongId(null); 
                   }}
@@ -680,7 +746,7 @@ function Admin() {
             <div className="admin-filter-bar">
               <input 
                 type="text" 
-                placeholder="Search songs..." 
+                placeholder="Search songs or tags..." 
                 value={songSearch} 
                 onChange={(e) => setSongSearch(e.target.value)} 
                 className="admin-filter-input" 
@@ -694,6 +760,17 @@ function Admin() {
                 <option value="public">Public</option>
                 <option value="private">Private</option>
               </select>
+              <select 
+                value={songCategoryFilter} 
+                onChange={(e) => setSongCategoryFilter(e.target.value)} 
+                className="admin-filter-select"
+              >
+                <option value="all">All Categories</option>
+                <option value="Hymn">Hymn</option>
+                <option value="Choral">Choral</option>
+                <option value="Gospel">Gospel</option>
+                <option value="Other">Other</option>
+              </select>
             </div>
             <div className="admin-table-container">
               <table className="admin-table">
@@ -701,6 +778,8 @@ function Admin() {
                   <tr>
                     <th>Title</th>
                     <th>Composer</th>
+                    <th>Category</th>
+                    <th>Tags</th>
                     <th>File Source</th>
                     <th>Downloads</th>
                     <th>Public</th>
@@ -712,6 +791,8 @@ function Admin() {
                     <tr key={song.id}>
                       <td>{song.title}</td>
                       <td>{song.composer}</td>
+                      <td>{song.category || 'N/A'}</td>
+                      <td>{song.tags ? song.tags.join(', ') : 'N/A'}</td>
                       <td>{song.google_drive_file_id ? 'Google Drive' : 'GitHub'}</td>
                       <td>{song.downloads || 0}</td>
                       <td>
@@ -853,113 +934,58 @@ function Admin() {
         )}
         {activeTab === 'analytics' && (
           <div className="admin-analytics-container">
-            <div className="analytics-section local-data">
-              <h3 className="analytics-section-title">Local Data</h3>
-              <div className="analytics-row">
-                <div className="admin-analytics-item">
-                  <h4 className="admin-analytics-title">Total Songs</h4>
-                  <p className="admin-analytics-value">{songs.length}</p>
-                </div>
-                <div className="admin-analytics-item">
-                  <h4 className="admin-analytics-title">Total Downloads</h4>
-                  <p className="admin-analytics-value">{totalDownloads}</p>
-                </div>
-                <div className="admin-analytics-item">
-                  <h4 className="admin-analytics-title">Public Songs</h4>
-                  <p className="admin-analytics-value">{publicSongs}</p>
-                </div>
-                <div className="admin-analytics-item">
-                  <h4 className="admin-analytics-title">Private Songs</h4>
-                  <p className="admin-analytics-value">{privateSongs}</p>
-                </div>
-                <div className="admin-analytics-item">
-                  <h4 className="admin-analytics-title">Total Blog Posts</h4>
-                  <p className="admin-analytics-value">{posts.length}</p>
-                </div>
-                <div className="admin-analytics-item">
-                  <h4 className="admin-analytics-title">Total Users</h4>
-                  <p className="admin-analytics-value">{users.length}</p>
-                </div>
-                <div className="admin-analytics-item">
-                  <h4 className="admin-analytics-title">Top Songs</h4>
-                  {topSongs.length > 0 ? (
-                    <ul className="top-items">
-                      {topSongs.map((song, index) => (
-                        <li key={index}>{song.title}: {song.downloads || 0}</li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="admin-analytics-value">N/A</p>
-                  )}
-                </div>
-                <div className="admin-analytics-item">
-                  <h4 className="admin-analytics-title">Top Posts</h4>
-                  {topPosts.length > 0 ? (
-                    <ul className="top-items">
-                      {topPosts.map((post, index) => (
-                        <li key={index}>{post.title}: {post.views || 0}</li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="admin-analytics-value">N/A</p>
-                  )}
-                </div>
-              </div>
+            <div className="analytics-sub-tab-bar">
+              <button className={`sub-tab-button ${analyticsSection === 'local' ? 'active' : ''}`} onClick={() => setAnalyticsSection('local')}>Local Data</button>
+              <button className={`sub-tab-button ${analyticsSection === 'ga' ? 'active' : ''}`} onClick={() => setAnalyticsSection('ga')}>Google Analytics</button>
+              <button className={`sub-tab-button ${analyticsSection === 'gsc' ? 'active' : ''}`} onClick={() => setAnalyticsSection('gsc')}>Search Console</button>
+              <button className={`sub-tab-button ${analyticsSection === 'visitors' ? 'active' : ''}`} onClick={() => setAnalyticsSection('visitors')}>Visitors</button>
             </div>
-            <div className="analytics-section google-data">
-              <h3 className="analytics-section-title">Google Analytics (Last 30 Days)</h3>
-              {analyticsData.ga ? (
+            {analyticsSection === 'local' && (
+              <div className="analytics-section local-data">
+                <h3 className="analytics-section-title">Local Data</h3>
                 <div className="analytics-row">
                   <div className="admin-analytics-item">
-                    <h4 className="admin-analytics-title">Active Users</h4>
-                    <p className="admin-analytics-value">{analyticsData.ga.rows?.[0]?.metricValues?.[0]?.value || 'N/A'}</p>
+                    <h4 className="admin-analytics-title">Total Songs</h4>
+                    <p className="admin-analytics-value">{songs.length}</p>
                   </div>
                   <div className="admin-analytics-item">
-                    <h4 className="admin-analytics-title">Page Views</h4>
-                    <p className="admin-analytics-value">{analyticsData.ga.rows?.[0]?.metricValues?.[1]?.value || 'N/A'}</p>
+                    <h4 className="admin-analytics-title">Total Downloads</h4>
+                    <p className="admin-analytics-value">{totalDownloads}</p>
                   </div>
                   <div className="admin-analytics-item">
-                    <h4 className="admin-analytics-title">Sessions</h4>
-                    <p className="admin-analytics-value">{analyticsData.ga.rows?.[0]?.metricValues?.[2]?.value || 'N/A'}</p>
+                    <h4 className="admin-analytics-title">Public Songs</h4>
+                    <p className="admin-analytics-value">{publicSongs}</p>
                   </div>
                   <div className="admin-analytics-item">
-                    <h4 className="admin-analytics-title">Bounce Rate</h4>
-                    <p className="admin-analytics-value">{analyticsData.ga.rows?.[0]?.metricValues?.[3]?.value ? `${(parseFloat(analyticsData.ga.rows[0].metricValues[3].value) * 100).toFixed(1)}%` : 'N/A'}</p>
+                    <h4 className="admin-analytics-title">Private Songs</h4>
+                    <p className="admin-analytics-value">{privateSongs}</p>
                   </div>
                   <div className="admin-analytics-item">
-                    <h4 className="admin-analytics-title">Avg. Duration</h4>
-                    <p className="admin-analytics-value">{analyticsData.ga.rows?.[0]?.metricValues?.[4]?.value ? `${Math.round(analyticsData.ga.rows[0].metricValues[4].value)}s` : 'N/A'}</p>
+                    <h4 className="admin-analytics-title">Total Blog Posts</h4>
+                    <p className="admin-analytics-value">{posts.length}</p>
                   </div>
                   <div className="admin-analytics-item">
-                    <h4 className="admin-analytics-title">Event Count</h4>
-                    <p className="admin-analytics-value">{analyticsData.ga.rows?.[0]?.metricValues?.[5]?.value || 'N/A'}</p>
+                    <h4 className="admin-analytics-title">Total Users</h4>
+                    <p className="admin-analytics-value">{users.length}</p>
                   </div>
                   <div className="admin-analytics-item">
-                    <h4 className="admin-analytics-title">New Users</h4>
-                    <p className="admin-analytics-value">{analyticsData.ga.rows?.[0]?.metricValues?.[6]?.value || 'N/A'}</p>
+                    <h4 className="admin-analytics-title">Top Songs</h4>
+                    {topSongs.length > 0 ? (
+                      <ul className="top-items">
+                        {topSongs.map((song, index) => (
+                          <li key={index}>{song.title}: {song.downloads || 0}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="admin-analytics-value">N/A</p>
+                    )}
                   </div>
-                </div>
-              ) : (
-                <div className="analytics-row">
                   <div className="admin-analytics-item">
-                    <h4 className="admin-analytics-title">Loading...</h4>
-                    <p className="admin-analytics-value">Awaiting data</p>
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className="analytics-section google-data">
-              <h3 className="analytics-section-title">Google Search Console (Last 30 Days)</h3>
-              {analyticsData.gsc ? (
-                <div className="analytics-row">
-                  <div className="admin-analytics-item">
-                    <h4 className="admin-analytics-title">Top Queries</h4>
-                    {analyticsData.gsc.rows && analyticsData.gsc.rows.length > 0 ? (
-                      <ul className="search-queries">
-                        {analyticsData.gsc.rows.map((row, index) => (
-                          <li key={index}>
-                            {row.keys[0]}: {row.clicks} clicks, {row.impressions} imp., {(row.ctr * 100).toFixed(1)}% CTR, {row.position.toFixed(1)} pos.
-                          </li>
+                    <h4 className="admin-analytics-title">Top Posts</h4>
+                    {topPosts.length > 0 ? (
+                      <ul className="top-items">
+                        {topPosts.map((post, index) => (
+                          <li key={index}>{post.title}: {post.views || 0}</li>
                         ))}
                       </ul>
                     ) : (
@@ -967,183 +993,241 @@ function Admin() {
                     )}
                   </div>
                 </div>
-              ) : (
+              </div>
+            )}
+            {analyticsSection === 'ga' && (
+              <div className="analytics-section google-data">
+                <h3 className="analytics-section-title">Google Analytics (Last 30 Days)</h3>
+                {analyticsData.ga ? (
+                  <div className="analytics-row">
+                    <div className="admin-analytics-item">
+                      <h4 className="admin-analytics-title">Active Users</h4>
+                      <p className="admin-analytics-value">{analyticsData.ga.rows?.[0]?.metricValues?.[0]?.value || 'N/A'}</p>
+                    </div>
+                    <div className="admin-analytics-item">
+                      <h4 className="admin-analytics-title">Page Views</h4>
+                      <p className="admin-analytics-value">{analyticsData.ga.rows?.[0]?.metricValues?.[1]?.value || 'N/A'}</p>
+                    </div>
+                    <div className="admin-analytics-item">
+                      <h4 className="admin-analytics-title">Sessions</h4>
+                      <p className="admin-analytics-value">{analyticsData.ga.rows?.[0]?.metricValues?.[2]?.value || 'N/A'}</p>
+                    </div>
+                    <div className="admin-analytics-item">
+                      <h4 className="admin-analytics-title">Bounce Rate</h4>
+                      <p className="admin-analytics-value">{analyticsData.ga.rows?.[0]?.metricValues?.[3]?.value ? `${(parseFloat(analyticsData.ga.rows[0].metricValues[3].value) * 100).toFixed(1)}%` : 'N/A'}</p>
+                    </div>
+                    <div className="admin-analytics-item">
+                      <h4 className="admin-analytics-title">Avg. Duration</h4>
+                      <p className="admin-analytics-value">{analyticsData.ga.rows?.[0]?.metricValues?.[4]?.value ? `${Math.round(analyticsData.ga.rows[0].metricValues[4].value)}s` : 'N/A'}</p>
+                    </div>
+                    <div className="admin-analytics-item">
+                      <h4 className="admin-analytics-title">Event Count</h4>
+                      <p className="admin-analytics-value">{analyticsData.ga.rows?.[0]?.metricValues?.[5]?.value || 'N/A'}</p>
+                    </div>
+                    <div className="admin-analytics-item">
+                      <h4 className="admin-analytics-title">New Users</h4>
+                      <p className="admin-analytics-value">{analyticsData.ga.rows?.[0]?.metricValues?.[6]?.value || 'N/A'}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="analytics-row">
+                    <div className="admin-analytics-item">
+                      <h4 className="admin-analytics-title">Loading...</h4>
+                      <p className="admin-analytics-value">Awaiting data</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            {analyticsSection === 'gsc' && (
+              <div className="analytics-section google-data">
+                <h3 className="analytics-section-title">Google Search Console (Last 30 Days)</h3>
+                {analyticsData.gsc ? (
+                  <div className="analytics-row">
+                    <div className="admin-analytics-item">
+                      <h4 className="admin-analytics-title">Top Queries</h4>
+                      {analyticsData.gsc.rows && analyticsData.gsc.rows.length > 0 ? (
+                        <ul className="search-queries">
+                          {analyticsData.gsc.rows.slice(0, 3).map((row, index) => (
+                            <li key={index}>
+                              {row.keys[0]}: {row.clicks} clicks, {row.impressions} imp., {(row.ctr * 100).toFixed(1)}% CTR, {row.position.toFixed(1)} pos.
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="admin-analytics-value">N/A</p>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="analytics-row">
+                    <div className="admin-analytics-item">
+                      <h4 className="admin-analytics-title">Loading...</h4>
+                      <p className="admin-analytics-value">Awaiting data</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            {analyticsSection === 'visitors' && (
+              <div className="analytics-section visitor-data">
+                <h3 className="analytics-section-title">Site Visitors (Last 100 Visits)</h3>
                 <div className="analytics-row">
                   <div className="admin-analytics-item">
-                    <h4 className="admin-analytics-title">Loading...</h4>
-                    <p className="admin-analytics-value">Awaiting data</p>
+                    <h4 className="admin-analytics-title">Total Visits</h4>
+                    <p className="admin-analytics-value">{totalVisits}</p>
+                  </div>
+                  <div className="admin-analytics-item">
+                    <h4 className="admin-analytics-title">Unique Visitors</h4>
+                    <p className="admin-analytics-value">{uniqueVisitors}</p>
+                  </div>
+                  <div className="admin-analytics-item">
+                    <h4 className="admin-analytics-title">Avg. Duration</h4>
+                    <p className="admin-analytics-value">{avgDuration}s</p>
+                  </div>
+                  <div className="admin-analytics-item">
+                    <h4 className="admin-analytics-title">Top Cities</h4>
+                    <ul className="top-items">
+                      {topCities.map(([city, count]) => (
+                        <li key={city}>{city}: {count}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="admin-analytics-item">
+                    <h4 className="admin-analytics-title">Top Referrers</h4>
+                    <ul className="top-items">
+                      {topReferrers.map(([referrer, count]) => (
+                        <li key={referrer}>{referrer}: {count}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="admin-analytics-item">
+                    <h4 className="admin-analytics-title">Device Types</h4>
+                    <ul className="top-items">
+                      {deviceTypes.map(([type, count]) => (
+                        <li key={type}>{type}: {count}</li>
+                      ))}
+                    </ul>
                   </div>
                 </div>
-              )}
-            </div>
-            <div className="analytics-section visitor-data">
-              <h3 className="analytics-section-title">Site Visitors (Last 100 Visits)</h3>
-              <div className="analytics-row">
-                <div className="admin-analytics-item">
-                  <h4 className="admin-analytics-title">Total Visits</h4>
-                  <p className="admin-analytics-value">{totalVisits}</p>
-                </div>
-                <div className="admin-analytics-item">
-                  <h4 className="admin-analytics-title">Unique Visitors</h4>
-                  <p className="admin-analytics-value">{uniqueVisitors}</p>
-                </div>
-                <div className="admin-analytics-item">
-                  <h4 className="admin-analytics-title">Avg. Duration</h4>
-                  <p className="admin-analytics-value">{avgDuration}s</p>
-                </div>
-                <div className="admin-analytics-item">
-                  <h4 className="admin-analytics-title">Top Cities</h4>
-                  <ul className="top-items">
-                    {topCities.map(([city, count]) => (
-                      <li key={city}>{city}: {count}</li>
-                    ))}
-                  </ul>
-                </div>
-                <div className="admin-analytics-item">
-                  <h4 className="admin-analytics-title">Top Referrers</h4>
-                  <ul className="top-items">
-                    {topReferrers.map(([referrer, count]) => (
-                      <li key={referrer}>{referrer}: {count}</li>
-                    ))}
-                  </ul>
-                </div>
-                <div className="admin-analytics-item">
-                  <h4 className="admin-analytics-title">Device Types</h4>
-                  <ul className="top-items">
-                    {deviceTypes.map(([type, count]) => (
-                      <li key={type}>{type}: {count}</li>
-                    ))}
-                  </ul>
-                </div>
               </div>
-              <h4 className="analytics-section-subtitle">Recent Visits</h4>
-              <div className="admin-table-container">
-                <table className="admin-table">
-                  <thead>
-                    <tr>
-                      <th>Timestamp</th>
-                      <th>IP</th>
-                      <th>City</th>
-                      <th>Page</th>
-                      <th>Duration (s)</th>
-                      <th>Clicks</th>
-                      <th>Device</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {visitorData.map(visit => (
-                      <tr key={visit.id}>
-                        <td>{new Date(visit.visit_timestamp).toLocaleString()}</td>
-                        <td>{visit.ip_address}</td>
-                        <td>{visit.city}</td>
-                        <td>{visit.page_url}</td>
-                        <td>{visit.duration || 0}</td>
-                        <td>{visit.click_events.length ? visit.click_events.map(e => e.element).join(', ') : 'None'}</td>
-                        <td>{visit.device_type}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+            )}
           </div>
         )}
         {activeTab === 'users' && (
-          <div className="admin-table-container">
-            <table className="admin-table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Email</th>
-                  <th>Admin</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map(u => (
-                  <tr key={u.id}>
-                    <td>{u.id}</td>
-                    <td>{u.email}</td>
-                    <td>
-                      <button 
-                        onClick={() => toggleUserAdmin(u.id, u.role === 'admin')} 
-                        className={`admin-toggle-button ${u.role === 'admin' ? 'active' : ''}`}
-                      >
-                        {u.role === 'admin' ? 'Yes' : 'No'}
-                      </button>
-                    </td>
-                    <td>
-                      <button onClick={() => deleteUser(u.id)} className="admin-delete-button">Delete</button>
-                    </td>
+          <>
+            <div className="admin-filter-bar">
+              <input 
+                type="text" 
+                placeholder="Search users by name or email..." 
+                value={userSearch} 
+                onChange={(e) => setUserSearch(e.target.value)} 
+                className="admin-filter-input" 
+              />
+            </div>
+            <div className="admin-table-container">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Full Name</th>
+                    <th>Email</th>
+                    <th>Choir Name</th>
+                    <th>Church Name</th>
+                    <th>Country</th>
+                    <th>State</th>
+                    <th>Donated</th>
+                    <th>Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {filteredUsers.map(user => (
+                    <tr key={user.id}>
+                      <td>{user.full_name}</td>
+                      <td>{user.email}</td>
+                      <td>{user.choir_name || 'N/A'}</td>
+                      <td>{user.church_name || 'N/A'}</td>
+                      <td>{user.country || 'N/A'}</td>
+                      <td>{user.state || 'N/A'}</td>
+                      <td>
+                        <button 
+                          className={`admin-toggle-button ${user.has_donated ? 'active' : ''}`}
+                          disabled
+                        >
+                          {user.has_donated ? 'Yes' : 'No'}
+                        </button>
+                      </td>
+                      <td>
+                        <button onClick={() => toggleUserAdmin(user.id, user.is_admin)} className="admin-edit-button">
+                          {user.is_admin ? 'Remove Admin' : 'Make Admin'}
+                        </button>
+                        <button onClick={() => deleteUser(user.id)} className="admin-delete-button">Delete</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
         {activeTab === 'songOfTheWeek' && (
           <form onSubmit={handleSongOfTheWeekSubmit} className="admin-form-grid">
-            <textarea 
-              placeholder="Song of the Week HTML" 
-              value={songOfTheWeekHtml} 
-              onChange={(e) => setSongOfTheWeekHtml(e.target.value)} 
-              className="admin-form-input" 
-              rows="5"
+            <textarea
+              placeholder="Song of the Week Audio URL"
+              value={songOfTheWeekHtml}
+              onChange={(e) => setSongOfTheWeekHtml(e.target.value)}
+              className="admin-form-input"
+              rows="3"
             />
             <button type="submit" className="admin-form-submit">Update Song of the Week</button>
           </form>
         )}
         {activeTab === 'advert' && (
-          <>
-            <form onSubmit={handleAdSubmit} className="admin-form-grid">
+          <form onSubmit={handleAdSubmit} className="admin-form-grid">
+            <input 
+              type="text" 
+              placeholder="Ad Name" 
+              value={adForm.name} 
+              onChange={(e) => setAdForm({ ...adForm, name: e.target.value })} 
+              className="admin-form-input" 
+              required 
+            />
+            <textarea 
+              placeholder="Ad Code" 
+              value={adForm.code} 
+              onChange={(e) => setAdForm({ ...adForm, code: e.target.value })} 
+              className="admin-form-input" 
+              rows="3" 
+              required 
+            />
+            <select 
+              value={adForm.position} 
+              onChange={(e) => setAdForm({ ...adForm, position: e.target.value })} 
+              className="admin-form-input"
+            >
+              <option value="home_above_sotw">Home (Above Song of the Week)</option>
+              <option value="home_below_sotw">Home (Below Song of the Week)</option>
+            </select>
+            <label className="admin-checkbox">
               <input 
-                type="text" 
-                placeholder="Ad Name" 
-                value={adForm.name} 
-                onChange={(e) => setAdForm({ ...adForm, name: e.target.value })} 
-                className="admin-form-input" 
-                required 
+                type="checkbox" 
+                checked={adForm.is_active} 
+                onChange={(e) => setAdForm({ ...adForm, is_active: e.target.checked })} 
               />
-              <textarea 
-                placeholder="Ad Code" 
-                value={adForm.code} 
-                onChange={(e) => setAdForm({ ...adForm, code: e.target.value })} 
-                className="admin-form-input" 
-                rows="5" 
-                required 
-              />
-              <select 
-                value={adForm.position} 
-                onChange={(e) => setAdForm({ ...adForm, position: e.target.value })} 
-                className="admin-form-input"
+              Active
+            </label>
+            <button type="submit" className="admin-form-submit">{editingAdId ? 'Update Ad' : 'Add Ad'}</button>
+            {editingAdId && (
+              <button 
+                type="button" 
+                className="admin-cancel-button" 
+                onClick={() => { 
+                  setAdForm({ name: '', code: '', position: 'home_above_sotw', is_active: true }); 
+                  setEditingAdId(null); 
+                }}
               >
-                <option value="home_above_sotw">Home - Above Song of the Week</option>
-                <option value="home_below_sotw">Home - Below Song of the Week</option>
-                <option value="song_page_below_header">Song Page - Below Header</option>
-                <option value="blog_page_below_header">Blog Page - Below Header</option>
-              </select>
-              <label className="admin-checkbox">
-                <input 
-                  type="checkbox" 
-                  checked={adForm.is_active} 
-                  onChange={(e) => setAdForm({ ...adForm, is_active: e.target.checked })} 
-                />
-                Active
-              </label>
-              <button type="submit" className="admin-form-submit">{editingAdId ? 'Update Ad' : 'Add Ad'}</button>
-              {editingAdId && (
-                <button 
-                  type="button" 
-                  className="admin-cancel-button" 
-                  onClick={() => { 
-                    setAdForm({ name: '', code: '', position: 'home_above_sotw', is_active: true }); 
-                    setEditingAdId(null); 
-                  }}
-                >
-                  Cancel
-                </button>
-              )}
-            </form>
+                Cancel
+              </button>
+            )}
             <div className="admin-table-container">
               <table className="admin-table">
                 <thead>
@@ -1176,7 +1260,7 @@ function Admin() {
                 </tbody>
               </table>
             </div>
-          </>
+          </form>
         )}
       </div>
     </div>

@@ -178,6 +178,8 @@ function App() {
     const consent = localStorage.getItem('cookieConsent');
     if (consent === 'accepted') {
       setCookiesAccepted(true);
+    } else {
+      console.log('Cookies not accepted yet'); // Debug
     }
 
     setVisitStartTime(Date.now());
@@ -192,12 +194,21 @@ function App() {
     document.addEventListener('click', handleClick);
 
     const trackVisit = async () => {
-      if (!cookiesAccepted || !visitStartTime) return;
+      if (!cookiesAccepted || !visitStartTime) {
+        console.log('Tracking skipped: Cookies not accepted or no start time'); // Debug
+        return;
+      }
       const duration = Math.round((Date.now() - visitStartTime) / 1000);
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData?.session?.access_token;
 
-      console.log('Tracking visit:', { pageUrl: window.location.pathname, duration, token }); // Debug
+      const trackingData = {
+        pageUrl: window.location.pathname,
+        clickEvents,
+        duration,
+        userId: user?.id || null,
+      };
+      console.log('Attempting to track visit:', { ...trackingData, token: token ? 'Present' : 'Absent' }); // Debug
 
       try {
         const response = await fetch('/.netlify/functions/track-visitor', {
@@ -206,35 +217,37 @@ function App() {
             'Content-Type': 'application/json',
             ...(token && { 'Authorization': `Bearer ${token}` }),
           },
-          body: JSON.stringify({
-            pageUrl: window.location.pathname,
-            clickEvents,
-            duration,
-          }),
+          body: JSON.stringify(trackingData),
         });
+        const responseText = await response.text();
         if (!response.ok) {
-          console.error('Fetch error:', response.status, await response.text());
+          console.error('Track visit failed:', response.status, responseText); // Debug
         } else {
-          console.log('Track success:', await response.json());
+          console.log('Track success:', JSON.parse(responseText)); // Debug
+          setClickEvents([]); // Reset click events after successful track
+          setVisitStartTime(Date.now()); // Reset start time
         }
       } catch (error) {
-        console.error('Track visit failed:', error.message);
+        console.error('Track visit error:', error.message); // Debug
       }
     };
 
     // Track on page load
     trackVisit();
 
+    // Track every 30 seconds while on page
+    const intervalId = setInterval(trackVisit, 30000);
+
     // Track on page unload
     window.addEventListener('beforeunload', trackVisit);
 
-    // Track on route change (optional, for SPA navigation)
     return () => {
       authListener.subscription.unsubscribe();
       document.removeEventListener('click', handleClick);
       window.removeEventListener('beforeunload', trackVisit);
+      clearInterval(intervalId);
     };
-  }, [cookiesAccepted]);
+  }, [cookiesAccepted, user]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();

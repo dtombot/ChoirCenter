@@ -131,62 +131,28 @@ function Admin() {
           setError('Analytics fetch failed: ' + err.message);
         }
       };
-      if (activeTab === 'analytics') fetchAnalytics();
+      fetchAnalytics();
 
       const fetchVisitors = async () => {
-        try {
-          const { data: adminProfiles, error: adminError } = await supabase
-            .from('profiles')
-            .select('id')
-            .eq('is_admin', true);
-          if (adminError) throw adminError;
-          const adminIds = adminProfiles.map(profile => profile.id);
-          console.log('Admin IDs:', adminIds); // Debug
-
-          const { data: allVisitors, error: visitorError } = await supabase
-            .from('visitors')
-            .select('id, ip_address, page_url, device_type, visit_timestamp, user_id, referrer, city, country, duration')
-            .order('visit_timestamp', { ascending: false });
-          if (visitorError) throw visitorError;
-          console.log('All Visitors:', allVisitors); // Debug
-
-          const filteredVisitors = allVisitors.filter(visitor => 
-            !visitor.user_id || !adminIds.includes(visitor.user_id)
-          );
-          console.log('Filtered Visitors:', filteredVisitors); // Debug
-
-          setVisitorData(filteredVisitors || []);
-          if (filteredVisitors.length === 0) {
-            console.log('No non-admin visitors found'); // Debug
-          }
-        } catch (error) {
-          console.error('Visitor fetch error:', error.message); // Debug
-          setError('Failed to load visitor data: ' + error.message);
-        }
+        const { data, error } = await supabase
+          .from('visitors')
+          .select('id, ip_address, page_url, device_type, visit_timestamp, user_id, referrer, city, country, duration')
+          .order('visit_timestamp', { ascending: false })
+          .limit(100);
+        if (error) setError('Failed to load visitor data: ' + error.message);
+        else setVisitorData(data || []);
       };
+      fetchVisitors();
 
-      if (activeTab === 'analytics' && analyticsSection === 'visitors') {
-        fetchVisitors();
-        // Refresh every 30 seconds when on Visitors tab
-        const visitorInterval = setInterval(fetchVisitors, 30000);
-        const visitorSubscription = supabase
-          .channel('visitors')
-          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'visitors' }, (payload) => {
-            console.log('New visitor inserted:', payload.new); // Debug
-            setVisitorData((current) => [payload.new, ...current.filter(v => v.id !== payload.new.id)]);
-          })
-          .subscribe((status) => {
-            console.log('Subscription status:', status); // Debug
-            if (status === 'SUBSCRIBED') {
-              console.log('Successfully subscribed to visitors channel');
-            }
+      const visitorSubscription = supabase
+        .channel('visitors')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'visitors' }, (payload) => {
+          setVisitorData((current) => {
+            const newData = [payload.new, ...current].slice(0, 100); // Keep only the latest 100
+            return newData;
           });
-
-        return () => {
-          clearInterval(visitorInterval);
-          supabase.removeChannel(visitorSubscription);
-        };
-      }
+        })
+        .subscribe();
 
       const fetchTopSongs = async () => {
         const { data, error } = await supabase
@@ -241,11 +207,11 @@ function Admin() {
       }
 
       return () => {
-        // Cleanup for other subscriptions if any
+        supabase.removeChannel(visitorSubscription);
       };
     };
     fetchUser();
-  }, [navigate, location.search, activeTab, analyticsSection]);
+  }, [navigate, location.search]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -492,7 +458,7 @@ function Admin() {
 
   const toggleAdActive = async (id, isActive) => {
     const { error } = await supabase.from('advertisements').update({ is_active: !isActive }).eq('id', id);
-    if (error) setError('Failed to update ad status: ' + error.message);
+    if (error) setError('Failed to update ad status: ' + err.message);
     else setAds(ads.map(ad => ad.id === id ? { ...ad, is_active: !isActive } : ad));
   };
 
@@ -1139,7 +1105,7 @@ function Admin() {
             )}
             {analyticsSection === 'visitors' && (
               <div className="analytics-section visitors-data">
-                <h3 className="analytics-section-title">Recent Visitors</h3>
+                <h3 className="analytics-section-title">Recent Visitors (Last 100 Visits)</h3>
                 {visitorData.length > 0 ? (
                   <>
                     <div className="analytics-table-container">

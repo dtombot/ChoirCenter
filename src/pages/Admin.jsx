@@ -55,6 +55,8 @@ function Admin() {
   const [songCategoryFilter, setSongCategoryFilter] = useState('all');
   const [userSearch, setUserSearch] = useState('');
   const [analyticsSection, setAnalyticsSection] = useState('local');
+  const [visitorPage, setVisitorPage] = useState(1); // Pagination for Visitors
+  const visitorsPerPage = 10; // Items per page
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -134,9 +136,8 @@ function Admin() {
       const fetchVisitors = async () => {
         const { data, error } = await supabase
           .from('visitors')
-          .select('*')
-          .order('visit_timestamp', { ascending: false })
-          .limit(100);
+          .select('ip_address, page_url, click_events, visit_timestamp')
+          .order('visit_timestamp', { ascending: false });
         if (error) setError('Failed to load visitor data: ' + error.message);
         else setVisitorData(data || []);
       };
@@ -145,10 +146,7 @@ function Admin() {
       const visitorSubscription = supabase
         .channel('visitors')
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'visitors' }, (payload) => {
-          setVisitorData((current) => {
-            const newData = [payload.new, ...current].slice(0, 100);
-            return newData;
-          });
+          setVisitorData((current) => [payload.new, ...current]);
         })
         .subscribe();
 
@@ -553,29 +551,14 @@ function Admin() {
   const totalDownloads = songs.reduce((sum, song) => sum + (song.downloads || 0), 0);
   const publicSongs = songs.filter(song => song.is_public).length;
   const privateSongs = songs.length - publicSongs;
-  const totalVisits = visitorData.length;
-  const uniqueVisitors = new Set(visitorData.map(v => v.ip_address)).size;
-  const avgDuration = visitorData.length
-    ? Math.round(visitorData.reduce((sum, v) => sum + (v.duration || 0), 0) / visitorData.length)
-    : 0;
-  const topCities = Object.entries(
-    visitorData.reduce((acc, v) => {
-      acc[v.city] = (acc[v.city] || 0) + 1;
-      return acc;
-    }, {})
-  ).sort((a, b) => b[1] - a[1]).slice(0, 3);
-  const topReferrers = Object.entries(
-    visitorData.reduce((acc, v) => {
-      acc[v.referrer] = (acc[v.referrer] || 0) + 1;
-      return acc;
-    }, {})
-  ).sort((a, b) => b[1] - a[1]).slice(0, 3);
-  const deviceTypes = Object.entries(
-    visitorData.reduce((acc, v) => {
-      acc[v.device_type] = (acc[v.device_type] || 0) + 1;
-      return acc;
-    }, {})
-  );
+
+  // Pagination for Visitors
+  const indexOfLastVisitor = visitorPage * visitorsPerPage;
+  const indexOfFirstVisitor = indexOfLastVisitor - visitorsPerPage;
+  const currentVisitors = visitorData.slice(indexOfFirstVisitor, indexOfLastVisitor);
+  const totalVisitorPages = Math.ceil(visitorData.length / visitorsPerPage);
+
+  const paginate = (pageNumber) => setVisitorPage(pageNumber);
 
   return (
     <div className="admin-container">
@@ -699,10 +682,27 @@ function Admin() {
                   className="admin-form-input"
                 >
                   <option value="">Select Category</option>
-                  <option value="Hymn">Hymn</option>
-                  <option value="Choral">Choral</option>
-                  <option value="Gospel">Gospel</option>
-                  <option value="Other">Other</option>
+                  <option value="Entrance">Entrance</option>
+                  <option value="Kyrie">Kyrie</option>
+                  <option value="Gloria">Gloria</option>
+                  <option value="Responsorial Psalm">Responsorial Psalm</option>
+                  <option value="Gospel Acclamation">Gospel Acclamation</option>
+                  <option value="Credo">Credo</option>
+                  <option value="Response to prayers">Response to Prayers</option>
+                  <option value="Preconsecration">Preconsecration</option>
+                  <option value="Offertory">Offertory</option>
+                  <option value="Sanctus">Sanctus</option>
+                  <option value="Agnus Dei">Agnus Dei</option>
+                  <option value="Communion">Communion</option>
+                  <option value="Dismissal">Dismissal</option>
+                  <option value="Lent">Lent</option>
+                  <option value="Pentecost">Pentecost</option>
+                  <option value="Easter">Easter</option>
+                  <option value="Advent">Advent</option>
+                  <option value="Christmas">Christmas</option>
+                  <option value="Trinity">Trinity</option>
+                  <option value="Marian">Marian</option>
+                  <option value="Classical">Classical</option>
                 </select>
               </div>
               <input 
@@ -769,10 +769,27 @@ function Admin() {
                 className="admin-filter-select"
               >
                 <option value="all">All Categories</option>
-                <option value="Hymn">Hymn</option>
-                <option value="Choral">Choral</option>
-                <option value="Gospel">Gospel</option>
-                <option value="Other">Other</option>
+                <option value="Entrance">Entrance</option>
+                <option value="Kyrie">Kyrie</option>
+                <option value="Gloria">Gloria</option>
+                <option value="Responsorial Psalm">Responsorial Psalm</option>
+                <option value="Gospel Acclamation">Gospel Acclamation</option>
+                <option value="Credo">Credo</option>
+                <option value="Response to prayers">Response to Prayers</option>
+                <option value="Preconsecration">Preconsecration</option>
+                <option value="Offertory">Offertory</option>
+                <option value="Sanctus">Sanctus</option>
+                <option value="Agnus Dei">Agnus Dei</option>
+                <option value="Communion">Communion</option>
+                <option value="Dismissal">Dismissal</option>
+                <option value="Lent">Lent</option>
+                <option value="Pentecost">Pentecost</option>
+                <option value="Easter">Easter</option>
+                <option value="Advent">Advent</option>
+                <option value="Christmas">Christmas</option>
+                <option value="Trinity">Trinity</option>
+                <option value="Marian">Marian</option>
+                <option value="Classical">Classical</option>
               </select>
             </div>
             <div className="admin-table-container">
@@ -865,6 +882,7 @@ function Admin() {
                     formats={quillFormats}
                     className="admin-quill-editor"
                     placeholder="Write your blog post content here..."
+                    style={{ height: '300px' }} // Increased height
                   />
                 </div>
                 <div className="admin-form-group">
@@ -1033,28 +1051,37 @@ function Admin() {
                     </div>
                   </div>
                 ) : (
-                  <div className="analytics-row">
-                    <div className="admin-analytics-item">
-                      <h4 className="admin-analytics-title">Loading...</h4>
-                      <p className="admin-analytics-value">Awaiting data</p>
-                    </div>
-                  </div>
+                  <p>No Google Analytics data available.</p>
                 )}
               </div>
             )}
             {analyticsSection === 'gsc' && (
               <div className="analytics-section google-data">
-                <h3 className="analytics-section-title">Google Search Console (Last 30 Days)</h3>
+                <h3 className="analytics-section-title">Search Console (Last 30 Days)</h3>
                 {analyticsData.gsc ? (
                   <div className="analytics-row">
                     <div className="admin-analytics-item">
+                      <h4 className="admin-analytics-title">Total Clicks</h4>
+                      <p className="admin-analytics-value">{analyticsData.gsc.rows?.reduce((sum, row) => sum + row.clicks, 0) || 'N/A'}</p>
+                    </div>
+                    <div className="admin-analytics-item">
+                      <h4 className="admin-analytics-title">Total Impressions</h4>
+                      <p className="admin-analytics-value">{analyticsData.gsc.rows?.reduce((sum, row) => sum + row.impressions, 0) || 'N/A'}</p>
+                    </div>
+                    <div className="admin-analytics-item">
+                      <h4 className="admin-analytics-title">Avg. CTR</h4>
+                      <p className="admin-analytics-value">{analyticsData.gsc.rows?.length ? `${((analyticsData.gsc.rows.reduce((sum, row) => sum + row.ctr, 0) / analyticsData.gsc.rows.length) * 100).toFixed(1)}%` : 'N/A'}</p>
+                    </div>
+                    <div className="admin-analytics-item">
+                      <h4 className="admin-analytics-title">Avg. Position</h4>
+                      <p className="admin-analytics-value">{analyticsData.gsc.rows?.length ? (analyticsData.gsc.rows.reduce((sum, row) => sum + row.position, 0) / analyticsData.gsc.rows.length).toFixed(1) : 'N/A'}</p>
+                    </div>
+                    <div className="admin-analytics-item">
                       <h4 className="admin-analytics-title">Top Queries</h4>
-                      {analyticsData.gsc.rows && analyticsData.gsc.rows.length > 0 ? (
+                      {analyticsData.gsc.rows?.length > 0 ? (
                         <ul className="search-queries">
-                          {analyticsData.gsc.rows.slice(0, 3).map((row, index) => (
-                            <li key={index}>
-                              {row.keys[0]}: {row.clicks} clicks, {row.impressions} imp., {(row.ctr * 100).toFixed(1)}% CTR, {row.position.toFixed(1)} pos.
-                            </li>
+                          {analyticsData.gsc.rows.slice(0, 5).map((row, index) => (
+                            <li key={index}>{row.keys[0]}: {row.clicks} clicks</li>
                           ))}
                         </ul>
                       ) : (
@@ -1063,55 +1090,62 @@ function Admin() {
                     </div>
                   </div>
                 ) : (
-                  <div className="analytics-row">
-                    <div className="admin-analytics-item">
-                      <h4 className="admin-analytics-title">Loading...</h4>
-                      <p className="admin-analytics-value">Awaiting data</p>
-                    </div>
-                  </div>
+                  <p>No Search Console data available.</p>
                 )}
               </div>
             )}
             {analyticsSection === 'visitors' && (
               <div className="analytics-section visitor-data">
-                <h3 className="analytics-section-title">Site Visitors (Last 100 Visits)</h3>
-                <div className="analytics-row">
-                  <div className="admin-analytics-item">
-                    <h4 className="admin-analytics-title">Total Visits</h4>
-                    <p className="admin-analytics-value">{totalVisits}</p>
-                  </div>
-                  <div className="admin-analytics-item">
-                    <h4 className="admin-analytics-title">Unique Visitors</h4>
-                    <p className="admin-analytics-value">{uniqueVisitors}</p>
-                  </div>
-                  <div className="admin-analytics-item">
-                    <h4 className="admin-analytics-title">Avg. Duration</h4>
-                    <p className="admin-analytics-value">{avgDuration}s</p>
-                  </div>
-                  <div className="admin-analytics-item">
-                    <h4 className="admin-analytics-title">Top Cities</h4>
-                    <ul className="top-items">
-                      {topCities.map(([city, count]) => (
-                        <li key={city}>{city}: {count}</li>
+                <h3 className="analytics-section-title">Visitor Data</h3>
+                <div className="admin-table-container">
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        <th>IP Address</th>
+                        <th>Page Visited</th>
+                        <th>Clicks</th>
+                        <th>Visit Time</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {currentVisitors.map((visitor, index) => (
+                        <tr key={index}>
+                          <td>{visitor.ip_address || 'N/A'}</td>
+                          <td>{visitor.page_url || 'N/A'}</td>
+                          <td>{visitor.click_events ? JSON.stringify(visitor.click_events) : 'N/A'}</td>
+                          <td>{new Date(visitor.visit_timestamp).toLocaleString()}</td>
+                        </tr>
                       ))}
-                    </ul>
-                  </div>
-                  <div className="admin-analytics-item">
-                    <h4 className="admin-analytics-title">Top Referrers</h4>
-                    <ul className="top-items">
-                      {topReferrers.map(([referrer, count]) => (
-                        <li key={referrer}>{referrer}: {count}</li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div className="admin-analytics-item">
-                    <h4 className="admin-analytics-title">Device Types</h4>
-                    <ul className="top-items">
-                      {deviceTypes.map(([type, count]) => (
-                        <li key={type}>{type}: {count}</li>
-                      ))}
-                    </ul>
-                  </div>
+                    </tbody>
+                  </table>
+                </div>
+                <div className="pagination" style={{ display: 'flex', justifyContent: 'center', marginTop: '1rem' }}>
+                  <button 
+                    onClick={() => paginate(visitorPage - 1)} 
+                    disabled={visitorPage === 1}
+                    className="pagination-button"
+                    style={{ padding: '0.5rem 1rem', margin: '0 0.5rem', background: visitorPage === 1 ? '#e0e0e0' : '#3cb371', color: '#fff', border: 'none', borderRadius: '6px', cursor: visitorPage === 1 ? 'not-allowed' : 'pointer' }}
+                  >
+                    Previous
+                  </button>
+                  {Array.from({ length: totalVisitorPages }, (_, i) => i + 1).map(number => (
+                    <button 
+                      key={number} 
+                      onClick={() => paginate(number)} 
+                      className={`pagination-button ${visitorPage === number ? 'active' : ''}`}
+                      style={{ padding: '0.5rem 1rem', margin: '0 0.2rem', background: visitorPage === number ? '#2f9e5e' : '#f4f6f8', color: visitorPage === number ? '#fff' : '#2f4f2f', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+                    >
+                      {number}
+                    </button>
+                  ))}
+                  <button 
+                    onClick={() => paginate(visitorPage + 1)} 
+                    disabled={visitorPage === totalVisitorPages}
+                    className="pagination-button"
+                    style={{ padding: '0.5rem 1rem', margin: '0 0.5rem', background: visitorPage === totalVisitorPages ? '#e0e0e0' : '#3cb371', color: '#fff', border: 'none', borderRadius: '6px', cursor: visitorPage === totalVisitorPages ? 'not-allowed' : 'pointer' }}
+                  >
+                    Next
+                  </button>
                 </div>
               </div>
             )}
@@ -1132,38 +1166,28 @@ function Admin() {
               <table className="admin-table">
                 <thead>
                   <tr>
-                    <th>Full Name</th>
+                    <th>Name</th>
                     <th>Email</th>
-                    <th>Choir Name</th>
-                    <th>Church Name</th>
-                    <th>Country</th>
-                    <th>State</th>
-                    <th>Donated</th>
+                    <th>Admin</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredUsers.map(user => (
-                    <tr key={user.id}>
-                      <td>{user.full_name}</td>
-                      <td>{user.email}</td>
-                      <td>{user.choir_name || 'N/A'}</td>
-                      <td>{user.church_name || 'N/A'}</td>
-                      <td>{user.country || 'N/A'}</td>
-                      <td>{user.state || 'N/A'}</td>
+                  {filteredUsers.map(u => (
+                    <tr key={u.id}>
+                      <td>{u.full_name || 'N/A'}</td>
+                      <td>{u.email}</td>
                       <td>
                         <button 
-                          className={`admin-toggle-button ${user.has_donated ? 'active' : ''}`}
-                          disabled
+                          onClick={() => toggleUserAdmin(u.id, u.isAdmin)} 
+                          className={`admin-toggle-button ${u.isAdmin ? 'active' : ''}`}
+                          disabled={u.id === user.id}
                         >
-                          {user.has_donated ? 'Yes' : 'No'}
+                          {u.isAdmin ? 'Yes' : 'No'}
                         </button>
                       </td>
                       <td>
-                        <button onClick={() => toggleUserAdmin(user.id, user.is_admin)} className="admin-edit-button">
-                          {user.is_admin ? 'Remove Admin' : 'Make Admin'}
-                        </button>
-                        <button onClick={() => deleteUser(user.id)} className="admin-delete-button">Delete</button>
+                        <button onClick={() => deleteUser(u.id)} className="admin-delete-button" disabled={u.id === user.id}>Delete</button>
                       </td>
                     </tr>
                   ))}
@@ -1174,12 +1198,12 @@ function Admin() {
         )}
         {activeTab === 'songOfTheWeek' && (
           <form onSubmit={handleSongOfTheWeekSubmit} className="admin-form-grid">
-            <textarea
-              placeholder="Song of the Week Audio URL"
-              value={songOfTheWeekHtml}
-              onChange={(e) => setSongOfTheWeekHtml(e.target.value)}
-              className="admin-form-input"
-              rows="3"
+            <textarea 
+              placeholder="Song of the Week Audio URL or Embed Code" 
+              value={songOfTheWeekHtml} 
+              onChange={(e) => setSongOfTheWeekHtml(e.target.value)} 
+              className="admin-form-input" 
+              rows="5"
             />
             <button type="submit" className="admin-form-submit">Update Song of the Week</button>
           </form>
@@ -1195,11 +1219,11 @@ function Admin() {
               required 
             />
             <textarea 
-              placeholder="Ad Code" 
+              placeholder="Ad Code (HTML/JS)" 
               value={adForm.code} 
               onChange={(e) => setAdForm({ ...adForm, code: e.target.value })} 
               className="admin-form-input" 
-              rows="3" 
+              rows="5" 
               required 
             />
             <select 
@@ -1207,8 +1231,10 @@ function Admin() {
               onChange={(e) => setAdForm({ ...adForm, position: e.target.value })} 
               className="admin-form-input"
             >
-              <option value="home_above_sotw">Home (Above Song of the Week)</option>
-              <option value="home_below_sotw">Home (Below Song of the Week)</option>
+              <option value="home_above_sotw">Home - Above Song of the Week</option>
+              <option value="home_below_sotw">Home - Below Song of the Week</option>
+              <option value="library_above">Library - Above Content</option>
+              <option value="library_below">Library - Below Content</option>
             </select>
             <label className="admin-checkbox">
               <input 
@@ -1223,10 +1249,7 @@ function Admin() {
               <button 
                 type="button" 
                 className="admin-cancel-button" 
-                onClick={() => { 
-                  setAdForm({ name: '', code: '', position: 'home_above_sotw', is_active: true }); 
-                  setEditingAdId(null); 
-                }}
+                onClick={() => { setAdForm({ name: '', code: '', position: 'home_above_sotw', is_active: true }); setEditingAdId(null); }}
               >
                 Cancel
               </button>

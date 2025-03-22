@@ -9,18 +9,29 @@ function Contact({ recaptchaLoaded }) {
 
   useEffect(() => {
     const renderRecaptcha = () => {
+      console.log('reCAPTCHA render check:', {
+        recaptchaLoaded,
+        grecaptchaExists: !!window.grecaptcha,
+        renderExists: window.grecaptcha && !!window.grecaptcha.render,
+        refExists: !!recaptchaRef.current,
+      });
+
       if (recaptchaLoaded && window.grecaptcha && window.grecaptcha.render && recaptchaRef.current) {
         try {
           window.grecaptcha.render(recaptchaRef.current, {
             sitekey: '6LczEuYqAAAAANYh6VG8jSj1Fmt6LKMK7Ee1OcfU',
             callback: (token) => console.log('reCAPTCHA token received:', token),
           });
+          console.log('reCAPTCHA rendered successfully');
         } catch (err) {
           console.error('Error rendering reCAPTCHA:', err);
           setStatus('Failed to load reCAPTCHA. Please refresh the page.');
         }
+      } else {
+        console.log('reCAPTCHA not ready yet');
       }
     };
+
     renderRecaptcha();
   }, [recaptchaLoaded]);
 
@@ -31,6 +42,7 @@ function Contact({ recaptchaLoaded }) {
         body: JSON.stringify({ token }),
       });
       const result = await response.json();
+      console.log('reCAPTCHA verification result:', result);
       return result.success;
     } catch (err) {
       console.error('reCAPTCHA verification error:', err);
@@ -50,6 +62,7 @@ function Contact({ recaptchaLoaded }) {
     }
 
     const token = window.grecaptcha.getResponse();
+    console.log('Token retrieved on submit:', token);
     if (!token) {
       setStatus('Please complete the reCAPTCHA.');
       setLoading(false);

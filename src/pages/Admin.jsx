@@ -135,7 +135,6 @@ function Admin() {
 
       const fetchVisitors = async () => {
         try {
-          // Fetch admin user IDs from profiles where is_admin is true
           const { data: adminProfiles, error: adminError } = await supabase
             .from('profiles')
             .select('id')
@@ -144,7 +143,6 @@ function Admin() {
           const adminIds = adminProfiles.map(profile => profile.id);
           console.log('Admin IDs:', adminIds); // Debug
 
-          // Fetch all visitors
           const { data: allVisitors, error: visitorError } = await supabase
             .from('visitors')
             .select('id, ip_address, page_url, device_type, visit_timestamp, user_id, referrer, city, country, duration')
@@ -152,7 +150,6 @@ function Admin() {
           if (visitorError) throw visitorError;
           console.log('All Visitors:', allVisitors); // Debug
 
-          // Filter out visitors where user_id matches an admin ID
           const filteredVisitors = allVisitors.filter(visitor => 
             !visitor.user_id || !adminIds.includes(visitor.user_id)
           );
@@ -167,14 +164,29 @@ function Admin() {
           setError('Failed to load visitor data: ' + error.message);
         }
       };
-      if (activeTab === 'analytics' && analyticsSection === 'visitors') fetchVisitors();
 
-      const visitorSubscription = supabase
-        .channel('visitors')
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'visitors' }, (payload) => {
-          setVisitorData((current) => [payload.new, ...current]);
-        })
-        .subscribe();
+      if (activeTab === 'analytics' && analyticsSection === 'visitors') {
+        fetchVisitors();
+        // Refresh every 30 seconds when on Visitors tab
+        const visitorInterval = setInterval(fetchVisitors, 30000);
+        const visitorSubscription = supabase
+          .channel('visitors')
+          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'visitors' }, (payload) => {
+            console.log('New visitor inserted:', payload.new); // Debug
+            setVisitorData((current) => [payload.new, ...current.filter(v => v.id !== payload.new.id)]);
+          })
+          .subscribe((status) => {
+            console.log('Subscription status:', status); // Debug
+            if (status === 'SUBSCRIBED') {
+              console.log('Successfully subscribed to visitors channel');
+            }
+          });
+
+        return () => {
+          clearInterval(visitorInterval);
+          supabase.removeChannel(visitorSubscription);
+        };
+      }
 
       const fetchTopSongs = async () => {
         const { data, error } = await supabase
@@ -229,7 +241,7 @@ function Admin() {
       }
 
       return () => {
-        supabase.removeChannel(visitorSubscription);
+        // Cleanup for other subscriptions if any
       };
     };
     fetchUser();
@@ -300,7 +312,7 @@ function Admin() {
   };
 
   const handlePostSubmit = async (e) => {
-    e.preventForm();
+    e.preventDefault();
     try {
       const generatedPermalink = postForm.permalink.trim() || postForm.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
       if (!postForm.title.trim()) {

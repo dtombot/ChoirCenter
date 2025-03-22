@@ -6,6 +6,7 @@ exports.handler = async (event) => {
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!supabaseUrl || !supabaseKey) {
+    console.error('Supabase configuration missing');
     return {
       statusCode: 500,
       body: JSON.stringify({ error: 'Supabase configuration missing' }),
@@ -37,45 +38,44 @@ exports.handler = async (event) => {
     ? 'tablet'
     : 'desktop';
 
-  // Extract user_id from Authorization header (JWT token)
   let userId = null;
   const token = event.headers['authorization']?.replace('Bearer ', '');
+  console.log('Received headers:', { token, ip, referrer, userAgent }); // Debug
   if (token) {
     try {
       const { data: { user }, error } = await supabase.auth.getUser(token);
-      if (error) {
-        console.error('Auth error:', error.message);
-      } else {
-        userId = user?.id || null;
-      }
+      if (error) throw error;
+      userId = user?.id || null;
+      console.log('User fetched:', userId); // Debug
     } catch (authError) {
-      console.error('Token validation error:', authError.message);
+      console.error('Auth error:', authError.message);
     }
   }
 
+  const visitorData = {
+    ip_address: ip,
+    referrer: referrer || 'direct',
+    city: city || 'unknown',
+    country: country || 'unknown',
+    device_type: deviceType || 'unknown',
+    user_agent: userAgent || 'unknown',
+    page_url: pageUrl || '/',
+    click_events: clickEvents || [],
+    duration: duration || 0,
+    visit_timestamp: new Date().toISOString(),
+    user_id: userId,
+  };
+
   try {
-    const { error } = await supabase.from('visitors').insert({
-      ip_address: ip,
-      referrer: referrer || 'direct',
-      city: city || 'unknown',
-      country: country || 'unknown',
-      device_type: deviceType || 'unknown',
-      user_agent: userAgent || 'unknown',
-      page_url: pageUrl || '/',
-      click_events: clickEvents || [],
-      duration: duration || 0,
-      visit_timestamp: new Date().toISOString(),
-      user_id: userId, // Add user_id (NULL if no authenticated user)
-    });
-
+    const { error } = await supabase.from('visitors').insert(visitorData);
     if (error) throw error;
-
+    console.log('Inserted visitor:', visitorData); // Debug
     return {
       statusCode: 200,
       body: JSON.stringify({ message: 'Visit tracked' }),
     };
   } catch (error) {
-    console.error('Track visitor error:', error.message);
+    console.error('Insert error:', error.message);
     return {
       statusCode: 500,
       body: JSON.stringify({ error: 'Failed to track visitor: ' + error.message }),

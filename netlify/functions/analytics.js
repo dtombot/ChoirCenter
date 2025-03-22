@@ -1,6 +1,7 @@
 const { google } = require('googleapis');
 
 exports.handler = async (event, context) => {
+  console.log('Function invoked:', new Date().toISOString()); // Log invocation time
   try {
     const oauth2Client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
@@ -8,14 +9,17 @@ exports.handler = async (event, context) => {
       `${process.env.SITE_URL}/.netlify/functions/auth-callback`
     );
 
+    console.log('Setting credentials...');
     oauth2Client.setCredentials({
-      access_token: 'ya29.a0AeXRPp5dG9flvjWbUbXD1Klm-OKk1v1ZAwuR4VuraBZ125sbE8xJ_E__fRtW4o7gUAgMnKLn95gaXR-6YRIxvkhtcIf78e-TfMHNlNUPvyv2obi_fIWGaSpZ2fAh5txSFtWN5c4l2sTmR6UFC0H47pDZjmhXkHWmf32xGnSpaCgYKAVwSARISFQHGX2MiJXox2tJIbsLReNlhiCi8PQ0175',
-      refresh_token: '1//04bOTrckPrz-dCgYIARAAGAQSNwF-L9IrhBtFOmZgkSlsl-ox2Q1Pn9td46VHUd1iAPhpE_-r716xPPHL8ppV8hIa-2Imge9U1Wo',
+      access_token: process.env.GOOGLE_ACCESS_TOKEN || 'ya29.a0AeXRPp5dG9flvjWbUbXD1Klm-OKk1v1ZAwuR4VuraBZ125sbE8xJ_E__fRtW4o7gUAgMnKLn95gaXR-6YRIxvkhtcIf78e-TfMHNlNUPvyv2obi_fIWGaSpZ2fAh5txSFtWN5c4l2sTmR6UFC0H47pDZjmhXkHWmf32xGnSpaCgYKAVwSARISFQHGX2MiJXox2tJIbsLReNlhiCi8PQ0175',
+      refresh_token: process.env.GOOGLE_REFRESH_TOKEN || '1//04bOTrckPrz-dCgYIARAAGAQSNwF-L9IrhBtFOmZgkSlsl-ox2Q1Pn9td46VHUd1iAPhpE_-r716xPPHL8ppV8hIa-2Imge9U1Wo',
     });
 
     // Refresh token if expired
+    console.log('Refreshing token...');
     const { credentials } = await oauth2Client.refreshAccessToken();
     oauth2Client.setCredentials(credentials);
+    console.log('Token refreshed:', credentials.access_token);
 
     const analytics = google.analyticsdata({
       version: 'v1beta',
@@ -29,6 +33,7 @@ exports.handler = async (event, context) => {
 
     let gaResponse;
     try {
+      console.log('Fetching GA data...');
       gaResponse = await analytics.properties.runReport({
         property: `properties/${process.env.GA_PROPERTY_ID}`,
         requestBody: {
@@ -44,13 +49,15 @@ exports.handler = async (event, context) => {
           ],
         },
       });
+      console.log('GA data fetched:', gaResponse.data.rows ? 'Rows present' : 'No rows');
     } catch (gaError) {
-      console.error('Google Analytics Error:', gaError.message);
-      gaResponse = { data: { rows: [], error: gaError.message } }; // Ensure rows exists
+      console.error('Google Analytics Error:', gaError.message, gaError.stack);
+      gaResponse = { data: { rows: [], error: gaError.message } };
     }
 
     let gscResponse;
     try {
+      console.log('Fetching GSC data...');
       gscResponse = await searchconsole.searchanalytics.query({
         siteUrl: process.env.SITE_URL,
         requestBody: {
@@ -60,11 +67,13 @@ exports.handler = async (event, context) => {
           rowLimit: 5,
         },
       });
+      console.log('GSC data fetched:', gscResponse.data.rows ? 'Rows present' : 'No rows');
     } catch (gscError) {
-      console.error('Google Search Console Error:', gscError.message);
-      gscResponse = { data: { rows: [], error: gscError.message } }; // Ensure rows exists
+      console.error('Google Search Console Error:', gscError.message, gscError.stack);
+      gscResponse = { data: { rows: [], error: gscError.message } };
     }
 
+    console.log('Returning response...');
     return {
       statusCode: 200,
       body: JSON.stringify({
@@ -73,7 +82,7 @@ exports.handler = async (event, context) => {
       }),
     };
   } catch (error) {
-    console.error('Function Error:', error.message);
+    console.error('Function Error:', error.message, error.stack);
     return {
       statusCode: 500,
       body: JSON.stringify({ error: 'Server error: ' + error.message }),

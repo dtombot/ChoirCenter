@@ -134,25 +134,32 @@ function Admin() {
       fetchAnalytics();
 
       const fetchVisitors = async () => {
-        const { data, error } = await supabase
-          .from('visitors')
-          .select('id, ip_address, page_url, device_type, visit_timestamp, user_id, referrer, city, country, duration')
-          .order('visit_timestamp', { ascending: false })
-          .limit(100);
-        if (error) setError('Failed to load visitor data: ' + error.message);
-        else setVisitorData(data || []);
+        try {
+          // Get admin user IDs
+          const { data: adminProfiles, error: adminError } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('is_admin', true);
+          if (adminError) throw adminError;
+          const adminIds = adminProfiles.map(profile => profile.id);
+
+          // Fetch visitors, excluding admins
+          const { data, error } = await supabase
+            .from('visitors')
+            .select('id, ip_address, device_type, visit_timestamp, user_id, referrer, duration')
+            .not('user_id', 'in', `(${adminIds.join(',')})`)
+            .order('visit_timestamp', { ascending: false })
+            .limit(100);
+          if (error) throw error;
+          setVisitorData(data || []);
+        } catch (error) {
+          setError('Failed to load visitor data: ' + error.message);
+        }
       };
       fetchVisitors();
 
-      const visitorSubscription = supabase
-        .channel('visitors')
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'visitors' }, (payload) => {
-          setVisitorData((current) => {
-            const newData = [payload.new, ...current].slice(0, 100); // Keep only the latest 100
-            return newData;
-          });
-        })
-        .subscribe();
+      // Periodic fetch every 5 minutes (300,000 ms)
+      const visitorInterval = setInterval(fetchVisitors, 300000);
 
       const fetchTopSongs = async () => {
         const { data, error } = await supabase
@@ -207,7 +214,7 @@ function Admin() {
       }
 
       return () => {
-        supabase.removeChannel(visitorSubscription);
+        clearInterval(visitorInterval);
       };
     };
     fetchUser();
@@ -458,7 +465,7 @@ function Admin() {
 
   const toggleAdActive = async (id, isActive) => {
     const { error } = await supabase.from('advertisements').update({ is_active: !isActive }).eq('id', id);
-    if (error) setError('Failed to update ad status: ' + err.message);
+    if (error) setError('Failed to update ad status: ' + error.message);
     else setAds(ads.map(ad => ad.id === id ? { ...ad, is_active: !isActive } : ad));
   };
 
@@ -562,6 +569,13 @@ function Admin() {
   const totalVisitorPages = Math.ceil(visitorData.length / visitorsPerPage);
 
   const paginate = (pageNumber) => setVisitorPage(pageNumber);
+
+  // Helper function to convert UTC to GMT+1
+  const toGMTPlus1 = (date) => {
+    const utcDate = new Date(date);
+    const gmtPlus1Offset = 1 * 60 * 60 * 1000; // 1 hour in milliseconds
+    return new Date(utcDate.getTime() + gmtPlus1Offset);
+  };
 
   return (
     <div className="admin-container">
@@ -1105,7 +1119,7 @@ function Admin() {
             )}
             {analyticsSection === 'visitors' && (
               <div className="analytics-section visitors-data">
-                <h3 className="analytics-section-title">Recent Visitors (Last 100 Visits)</h3>
+                <h3 className="analytics-section-title">Recent Visitors (Last 100 Non-Admin Visits)</h3>
                 {visitorData.length > 0 ? (
                   <>
                     <div className="analytics-table-container">
@@ -1113,13 +1127,10 @@ function Admin() {
                         <thead>
                           <tr>
                             <th>IP Address</th>
-                            <th>Page URL</th>
                             <th>Device Type</th>
-                            <th>Timestamp</th>
+                            <th>Timestamp (GMT+1)</th>
                             <th>User ID</th>
                             <th>Referrer</th>
-                            <th>City</th>
-                            <th>Country</th>
                             <th>Duration (s)</th>
                           </tr>
                         </thead>
@@ -1127,13 +1138,10 @@ function Admin() {
                           {currentVisitors.map((visitor) => (
                             <tr key={visitor.id}>
                               <td>{visitor.ip_address}</td>
-                              <td>{visitor.page_url}</td>
                               <td>{visitor.device_type}</td>
-                              <td>{new Date(visitor.visit_timestamp).toLocaleString()}</td>
+                              <td>{toGMTPlus1(visitor.visit_timestamp).toLocaleString()}</td>
                               <td>{visitor.user_id || 'N/A'}</td>
                               <td>{visitor.referrer || 'Direct'}</td>
-                              <td>{visitor.city || 'Unknown'}</td>
-                              <td>{visitor.country || 'Unknown'}</td>
                               <td>{visitor.duration || 0}</td>
                             </tr>
                           ))}

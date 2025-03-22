@@ -55,8 +55,6 @@ function Admin() {
   const [songCategoryFilter, setSongCategoryFilter] = useState('all');
   const [userSearch, setUserSearch] = useState('');
   const [analyticsSection, setAnalyticsSection] = useState('local');
-  const [visitorPage, setVisitorPage] = useState(1);
-  const visitorsPerPage = 10;
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -135,19 +133,9 @@ function Admin() {
 
       const fetchVisitors = async () => {
         try {
-          // Get admin user IDs
-          const { data: adminProfiles, error: adminError } = await supabase
-            .from('profiles')
-            .select('id')
-            .eq('is_admin', true);
-          if (adminError) throw adminError;
-          const adminIds = adminProfiles.map(profile => profile.id);
-
-          // Fetch visitors, excluding admins
           const { data, error } = await supabase
             .from('visitors')
-            .select('id, ip_address, device_type, visit_timestamp, user_id, referrer, duration')
-            .not('user_id', 'in', `(${adminIds.join(',')})`)
+            .select('visit_timestamp, page_url')
             .order('visit_timestamp', { ascending: false })
             .limit(100);
           if (error) throw error;
@@ -562,13 +550,6 @@ function Admin() {
   const totalDownloads = songs.reduce((sum, song) => sum + (song.downloads || 0), 0);
   const publicSongs = songs.filter(song => song.is_public).length;
   const privateSongs = songs.length - publicSongs;
-
-  const indexOfLastVisitor = visitorPage * visitorsPerPage;
-  const indexOfFirstVisitor = indexOfLastVisitor - visitorsPerPage;
-  const currentVisitors = visitorData.slice(indexOfFirstVisitor, indexOfLastVisitor);
-  const totalVisitorPages = Math.ceil(visitorData.length / visitorsPerPage);
-
-  const paginate = (pageNumber) => setVisitorPage(pageNumber);
 
   // Helper function to convert UTC to GMT+1
   const toGMTPlus1 = (date) => {
@@ -1119,52 +1100,17 @@ function Admin() {
             )}
             {analyticsSection === 'visitors' && (
               <div className="analytics-section visitors-data">
-                <h3 className="analytics-section-title">Recent Visitors (Last 100 Non-Admin Visits)</h3>
+                <h3 className="analytics-section-title">Recent Visitors (Last 100 Visits)</h3>
                 {visitorData.length > 0 ? (
                   <>
-                    <div className="analytics-table-container">
-                      <table className="admin-table">
-                        <thead>
-                          <tr>
-                            <th>IP Address</th>
-                            <th>Device Type</th>
-                            <th>Timestamp (GMT+1)</th>
-                            <th>User ID</th>
-                            <th>Referrer</th>
-                            <th>Duration (s)</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {currentVisitors.map((visitor) => (
-                            <tr key={visitor.id}>
-                              <td>{visitor.ip_address}</td>
-                              <td>{visitor.device_type}</td>
-                              <td>{toGMTPlus1(visitor.visit_timestamp).toLocaleString()}</td>
-                              <td>{visitor.user_id || 'N/A'}</td>
-                              <td>{visitor.referrer || 'Direct'}</td>
-                              <td>{visitor.duration || 0}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                    <div className="pagination">
-                      <button 
-                        onClick={() => paginate(visitorPage - 1)} 
-                        disabled={visitorPage === 1}
-                        className="pagination-button"
-                      >
-                        Previous
-                      </button>
-                      <span className="pagination-info">Page {visitorPage} of {totalVisitorPages}</span>
-                      <button 
-                        onClick={() => paginate(visitorPage + 1)} 
-                        disabled={visitorPage === totalVisitorPages}
-                        className="pagination-button"
-                      >
-                        Next
-                      </button>
-                    </div>
+                    <p>Total Visits Recorded: {visitorData.length}</p>
+                    <ul className="visitor-list">
+                      {visitorData.map((visitor, index) => (
+                        <li key={index}>
+                          {toGMTPlus1(visitor.visit_timestamp).toLocaleString()} - {visitor.page_url}
+                        </li>
+                      ))}
+                    </ul>
                   </>
                 ) : (
                   <p>No visitor data available.</p>

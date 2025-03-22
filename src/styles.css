@@ -2954,6 +2954,7 @@ input[type="range"]:hover {
   background: rgba(255, 255, 255, 0.9);
   transition: all 0.3s ease;
   outline: none;
+  box-sizing: border-box; /* Ensures padding doesn’t cause overflow */
 }
 
 .modern-search-input:focus {
@@ -2970,18 +2971,23 @@ input[type="range"]:hover {
   font-size: 1rem;
   pointer-events: none;
   transition: all 0.3s ease;
+  max-width: calc(100% - 3rem); /* Limits width to input minus padding */
+  white-space: nowrap; /* Prevents wrapping */
+  overflow: hidden; /* Hides overflow */
+  text-overflow: ellipsis; /* Adds ellipsis for long text */
 }
 
 .floating-label.active {
-  top: -0.5rem;
+  top: -0.75rem; /* Adjusted for better spacing */
   left: 1rem;
   font-size: 0.75rem;
   color: #3cb371;
   background: #fff;
   padding: 0 0.25rem;
+  max-width: calc(100% - 2rem); /* Slightly less to fit padding */
 }
 
-/* Modern Suggestions List */
+/* Modern Suggestions List (unchanged, included for completeness) */
 .modern-suggestions-list {
   position: absolute;
   top: calc(100% + 0.5rem);
@@ -2997,7 +3003,7 @@ input[type="range"]:hover {
   max-height: 220px;
   overflow-y: auto;
   animation: slideIn 0.2s ease-out;
-  backdrop-filter: blur(5px); /* Glassmorphism effect */
+  backdrop-filter: blur(5px);
 }
 
 .modern-suggestions-list li {

@@ -62,12 +62,16 @@ function App() {
 
   useEffect(() => {
     const loadRecaptchaScript = () => {
-      if (!document.querySelector('script[src="https://www.google.com/recaptcha/api.js"]')) {
+      if (!document.querySelector('script[src="https://www.google.com/recaptcha/api.js?render=explicit"]')) {
         const script = document.createElement('script');
-        script.src = 'https://www.google.com/recaptcha/api.js';
+        script.src = 'https://www.google.com/recaptcha/api.js?render=explicit'; // Changed to explicit mode
         script.async = true;
         script.defer = true;
-        script.onload = () => setRecaptchaLoaded(true);
+        script.onload = () => {
+          console.log('reCAPTCHA script loaded');
+          setRecaptchaLoaded(true);
+        };
+        script.onerror = () => console.error('Failed to load reCAPTCHA script');
         document.head.appendChild(script);
       }
     };
@@ -240,7 +244,7 @@ function App() {
             element={user ? <Navigate to="/" /> : <Login recaptchaLoaded={recaptchaLoaded} />}
           />
           <Route path="/about" element={<About />} />
-          <Route path="/contact" element={<Contact />} />
+          <Route path="/contact" element={<Contact recaptchaLoaded={recaptchaLoaded} />} /> {/* Added recaptchaLoaded prop */}
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/blog" element={<Blog />} />

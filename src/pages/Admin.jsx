@@ -134,12 +134,27 @@ function Admin() {
       if (activeTab === 'analytics') fetchAnalytics();
 
       const fetchVisitors = async () => {
-        const { data, error } = await supabase
-          .from('visitors')
-          .select('ip_address, page_url, device_type, visit_timestamp')
-          .order('visit_timestamp', { ascending: false });
-        if (error) setError('Failed to load visitor data: ' + error.message);
-        else setVisitorData(data || []);
+        try {
+          // Fetch admin user IDs
+          const { data: admins, error: adminError } = await supabase
+            .from('admins')
+            .select('user_id');
+          if (adminError) throw adminError;
+
+          const adminIds = admins.map(admin => admin.user_id);
+
+          // Fetch visitors, excluding admins
+          const { data, error } = await supabase
+            .from('visitors')
+            .select('ip_address, page_url, device_type, visit_timestamp')
+            .not('user_id', 'in', `(${adminIds.join(',')})`)
+            .order('visit_timestamp', { ascending: false });
+          if (error) throw error;
+
+          setVisitorData(data || []);
+        } catch (error) {
+          setError('Failed to load visitor data: ' + error.message);
+        }
       };
       if (activeTab === 'analytics') fetchVisitors();
 

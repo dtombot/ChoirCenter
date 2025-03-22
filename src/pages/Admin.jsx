@@ -55,8 +55,8 @@ function Admin() {
   const [songCategoryFilter, setSongCategoryFilter] = useState('all');
   const [userSearch, setUserSearch] = useState('');
   const [analyticsSection, setAnalyticsSection] = useState('local');
-  const [visitorPage, setVisitorPage] = useState(1); // Pagination for Visitors
-  const visitorsPerPage = 10; // Items per page
+  const [visitorPage, setVisitorPage] = useState(1);
+  const visitorsPerPage = 10;
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -136,7 +136,7 @@ function Admin() {
       const fetchVisitors = async () => {
         const { data, error } = await supabase
           .from('visitors')
-          .select('ip_address, page_url, click_events, visit_timestamp')
+          .select('ip_address, page_url, device_type, visit_timestamp')
           .order('visit_timestamp', { ascending: false });
         if (error) setError('Failed to load visitor data: ' + error.message);
         else setVisitorData(data || []);
@@ -552,7 +552,6 @@ function Admin() {
   const publicSongs = songs.filter(song => song.is_public).length;
   const privateSongs = songs.length - publicSongs;
 
-  // Pagination for Visitors
   const indexOfLastVisitor = visitorPage * visitorsPerPage;
   const indexOfFirstVisitor = indexOfLastVisitor - visitorsPerPage;
   const currentVisitors = visitorData.slice(indexOfFirstVisitor, indexOfLastVisitor);
@@ -882,7 +881,7 @@ function Admin() {
                     formats={quillFormats}
                     className="admin-quill-editor"
                     placeholder="Write your blog post content here..."
-                    style={{ height: '300px' }} // Increased height
+                    style={{ height: '300px' }}
                   />
                 </div>
                 <div className="admin-form-group">
@@ -1020,38 +1019,44 @@ function Admin() {
               <div className="analytics-section google-data">
                 <h3 className="analytics-section-title">Google Analytics (Last 30 Days)</h3>
                 {analyticsData.ga ? (
-                  <div className="analytics-row">
-                    <div className="admin-analytics-item">
-                      <h4 className="admin-analytics-title">Active Users</h4>
-                      <p className="admin-analytics-value">{analyticsData.ga.rows?.[0]?.metricValues?.[0]?.value || 'N/A'}</p>
+                  analyticsData.ga.error ? (
+                    <p>Error: {analyticsData.ga.error}</p>
+                  ) : analyticsData.ga.rows?.length > 0 ? (
+                    <div className="analytics-row">
+                      <div className="admin-analytics-item">
+                        <h4 className="admin-analytics-title">Active Users</h4>
+                        <p className="admin-analytics-value">{analyticsData.ga.rows[0].metricValues[0]?.value || 'N/A'}</p>
+                      </div>
+                      <div className="admin-analytics-item">
+                        <h4 className="admin-analytics-title">Page Views</h4>
+                        <p className="admin-analytics-value">{analyticsData.ga.rows[0].metricValues[1]?.value || 'N/A'}</p>
+                      </div>
+                      <div className="admin-analytics-item">
+                        <h4 className="admin-analytics-title">Sessions</h4>
+                        <p className="admin-analytics-value">{analyticsData.ga.rows[0].metricValues[2]?.value || 'N/A'}</p>
+                      </div>
+                      <div className="admin-analytics-item">
+                        <h4 className="admin-analytics-title">Bounce Rate</h4>
+                        <p className="admin-analytics-value">{analyticsData.ga.rows[0].metricValues[3]?.value ? `${(parseFloat(analyticsData.ga.rows[0].metricValues[3].value) * 100).toFixed(1)}%` : 'N/A'}</p>
+                      </div>
+                      <div className="admin-analytics-item">
+                        <h4 className="admin-analytics-title">Avg. Duration</h4>
+                        <p className="admin-analytics-value">{analyticsData.ga.rows[0].metricValues[4]?.value ? `${Math.round(analyticsData.ga.rows[0].metricValues[4].value)}s` : 'N/A'}</p>
+                      </div>
+                      <div className="admin-analytics-item">
+                        <h4 className="admin-analytics-title">Event Count</h4>
+                        <p className="admin-analytics-value">{analyticsData.ga.rows[0].metricValues[5]?.value || 'N/A'}</p>
+                      </div>
+                      <div className="admin-analytics-item">
+                        <h4 className="admin-analytics-title">New Users</h4>
+                        <p className="admin-analytics-value">{analyticsData.ga.rows[0].metricValues[6]?.value || 'N/A'}</p>
+                      </div>
                     </div>
-                    <div className="admin-analytics-item">
-                      <h4 className="admin-analytics-title">Page Views</h4>
-                      <p className="admin-analytics-value">{analyticsData.ga.rows?.[0]?.metricValues?.[1]?.value || 'N/A'}</p>
-                    </div>
-                    <div className="admin-analytics-item">
-                      <h4 className="admin-analytics-title">Sessions</h4>
-                      <p className="admin-analytics-value">{analyticsData.ga.rows?.[0]?.metricValues?.[2]?.value || 'N/A'}</p>
-                    </div>
-                    <div className="admin-analytics-item">
-                      <h4 className="admin-analytics-title">Bounce Rate</h4>
-                      <p className="admin-analytics-value">{analyticsData.ga.rows?.[0]?.metricValues?.[3]?.value ? `${(parseFloat(analyticsData.ga.rows[0].metricValues[3].value) * 100).toFixed(1)}%` : 'N/A'}</p>
-                    </div>
-                    <div className="admin-analytics-item">
-                      <h4 className="admin-analytics-title">Avg. Duration</h4>
-                      <p className="admin-analytics-value">{analyticsData.ga.rows?.[0]?.metricValues?.[4]?.value ? `${Math.round(analyticsData.ga.rows[0].metricValues[4].value)}s` : 'N/A'}</p>
-                    </div>
-                    <div className="admin-analytics-item">
-                      <h4 className="admin-analytics-title">Event Count</h4>
-                      <p className="admin-analytics-value">{analyticsData.ga.rows?.[0]?.metricValues?.[5]?.value || 'N/A'}</p>
-                    </div>
-                    <div className="admin-analytics-item">
-                      <h4 className="admin-analytics-title">New Users</h4>
-                      <p className="admin-analytics-value">{analyticsData.ga.rows?.[0]?.metricValues?.[6]?.value || 'N/A'}</p>
-                    </div>
-                  </div>
+                  ) : (
+                    <p>No Google Analytics data available for the past 30 days.</p>
+                  )
                 ) : (
-                  <p>No Google Analytics data available.</p>
+                  <p>Loading Google Analytics data...</p>
                 )}
               </div>
             )}
@@ -1059,38 +1064,40 @@ function Admin() {
               <div className="analytics-section google-data">
                 <h3 className="analytics-section-title">Search Console (Last 30 Days)</h3>
                 {analyticsData.gsc ? (
-                  <div className="analytics-row">
-                    <div className="admin-analytics-item">
-                      <h4 className="admin-analytics-title">Total Clicks</h4>
-                      <p className="admin-analytics-value">{analyticsData.gsc.rows?.reduce((sum, row) => sum + row.clicks, 0) || 'N/A'}</p>
-                    </div>
-                    <div className="admin-analytics-item">
-                      <h4 className="admin-analytics-title">Total Impressions</h4>
-                      <p className="admin-analytics-value">{analyticsData.gsc.rows?.reduce((sum, row) => sum + row.impressions, 0) || 'N/A'}</p>
-                    </div>
-                    <div className="admin-analytics-item">
-                      <h4 className="admin-analytics-title">Avg. CTR</h4>
-                      <p className="admin-analytics-value">{analyticsData.gsc.rows?.length ? `${((analyticsData.gsc.rows.reduce((sum, row) => sum + row.ctr, 0) / analyticsData.gsc.rows.length) * 100).toFixed(1)}%` : 'N/A'}</p>
-                    </div>
-                    <div className="admin-analytics-item">
-                      <h4 className="admin-analytics-title">Avg. Position</h4>
-                      <p className="admin-analytics-value">{analyticsData.gsc.rows?.length ? (analyticsData.gsc.rows.reduce((sum, row) => sum + row.position, 0) / analyticsData.gsc.rows.length).toFixed(1) : 'N/A'}</p>
-                    </div>
-                    <div className="admin-analytics-item">
-                      <h4 className="admin-analytics-title">Top Queries</h4>
-                      {analyticsData.gsc.rows?.length > 0 ? (
+                  analyticsData.gsc.error ? (
+                    <p>Error: {analyticsData.gsc.error}</p>
+                  ) : analyticsData.gsc.rows?.length > 0 ? (
+                    <div className="analytics-row">
+                      <div className="admin-analytics-item">
+                        <h4 className="admin-analytics-title">Total Clicks</h4>
+                        <p className="admin-analytics-value">{analyticsData.gsc.rows.reduce((sum, row) => sum + row.clicks, 0) || 'N/A'}</p>
+                      </div>
+                      <div className="admin-analytics-item">
+                        <h4 className="admin-analytics-title">Total Impressions</h4>
+                        <p className="admin-analytics-value">{analyticsData.gsc.rows.reduce((sum, row) => sum + row.impressions, 0) || 'N/A'}</p>
+                      </div>
+                      <div className="admin-analytics-item">
+                        <h4 className="admin-analytics-title">Avg. CTR</h4>
+                        <p className="admin-analytics-value">{analyticsData.gsc.rows.length ? `${((analyticsData.gsc.rows.reduce((sum, row) => sum + row.ctr, 0) / analyticsData.gsc.rows.length) * 100).toFixed(1)}%` : 'N/A'}</p>
+                      </div>
+                      <div className="admin-analytics-item">
+                        <h4 className="admin-analytics-title">Avg. Position</h4>
+                        <p className="admin-analytics-value">{analyticsData.gsc.rows.length ? (analyticsData.gsc.rows.reduce((sum, row) => sum + row.position, 0) / analyticsData.gsc.rows.length).toFixed(1) : 'N/A'}</p>
+                      </div>
+                      <div className="admin-analytics-item">
+                        <h4 className="admin-analytics-title">Top Queries</h4>
                         <ul className="search-queries">
                           {analyticsData.gsc.rows.slice(0, 5).map((row, index) => (
                             <li key={index}>{row.keys[0]}: {row.clicks} clicks</li>
                           ))}
                         </ul>
-                      ) : (
-                        <p className="admin-analytics-value">N/A</p>
-                      )}
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <p>No Search Console data available for the past 30 days.</p>
+                  )
                 ) : (
-                  <p>No Search Console data available.</p>
+                  <p>Loading Search Console data...</p>
                 )}
               </div>
             )}
@@ -1103,7 +1110,7 @@ function Admin() {
                       <tr>
                         <th>IP Address</th>
                         <th>Page Visited</th>
-                        <th>Clicks</th>
+                        <th>Device Type</th>
                         <th>Visit Time</th>
                       </tr>
                     </thead>
@@ -1112,7 +1119,7 @@ function Admin() {
                         <tr key={index}>
                           <td>{visitor.ip_address || 'N/A'}</td>
                           <td>{visitor.page_url || 'N/A'}</td>
-                          <td>{visitor.click_events ? JSON.stringify(visitor.click_events) : 'N/A'}</td>
+                          <td>{visitor.device_type || 'N/A'}</td>
                           <td>{new Date(visitor.visit_timestamp).toLocaleString()}</td>
                         </tr>
                       ))}

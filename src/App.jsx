@@ -60,6 +60,7 @@ function App() {
   const [recaptchaLoaded, setRecaptchaLoaded] = useState(false);
   const [visitStartTime, setVisitStartTime] = useState(null);
   const [clickEvents, setClickEvents] = useState([]);
+  const [lastTracked, setLastTracked] = useState({}); // Store last tracked time per page/IP
 
   useEffect(() => {
     const loadRecaptchaScript = () => {
@@ -146,26 +147,35 @@ function App() {
       setClickEvents((prev) => [
         ...prev,
         { element: e.target.tagName, timestamp: Date.now() },
-      ]);
+      ].slice(-10)); // Limit to last 10 clicks to save memory
     };
     document.addEventListener('click', handleClick);
 
-    const trackVisit = async () => {
-      if (!visitStartTime) {
-        console.log('Tracking skipped: No start time'); // Debug
+    const trackVisit = async (isUnload = false) => {
+      if (!visitStartTime) return;
+
+      const duration = isUnload ? Math.round((Date.now() - visitStartTime) / 1000) : 0;
+      const pageUrl = window.location.pathname;
+      const trackingKey = `${pageUrl}-${user?.id || 'anonymous'}`; // Unique key per page/user
+      const now = Date.now();
+      const lastTrackedTime = lastTracked[trackingKey] || 0;
+
+      // Only track if >1 hour since last track for this page/user combo
+      if (now - lastTrackedTime < 60 * 60 * 1000 && !isUnload) {
+        console.log('Skipping track: Recent visit already recorded');
         return;
       }
-      const duration = Math.round((Date.now() - visitStartTime) / 1000);
+
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData?.session?.access_token;
 
       const trackingData = {
-        pageUrl: window.location.pathname,
-        clickEvents,
+        pageUrl,
+        clickEvents: isUnload ? clickEvents : [], // Only send clicks on unload
         duration,
         userId: user?.id || null,
       };
-      console.log('Attempting to track visit:', { ...trackingData, token: token ? 'Present' : 'Absent' }); // Debug
+      console.log('Tracking visit:', { ...trackingData, token: token ? 'Present' : 'Absent' });
 
       try {
         const response = await fetch('/.netlify/functions/track-visitor', {
@@ -176,35 +186,36 @@ function App() {
           },
           body: JSON.stringify(trackingData),
         });
-        const responseData = await response.json(); // Parse JSON response
+        const responseData = await response.json();
         if (!response.ok) {
-          console.error('Track visit failed:', response.status, responseData); // Debug
+          console.error('Track visit failed:', response.status, responseData);
         } else {
-          console.log('Track success:', responseData); // Debug
-          setClickEvents([]); // Reset click events after successful track
-          setVisitStartTime(Date.now()); // Reset start time
+          console.log('Track success:', responseData);
+          if (isUnload) {
+            setClickEvents([]); // Reset on unload
+            setVisitStartTime(null);
+          } else {
+            setLastTracked((prev) => ({ ...prev, [trackingKey]: now }));
+          }
         }
       } catch (error) {
-        console.error('Track visit error:', error.message); // Debug
+        console.error('Track visit error:', error.message);
       }
     };
 
     // Track on page load
-    trackVisit();
-
-    // Track every 30 seconds while on page
-    const intervalId = setInterval(trackVisit, 30000);
+    trackVisit(false);
 
     // Track on page unload
-    window.addEventListener('beforeunload', trackVisit);
+    const handleUnload = () => trackVisit(true);
+    window.addEventListener('beforeunload', handleUnload);
 
     return () => {
       authListener.subscription.unsubscribe();
       document.removeEventListener('click', handleClick);
-      window.removeEventListener('beforeunload', trackVisit);
-      clearInterval(intervalId);
+      window.removeEventListener('beforeunload', handleUnload);
     };
-  }, [user]); // Removed cookiesAccepted dependency
+  }, [user]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();

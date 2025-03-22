@@ -16,61 +16,20 @@ exports.handler = async (event) => {
   const body = event.body ? JSON.parse(event.body) : {};
 
   const ip = event.headers['x-nf-client-connection-ip'] || 'unknown';
-  const referrer = event.headers['referer'] || 'direct';
-  const userAgent = event.headers['user-agent'] || 'unknown';
-  const { pageUrl, clickEvents, duration, userId } = body;
-
-  const deviceType = /mobile/i.test(userAgent)
-    ? 'mobile'
-    : /tablet/i.test(userAgent)
-    ? 'tablet'
-    : 'desktop';
-
-  let authenticatedUserId = userId || null;
-  const token = event.headers['authorization']?.replace('Bearer ', '');
-  console.log('Request headers:', { token: token ? 'Present' : 'Absent', ip, referrer, userAgent });
-
-  if (token && !authenticatedUserId) {
-    try {
-      const { data: { user }, error } = await supabase.auth.getUser(token);
-      if (error) {
-        console.error('Auth error:', error.message);
-        throw error;
-      }
-      authenticatedUserId = user?.id || null;
-      console.log('User authenticated:', authenticatedUserId);
-    } catch (authError) {
-      console.error('Auth error details:', authError.message);
-      return {
-        statusCode: 401,
-        body: JSON.stringify({ error: 'Authentication failed: ' + authError.message }),
-      };
-    }
-  }
+  const { pageUrl } = body;
 
   const visitorData = {
     ip_address: ip,
-    referrer: referrer || 'direct',
-    city: 'unknown',
-    country: 'unknown',
-    device_type: deviceType || 'unknown',
-    user_agent: userAgent || 'unknown',
     page_url: pageUrl || '/',
-    click_events: clickEvents || [],
-    duration: duration || 0,
     visit_timestamp: new Date().toISOString(),
-    user_id: authenticatedUserId,
   };
-
-  console.log('Inserting visitor data:', visitorData);
 
   try {
     const { data, error } = await supabase.from('visitors').insert(visitorData).select('id');
     if (error) {
-      console.error('Insert error details:', error.message);
+      console.error('Insert error:', error.message);
       throw error;
     }
-    console.log('Visitor inserted successfully:', { insertedId: data[0]?.id });
     return {
       statusCode: 200,
       body: JSON.stringify({ message: 'Visit tracked', id: data[0]?.id || null }),

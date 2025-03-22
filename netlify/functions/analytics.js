@@ -13,6 +13,10 @@ exports.handler = async (event, context) => {
       refresh_token: '1//04bOTrckPrz-dCgYIARAAGAQSNwF-L9IrhBtFOmZgkSlsl-ox2Q1Pn9td46VHUd1iAPhpE_-r716xPPHL8ppV8hIa-2Imge9U1Wo',
     });
 
+    // Refresh token if expired
+    const { credentials } = await oauth2Client.refreshAccessToken();
+    oauth2Client.setCredentials(credentials);
+
     const analytics = google.analyticsdata({
       version: 'v1beta',
       auth: oauth2Client,
@@ -42,7 +46,7 @@ exports.handler = async (event, context) => {
       });
     } catch (gaError) {
       console.error('Google Analytics Error:', gaError.message);
-      gaResponse = { data: { error: gaError.message } };
+      gaResponse = { data: { rows: [], error: gaError.message } }; // Ensure rows exists
     }
 
     let gscResponse;
@@ -58,7 +62,7 @@ exports.handler = async (event, context) => {
       });
     } catch (gscError) {
       console.error('Google Search Console Error:', gscError.message);
-      gscResponse = { data: { error: gscError.message } };
+      gscResponse = { data: { rows: [], error: gscError.message } }; // Ensure rows exists
     }
 
     return {

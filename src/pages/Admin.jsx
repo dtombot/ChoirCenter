@@ -47,6 +47,8 @@ function Admin() {
   const [topSongs, setTopSongs] = useState([]);
   const [topPosts, setTopPosts] = useState([]);
   const [songOfTheWeekHtml, setSongOfTheWeekHtml] = useState('');
+  const [songOfTheWeekTitle, setSongOfTheWeekTitle] = useState(''); // New field
+  const [songOfTheWeekComposer, setSongOfTheWeekComposer] = useState(''); // New field
   const [editingSongId, setEditingSongId] = useState(null);
   const [editingPostId, setEditingPostId] = useState(null);
   const [editingAdId, setEditingAdId] = useState(null);
@@ -185,10 +187,14 @@ function Admin() {
       const fetchSongOfTheWeek = async () => {
         const { data, error } = await supabase
           .from('song_of_the_week')
-          .select('audio_url')
+          .select('title, composer, audio_url')
           .single();
         if (error) console.warn('Song of the week fetch warning: ' + error.message);
-        else setSongOfTheWeekHtml(data?.audio_url || '');
+        else {
+          setSongOfTheWeekTitle(data?.title || '');
+          setSongOfTheWeekComposer(data?.composer || '');
+          setSongOfTheWeekHtml(data?.audio_url || '');
+        }
       };
       fetchSongOfTheWeek();
 
@@ -373,16 +379,22 @@ function Admin() {
         .single();
       if (fetchError && fetchError.code !== 'PGRST116') throw fetchError;
 
+      const songData = {
+        title: songOfTheWeekTitle,
+        composer: songOfTheWeekComposer,
+        audio_url: songOfTheWeekHtml,
+      };
+
       if (existingData) {
         const { error } = await supabase
           .from('song_of_the_week')
-          .update({ audio_url: songOfTheWeekHtml })
+          .update(songData)
           .eq('id', existingData.id);
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from('song_of_the_week')
-          .insert([{ audio_url: songOfTheWeekHtml }]);
+          .insert([songData]);
         if (error) throw error;
       }
       setError('Song of the Week updated successfully!');
@@ -1212,6 +1224,28 @@ function Admin() {
           <div className="admin-form-card">
             <h3 className="admin-form-title">Song of the Week</h3>
             <form onSubmit={handleSongOfTheWeekSubmit} className="admin-modern-form-grid">
+              <div className="admin-form-group">
+                <label htmlFor="songOfTheWeekTitle">Title</label>
+                <input
+                  id="songOfTheWeekTitle"
+                  type="text"
+                  placeholder="Enter song title"
+                  value={songOfTheWeekTitle}
+                  onChange={(e) => setSongOfTheWeekTitle(e.target.value)}
+                  className="admin-form-input"
+                />
+              </div>
+              <div className="admin-form-group">
+                <label htmlFor="songOfTheWeekComposer">Composer</label>
+                <input
+                  id="songOfTheWeekComposer"
+                  type="text"
+                  placeholder="Enter composer name"
+                  value={songOfTheWeekComposer}
+                  onChange={(e) => setSongOfTheWeekComposer(e.target.value)}
+                  className="admin-form-input"
+                />
+              </div>
               <div className="admin-form-group full-width">
                 <label htmlFor="songOfTheWeekHtml">Embed Code (iframe or audio URL)</label>
                 <ReactQuill

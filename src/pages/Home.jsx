@@ -519,41 +519,41 @@ function Home() {
           <div className="hero-content">
             <h1 className="hero-title animate-text">Everything Your Choir Needs in One Place</h1>
             <p className="hero-text animate-text">Discover free choir music and resources for choristers</p>
-            <form onSubmit={handleSearch} className="search-form modern-search-form">
-              <div className="search-container">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={handleSearchChange}
-                  onKeyDown={handleKeyPress} // Changed to onKeyDown for better key handling
-                  className="search-input modern-search-input"
-                  aria-label="Search choir songs and posts"
-                  ref={searchInputRef}
-                />
-                <label
-                  className={`floating-label ${searchQuery ? 'active' : ''}`}
-                >
-                  Search choir songs and posts...
-                </label>
-                {suggestions.length > 0 && (
-                  <ul className="suggestions-list modern-suggestions-list">
-                    {suggestions.map((suggestion, index) => (
-                      <li
-                        key={index}
-                        onClick={() => handleSuggestionClick(suggestion)}
-                        className={index === selectedSuggestionIndex ? 'selected' : ''}
-                        onMouseEnter={() => setSelectedSuggestionIndex(index)}
-                        onMouseLeave={() => setSelectedSuggestionIndex(-1)}
-                      >
-                        <span className="suggestion-title">{suggestion.title}</span>
-                        <span className="suggestion-type">({suggestion.type})</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-              <input type="text" name="honeypot" className="honeypot" />
-            </form>
+<form onSubmit={handleSearch} className="search-form modern-search-form">
+  <div className="search-container">
+    <input
+      type="text"
+      value={searchQuery}
+      onChange={handleSearchChange}
+      onKeyDown={handleKeyPress}
+      className="search-input modern-search-input"
+      aria-label="Search choir songs and posts"
+      ref={searchInputRef}
+    />
+    <label
+      className={`floating-label ${searchQuery ? 'active' : ''}`}
+    >
+      Search songs & posts...
+    </label>
+    {suggestions.length > 0 && (
+      <ul className="suggestions-list modern-suggestions-list">
+        {suggestions.map((suggestion, index) => (
+          <li
+            key={index}
+            onClick={() => handleSuggestionClick(suggestion)}
+            className={index === selectedSuggestionIndex ? 'selected' : ''}
+            onMouseEnter={() => setSelectedSuggestionIndex(index)}
+            onMouseLeave={() => setSelectedSuggestionIndex(-1)}
+          >
+            <span className="suggestion-title">{suggestion.title}</span>
+            <span className="suggestion-type">({suggestion.type})</span>
+          </li>
+        ))}
+      </ul>
+    )}
+  </div>
+  <input type="text" name="honeypot" className="honeypot" />
+</form>
             <div className="button-group">
               <Link to="/library" className="action-button animate-button">Explore Choir Library</Link>
               <Link to="/blog" className="action-button animate-button">Latest Choir Insights</Link>

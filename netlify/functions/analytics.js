@@ -1,8 +1,12 @@
 const { google } = require('googleapis');
 
 exports.handler = async (event, context) => {
-  console.log('Function invoked:', new Date().toISOString()); // Log invocation time
+  console.log('Function invoked:', new Date().toISOString());
   try {
+    if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET || !process.env.SITE_URL || !process.env.GA_PROPERTY_ID) {
+      throw new Error('Missing required environment variables');
+    }
+
     const oauth2Client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_SECRET,
@@ -11,15 +15,19 @@ exports.handler = async (event, context) => {
 
     console.log('Setting credentials...');
     oauth2Client.setCredentials({
-      access_token: process.env.GOOGLE_ACCESS_TOKEN || 'ya29.a0AeXRPp5dG9flvjWbUbXD1Klm-OKk1v1ZAwuR4VuraBZ125sbE8xJ_E__fRtW4o7gUAgMnKLn95gaXR-6YRIxvkhtcIf78e-TfMHNlNUPvyv2obi_fIWGaSpZ2fAh5txSFtWN5c4l2sTmR6UFC0H47pDZjmhXkHWmf32xGnSpaCgYKAVwSARISFQHGX2MiJXox2tJIbsLReNlhiCi8PQ0175',
-      refresh_token: process.env.GOOGLE_REFRESH_TOKEN || '1//04bOTrckPrz-dCgYIARAAGAQSNwF-L9IrhBtFOmZgkSlsl-ox2Q1Pn9td46VHUd1iAPhpE_-r716xPPHL8ppV8hIa-2Imge9U1Wo',
+      access_token: process.env.GOOGLE_ACCESS_TOKEN,
+      refresh_token: process.env.GOOGLE_REFRESH_TOKEN,
     });
 
-    // Refresh token if expired
     console.log('Refreshing token...');
-    const { credentials } = await oauth2Client.refreshAccessToken();
-    oauth2Client.setCredentials(credentials);
-    console.log('Token refreshed:', credentials.access_token);
+    try {
+      const { credentials } = await oauth2Client.refreshAccessToken();
+      oauth2Client.setCredentials(credentials);
+      console.log('Token refreshed:', credentials.access_token.substring(0, 10) + '...');
+    } catch (refreshError) {
+      console.error('Token refresh failed:', refreshError.message);
+      throw new Error('Failed to refresh token: ' + refreshError.message);
+    }
 
     const analytics = google.analyticsdata({
       version: 'v1beta',

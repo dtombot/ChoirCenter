@@ -14,12 +14,24 @@ const generateUUID = () => {
   });
 };
 
+// Debounce hook
+const useDebounce = (value, delay) => {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedValue(value), delay);
+    return () => clearTimeout(timer);
+  }, [value, delay]);
+  return debouncedValue;
+};
+
 function Home() {
   const [songs, setSongs] = useState([]);
   const [filteredSongs, setFilteredSongs] = useState([]);
   const [posts, setPosts] = useState([]);
   const [filteredPosts, setFilteredPosts] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [suggestions, setSuggestions] = useState([]);
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [error, setError] = useState(null);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [downloadPrompt, setDownloadPrompt] = useState(null);
@@ -28,7 +40,7 @@ function Home() {
   const [songComposer, setSongComposer] = useState('');
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [expandedFaq, setExpandedFaq] = useState(null); // New state for collapsible FAQs
+  const [expandedFaq, setExpandedFaq] = useState(null);
   const audioRef = useRef(null);
   const navigate = useNavigate();
 
@@ -102,6 +114,10 @@ function Home() {
     }
   }, [songOfTheWeek]);
 
+  useEffect(() => {
+    filterContent(debouncedSearchQuery);
+  }, [debouncedSearchQuery]);
+
   const togglePlay = () => {
     if (audioRef.current) {
       console.log('Attempting to play audio from URL:', audioRef.current.src);
@@ -137,19 +153,25 @@ function Home() {
       console.log('Resetting to initial 6 items');
       setFilteredSongs(songs.slice(0, 6));
       setFilteredPosts(posts.slice(0, 6));
+      setSuggestions([]);
       setError(null);
     } else {
       const songMatches = songs.filter(song =>
         song.title.toLowerCase().includes(trimmedQuery) ||
         (song.composer && song.composer.toLowerCase().includes(trimmedQuery))
-      ).slice(0, 6);
+      );
       const postMatches = posts.filter(post =>
         post.title.toLowerCase().includes(trimmedQuery)
-      ).slice(0, 6);
+      );
       console.log('Filtered songs:', JSON.stringify(songMatches, null, 2));
       console.log('Filtered posts:', JSON.stringify(postMatches, null, 2));
-      setFilteredSongs(songMatches);
-      setFilteredPosts(postMatches);
+      setFilteredSongs(songMatches.slice(0, 6));
+      setFilteredPosts(postMatches.slice(0, 6));
+      const allSuggestions = [
+        ...songMatches.map(song => ({ type: 'song', title: song.title, id: song.id, permalink: song.permalink })),
+        ...postMatches.map(post => ({ type: 'post', title: post.title, id: post.id, permalink: post.permalink }))
+      ].slice(0, 5); // Limit to 5 suggestions
+      setSuggestions(allSuggestions);
       if (songMatches.length === 0 && postMatches.length === 0) {
         setError(`No results found for "${query}".`);
       } else {
@@ -180,7 +202,6 @@ function Home() {
     const newQuery = e.target.value;
     console.log('Search input changed:', newQuery);
     setSearchQuery(newQuery);
-    filterContent(newQuery);
   };
 
   const handleKeyPress = (e) => {
@@ -199,6 +220,16 @@ function Home() {
       }
       console.log('Navigating via Enter keypress with query:', searchQuery);
       navigate(`/search?query=${encodeURIComponent(searchQuery)}`);
+    }
+  };
+
+  const handleSuggestionClick = (suggestion) => {
+    setSearchQuery(suggestion.title);
+    setSuggestions([]);
+    if (suggestion.type === 'song') {
+      navigate(`/song/${suggestion.permalink || suggestion.id}`);
+    } else {
+      navigate(`/blog/${suggestion.permalink || `post-${suggestion.id}`}`);
     }
   };
 
@@ -277,7 +308,7 @@ function Home() {
           .eq('is_authenticated', true)
           .single();
 
-        if (limitError && limitError.code !== 'PGRST116') {
+        if (limitError && limitError.codeadik !== 'PGRST116') {
           console.error('Fetch download_limits error for user:', limitError.message);
         } else if (limitData) {
           downloadCount = Math.max(downloadCount, limitData.download_count);
@@ -432,7 +463,6 @@ function Home() {
     }
   };
 
-  // Function to toggle FAQ expansion
   const toggleFaq = (index) => {
     setExpandedFaq(expandedFaq === index ? null : index);
   };
@@ -469,15 +499,29 @@ function Home() {
             <h1 className="hero-title animate-text">Everything Your Choir Needs in One Place</h1>
             <p className="hero-text animate-text">Discover free choir music and resources for choristers</p>
             <form onSubmit={handleSearch} className="search-form">
-              <input
-                type="text"
-                placeholder="Search choir songs and posts..."
-                value={searchQuery}
-                onChange={handleSearchChange}
-                onKeyPress={handleKeyPress}
-                className="search-input animate-input"
-                aria-label="Search choir songs and posts"
-              />
+              <div style={{ position: 'relative' }}>
+                <input
+                  type="text"
+                  placeholder="Search choir songs and posts..."
+                  value={searchQuery}
+                  onChange={handleSearchChange}
+                  onKeyPress={handleKeyPress}
+                  className="search-input animate-input"
+                  aria-label="Search choir songs and posts"
+                />
+                {suggestions.length > 0 && (
+                  <ul className="suggestions-list">
+                    {suggestions.map((suggestion, index) => (
+                      <li
+                        key={index}
+                        onClick={() => handleSuggestionClick(suggestion)}
+                      >
+                        {suggestion.title} <span style={{ color: '#3cb371', fontSize: '0.85rem' }}>({suggestion.type})</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
               <input type="text" name="honeypot" className="honeypot" />
             </form>
             <div className="button-group">

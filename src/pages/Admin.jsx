@@ -135,15 +135,16 @@ function Admin() {
 
       const fetchVisitors = async () => {
         try {
-          // Fetch admin user IDs
-          const { data: admins, error: adminError } = await supabase
-            .from('admins')
-            .select('user_id');
+          // Fetch admin user IDs from profiles where is_admin is true
+          const { data: adminProfiles, error: adminError } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('is_admin', true);
           if (adminError) throw adminError;
 
-          const adminIds = admins.map(admin => admin.user_id);
+          const adminIds = adminProfiles.map(profile => profile.id);
 
-          // Fetch visitors, excluding admins
+          // Fetch visitors, excluding those with user_id matching admins
           const { data, error } = await supabase
             .from('visitors')
             .select('ip_address, page_url, device_type, visit_timestamp')
@@ -1082,31 +1083,29 @@ function Admin() {
                   analyticsData.gsc.error ? (
                     <p>Error: {analyticsData.gsc.error}</p>
                   ) : analyticsData.gsc.rows?.length > 0 ? (
-                    <div className="analytics-row">
-                      <div className="admin-analytics-item">
-                        <h4 className="admin-analytics-title">Total Clicks</h4>
-                        <p className="admin-analytics-value">{analyticsData.gsc.rows.reduce((sum, row) => sum + row.clicks, 0) || 'N/A'}</p>
-                      </div>
-                      <div className="admin-analytics-item">
-                        <h4 className="admin-analytics-title">Total Impressions</h4>
-                        <p className="admin-analytics-value">{analyticsData.gsc.rows.reduce((sum, row) => sum + row.impressions, 0) || 'N/A'}</p>
-                      </div>
-                      <div className="admin-analytics-item">
-                        <h4 className="admin-analytics-title">Avg. CTR</h4>
-                        <p className="admin-analytics-value">{analyticsData.gsc.rows.length ? `${((analyticsData.gsc.rows.reduce((sum, row) => sum + row.ctr, 0) / analyticsData.gsc.rows.length) * 100).toFixed(1)}%` : 'N/A'}</p>
-                      </div>
-                      <div className="admin-analytics-item">
-                        <h4 className="admin-analytics-title">Avg. Position</h4>
-                        <p className="admin-analytics-value">{analyticsData.gsc.rows.length ? (analyticsData.gsc.rows.reduce((sum, row) => sum + row.position, 0) / analyticsData.gsc.rows.length).toFixed(1) : 'N/A'}</p>
-                      </div>
-                      <div className="admin-analytics-item">
-                        <h4 className="admin-analytics-title">Top Queries</h4>
-                        <ul className="search-queries">
-                          {analyticsData.gsc.rows.slice(0, 5).map((row, index) => (
-                            <li key={index}>{row.keys[0]}: {row.clicks} clicks</li>
+                    <div className="analytics-table-container">
+                      <table className="admin-table">
+                        <thead>
+                          <tr>
+                            <th>Query</th>
+                            <th>Clicks</th>
+                            <th>Impressions</th>
+                            <th>CTR</th>
+                            <th>Position</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {analyticsData.gsc.rows.map((row, index) => (
+                            <tr key={index}>
+                              <td>{row.keys[0]}</td>
+                              <td>{row.clicks}</td>
+                              <td>{row.impressions}</td>
+                              <td>{((row.clicks / row.impressions) * 100).toFixed(1)}%</td>
+                              <td>{row.position.toFixed(1)}</td>
+                            </tr>
                           ))}
-                        </ul>
-                      </div>
+                        </tbody>
+                      </table>
                     </div>
                   ) : (
                     <p>No Search Console data available for the past 30 days.</p>
@@ -1117,64 +1116,59 @@ function Admin() {
               </div>
             )}
             {analyticsSection === 'visitors' && (
-              <div className="analytics-section visitor-data">
-                <h3 className="analytics-section-title">Visitor Data</h3>
-                <div className="admin-table-container">
-                  <table className="admin-table">
-                    <thead>
-                      <tr>
-                        <th>IP Address</th>
-                        <th>Page Visited</th>
-                        <th>Device Type</th>
-                        <th>Visit Time</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {currentVisitors.map((visitor, index) => (
-                        <tr key={index}>
-                          <td>{visitor.ip_address || 'N/A'}</td>
-                          <td>{visitor.page_url || 'N/A'}</td>
-                          <td>{visitor.device_type || 'N/A'}</td>
-                          <td>{new Date(visitor.visit_timestamp).toLocaleString()}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                <div className="pagination" style={{ display: 'flex', justifyContent: 'center', marginTop: '1rem' }}>
-                  <button 
-                    onClick={() => paginate(visitorPage - 1)} 
-                    disabled={visitorPage === 1}
-                    className="pagination-button"
-                    style={{ padding: '0.5rem 1rem', margin: '0 0.5rem', background: visitorPage === 1 ? '#e0e0e0' : '#3cb371', color: '#fff', border: 'none', borderRadius: '6px', cursor: visitorPage === 1 ? 'not-allowed' : 'pointer' }}
-                  >
-                    Previous
-                  </button>
-                  {Array.from({ length: totalVisitorPages }, (_, i) => i + 1).map(number => (
-                    <button 
-                      key={number} 
-                      onClick={() => paginate(number)} 
-                      className={`pagination-button ${visitorPage === number ? 'active' : ''}`}
-                      style={{ padding: '0.5rem 1rem', margin: '0 0.2rem', background: visitorPage === number ? '#2f9e5e' : '#f4f6f8', color: visitorPage === number ? '#fff' : '#2f4f2f', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
-                    >
-                      {number}
-                    </button>
-                  ))}
-                  <button 
-                    onClick={() => paginate(visitorPage + 1)} 
-                    disabled={visitorPage === totalVisitorPages}
-                    className="pagination-button"
-                    style={{ padding: '0.5rem 1rem', margin: '0 0.5rem', background: visitorPage === totalVisitorPages ? '#e0e0e0' : '#3cb371', color: '#fff', border: 'none', borderRadius: '6px', cursor: visitorPage === totalVisitorPages ? 'not-allowed' : 'pointer' }}
-                  >
-                    Next
-                  </button>
-                </div>
+              <div className="analytics-section visitors-data">
+                <h3 className="analytics-section-title">Recent Visitors</h3>
+                {visitorData.length > 0 ? (
+                  <>
+                    <div className="analytics-table-container">
+                      <table className="admin-table">
+                        <thead>
+                          <tr>
+                            <th>IP Address</th>
+                            <th>Page URL</th>
+                            <th>Device Type</th>
+                            <th>Visit Timestamp</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {currentVisitors.map((visitor, index) => (
+                            <tr key={index}>
+                              <td>{visitor.ip_address}</td>
+                              <td>{visitor.page_url}</td>
+                              <td>{visitor.device_type}</td>
+                              <td>{new Date(visitor.visit_timestamp).toLocaleString()}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div className="pagination">
+                      <button 
+                        onClick={() => paginate(visitorPage - 1)} 
+                        disabled={visitorPage === 1}
+                        className="pagination-button"
+                      >
+                        Previous
+                      </button>
+                      <span className="pagination-info">Page {visitorPage} of {totalVisitorPages}</span>
+                      <button 
+                        onClick={() => paginate(visitorPage + 1)} 
+                        disabled={visitorPage === totalVisitorPages}
+                        className="pagination-button"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <p>No visitor data available.</p>
+                )}
               </div>
             )}
           </div>
         )}
         {activeTab === 'users' && (
-          <>
+          <div className="admin-users-container">
             <div className="admin-filter-bar">
               <input 
                 type="text" 
@@ -1201,81 +1195,115 @@ function Admin() {
                       <td>{u.email}</td>
                       <td>
                         <button 
-                          onClick={() => toggleUserAdmin(u.id, u.isAdmin)} 
-                          className={`admin-toggle-button ${u.isAdmin ? 'active' : ''}`}
+                          onClick={() => toggleUserAdmin(u.id, u.is_admin)} 
+                          className={`admin-toggle-button ${u.is_admin ? 'active' : ''}`}
                           disabled={u.id === user.id}
                         >
-                          {u.isAdmin ? 'Yes' : 'No'}
+                          {u.is_admin ? 'Yes' : 'No'}
                         </button>
                       </td>
                       <td>
-                        <button onClick={() => deleteUser(u.id)} className="admin-delete-button" disabled={u.id === user.id}>Delete</button>
+                        <button 
+                          onClick={() => deleteUser(u.id)} 
+                          className="admin-delete-button"
+                          disabled={u.id === user.id}
+                        >
+                          Delete
+                        </button>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-          </>
+          </div>
         )}
         {activeTab === 'songOfTheWeek' && (
-          <form onSubmit={handleSongOfTheWeekSubmit} className="admin-form-grid">
-            <textarea 
-              placeholder="Song of the Week Audio URL or Embed Code" 
-              value={songOfTheWeekHtml} 
-              onChange={(e) => setSongOfTheWeekHtml(e.target.value)} 
-              className="admin-form-input" 
-              rows="5"
-            />
-            <button type="submit" className="admin-form-submit">Update Song of the Week</button>
-          </form>
+          <div className="admin-form-card">
+            <h3 className="admin-form-title">Song of the Week</h3>
+            <form onSubmit={handleSongOfTheWeekSubmit} className="admin-modern-form-grid">
+              <div className="admin-form-group full-width">
+                <label htmlFor="songOfTheWeekHtml">Embed Code (iframe or audio URL)</label>
+                <ReactQuill
+                  id="songOfTheWeekHtml"
+                  value={songOfTheWeekHtml}
+                  onChange={setSongOfTheWeekHtml}
+                  modules={quillModules}
+                  formats={quillFormats}
+                  className="admin-quill-editor"
+                  placeholder="Paste embed code or audio URL here..."
+                  style={{ height: '200px' }}
+                />
+              </div>
+              <div className="admin-form-actions">
+                <button type="submit" className="admin-form-submit">Update Song of the Week</button>
+              </div>
+            </form>
+          </div>
         )}
         {activeTab === 'advert' && (
-          <form onSubmit={handleAdSubmit} className="admin-form-grid">
-            <input 
-              type="text" 
-              placeholder="Ad Name" 
-              value={adForm.name} 
-              onChange={(e) => setAdForm({ ...adForm, name: e.target.value })} 
-              className="admin-form-input" 
-              required 
-            />
-            <textarea 
-              placeholder="Ad Code (HTML/JS)" 
-              value={adForm.code} 
-              onChange={(e) => setAdForm({ ...adForm, code: e.target.value })} 
-              className="admin-form-input" 
-              rows="5" 
-              required 
-            />
-            <select 
-              value={adForm.position} 
-              onChange={(e) => setAdForm({ ...adForm, position: e.target.value })} 
-              className="admin-form-input"
-            >
-              <option value="home_above_sotw">Home - Above Song of the Week</option>
-              <option value="home_below_sotw">Home - Below Song of the Week</option>
-              <option value="library_above">Library - Above Content</option>
-              <option value="library_below">Library - Below Content</option>
-            </select>
-            <label className="admin-checkbox">
-              <input 
-                type="checkbox" 
-                checked={adForm.is_active} 
-                onChange={(e) => setAdForm({ ...adForm, is_active: e.target.checked })} 
-              />
-              Active
-            </label>
-            <button type="submit" className="admin-form-submit">{editingAdId ? 'Update Ad' : 'Add Ad'}</button>
-            {editingAdId && (
-              <button 
-                type="button" 
-                className="admin-cancel-button" 
-                onClick={() => { setAdForm({ name: '', code: '', position: 'home_above_sotw', is_active: true }); setEditingAdId(null); }}
-              >
-                Cancel
-              </button>
-            )}
+          <div className="admin-advert-container">
+            <div className="admin-form-card">
+              <h3 className="admin-form-title">{editingAdId ? 'Edit Advertisement' : 'Add New Advertisement'}</h3>
+              <form onSubmit={handleAdSubmit} className="admin-modern-form-grid">
+                <div className="admin-form-group">
+                  <label htmlFor="adName">Name</label>
+                  <input
+                    id="adName"
+                    type="text"
+                    placeholder="e.g., Banner Ad 1"
+                    value={adForm.name}
+                    onChange={(e) => setAdForm({ ...adForm, name: e.target.value })}
+                    className="admin-form-input"
+                    required
+                  />
+                </div>
+                <div className="admin-form-group">
+                  <label htmlFor="adPosition">Position</label>
+                  <select
+                    id="adPosition"
+                    value={adForm.position}
+                    onChange={(e) => setAdForm({ ...adForm, position: e.target.value })}
+                    className="admin-form-input"
+                  >
+                    <option value="home_above_sotw">Home - Above Song of the Week</option>
+                    <option value="home_below_sotw">Home - Below Song of the Week</option>
+                    <option value="song_above_content">Song Page - Above Content</option>
+                    <option value="song_below_content">Song Page - Below Content</option>
+                    <option value="post_above_content">Post Page - Above Content</option>
+                    <option value="post_below_content">Post Page - Below Content</option>
+                  </select>
+                </div>
+                <div className="admin-form-group full-width">
+                  <label htmlFor="adCode">Ad Code</label>
+                  <textarea
+                    id="adCode"
+                    placeholder="Paste your ad code here (e.g., Google AdSense script)"
+                    value={adForm.code}
+                    onChange={(e) => setAdForm({ ...adForm, code: e.target.value })}
+                    className="admin-form-input"
+                    rows="5"
+                    required
+                  />
+                </div>
+                <div className="admin-form-group">
+                  <label className="admin-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={adForm.is_active}
+                      onChange={(e) => setAdForm({ ...adForm, is_active: e.target.checked })}
+                    />
+                    Active
+                  </label>
+                </div>
+                <div className="admin-form-actions">
+                  <button type="submit" className="admin-form-submit">{editingAdId ? 'Update Ad' : 'Add Ad'}</button>
+                  {editingAdId && (
+                    <button type="button" className="admin-cancel-button" onClick={() => { setAdForm({ name: '', code: '', position: 'home_above_sotw', is_active: true }); setEditingAdId(null); }}>Cancel</button>
+                  )}
+                </div>
+              </form>
+            </div>
             <div className="admin-table-container">
               <table className="admin-table">
                 <thead>
@@ -1308,7 +1336,7 @@ function Admin() {
                 </tbody>
               </table>
             </div>
-          </form>
+          </div>
         )}
       </div>
     </div>

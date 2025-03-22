@@ -2930,29 +2930,110 @@ input[type="range"]:hover {
 
 
 
-.suggestions-list {
+
+/* Modern Search Form */
+.modern-search-form {
+  position: relative;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.search-container {
+  position: relative;
+  width: 100%;
+}
+
+.modern-search-input {
+  width: 100%;
+  padding: 1rem 1.5rem;
+  border: 2px solid #3cb371;
+  border-radius: 25px;
+  font-size: 1rem;
+  color: #333;
+  background: rgba(255, 255, 255, 0.9);
+  transition: all 0.3s ease;
+  outline: none;
+}
+
+.modern-search-input:focus {
+  border-color: #2a8c56;
+  box-shadow: 0 0 8px rgba(60, 179, 113, 0.5);
+}
+
+.floating-label {
   position: absolute;
-  top: 100%;
+  top: 50%;
+  left: 1.5rem;
+  transform: translateY(-50%);
+  color: #777;
+  font-size: 1rem;
+  pointer-events: none;
+  transition: all 0.3s ease;
+}
+
+.floating-label.active {
+  top: -0.5rem;
+  left: 1rem;
+  font-size: 0.75rem;
+  color: #3cb371;
+  background: #fff;
+  padding: 0 0.25rem;
+}
+
+/* Modern Suggestions List */
+.modern-suggestions-list {
+  position: absolute;
+  top: calc(100% + 0.5rem);
   left: 0;
   right: 0;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 15px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
   list-style: none;
   padding: 0.5rem 0;
   margin: 0;
   z-index: 10;
-  max-height: 200px;
+  max-height: 220px;
   overflow-y: auto;
+  animation: slideIn 0.2s ease-out;
+  backdrop-filter: blur(5px); /* Glassmorphism effect */
 }
 
-.suggestions-list li {
-  padding: 0.5rem 1rem;
+.modern-suggestions-list li {
+  padding: 0.75rem 1.5rem;
   cursor: pointer;
   color: #333;
-  transition: background 0.2s ease;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background 0.2s ease, transform 0.1s ease;
 }
 
-.suggestions-list li:hover {
+.modern-suggestions-list li:hover,
+.modern-suggestions-list li.selected {
   background: #e6f4ea;
+  transform: scale(1.02);
+}
+
+.suggestion-title {
+  font-weight: 500;
+}
+
+.suggestion-type {
+  color: #3cb371;
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+/* Animation for dropdown */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

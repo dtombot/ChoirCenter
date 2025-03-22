@@ -58,8 +58,6 @@ function App() {
   const [user, setUser] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [recaptchaLoaded, setRecaptchaLoaded] = useState(false);
-  const [visitStartTime, setVisitStartTime] = useState(null);
-  const [clickEvents, setClickEvents] = useState([]);
   const [lastTracked, setLastTracked] = useState({}); // Store last tracked time per page/IP
 
   useEffect(() => {
@@ -142,27 +140,14 @@ function App() {
       }
     });
 
-    setVisitStartTime(Date.now());
-    const handleClick = (e) => {
-      setClickEvents((prev) => [
-        ...prev,
-        { element: e.target.tagName, timestamp: Date.now() },
-      ].slice(-10)); // Limit to last 10 clicks to save memory
-    };
-    document.addEventListener('click', handleClick);
-
-    const trackVisit = async (isUnload = false) => {
-      if (!visitStartTime) return;
-
-      const duration = isUnload ? Math.round((Date.now() - visitStartTime) / 1000) : 0;
+    const trackVisit = async () => {
       const pageUrl = window.location.pathname;
       const trackingKey = `${pageUrl}-${user?.id || 'anonymous'}`; // Unique key per page/user
       const now = Date.now();
       const lastTrackedTime = lastTracked[trackingKey] || 0;
 
       // Only track if >1 hour since last track for this page/user combo
-      if (now - lastTrackedTime < 60 * 60 * 1000 && !isUnload) {
-        console.log('Skipping track: Recent visit already recorded');
+      if (now - lastTrackedTime < 60 * 60 * 1000) {
         return;
       }
 
@@ -171,11 +156,7 @@ function App() {
 
       const trackingData = {
         pageUrl,
-        clickEvents: isUnload ? clickEvents : [], // Only send clicks on unload
-        duration,
-        userId: user?.id || null,
       };
-      console.log('Tracking visit:', { ...trackingData, token: token ? 'Present' : 'Absent' });
 
       try {
         const response = await fetch('/.netlify/functions/track-visitor', {
@@ -186,17 +167,10 @@ function App() {
           },
           body: JSON.stringify(trackingData),
         });
-        const responseData = await response.json();
         if (!response.ok) {
-          console.error('Track visit failed:', response.status, responseData);
+          console.error('Track visit failed:', await response.text());
         } else {
-          console.log('Track success:', responseData);
-          if (isUnload) {
-            setClickEvents([]); // Reset on unload
-            setVisitStartTime(null);
-          } else {
-            setLastTracked((prev) => ({ ...prev, [trackingKey]: now }));
-          }
+          setLastTracked((prev) => ({ ...prev, [trackingKey]: now }));
         }
       } catch (error) {
         console.error('Track visit error:', error.message);
@@ -204,16 +178,10 @@ function App() {
     };
 
     // Track on page load
-    trackVisit(false);
-
-    // Track on page unload
-    const handleUnload = () => trackVisit(true);
-    window.addEventListener('beforeunload', handleUnload);
+    trackVisit();
 
     return () => {
       authListener.subscription.unsubscribe();
-      document.removeEventListener('click', handleClick);
-      window.removeEventListener('beforeunload', handleUnload);
     };
   }, [user]);
 

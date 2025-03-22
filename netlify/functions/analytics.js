@@ -1,5 +1,11 @@
 const { google } = require('googleapis');
 
+function getDateDaysAgo(days) {
+  const date = new Date();
+  date.setDate(date.getDate() - days);
+  return date.toISOString().split('T')[0]; // Returns YYYY-MM-DD
+}
+
 exports.handler = async (event, context) => {
   console.log('Function invoked:', new Date().toISOString());
   try {
@@ -20,24 +26,15 @@ exports.handler = async (event, context) => {
     });
 
     console.log('Refreshing token...');
-    try {
-      const { credentials } = await oauth2Client.refreshAccessToken();
-      oauth2Client.setCredentials(credentials);
-      console.log('Token refreshed:', credentials.access_token.substring(0, 10) + '...');
-    } catch (refreshError) {
-      console.error('Token refresh failed:', refreshError.message);
-      throw new Error('Failed to refresh token: ' + refreshError.message);
-    }
+    const { credentials } = await oauth2Client.refreshAccessToken();
+    oauth2Client.setCredentials(credentials);
+    console.log('Token refreshed:', credentials.access_token.substring(0, 10) + '...');
 
-    const analytics = google.analyticsdata({
-      version: 'v1beta',
-      auth: oauth2Client,
-    });
+    const analytics = google.analyticsdata({ version: 'v1beta', auth: oauth2Client });
+    const searchconsole = google.webmasters({ version: 'v3', auth: oauth2Client });
 
-    const searchconsole = google.webmasters({
-      version: 'v3',
-      auth: oauth2Client,
-    });
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    const thirtyDaysAgo = getDateDaysAgo(30);
 
     let gaResponse;
     try {
@@ -45,7 +42,7 @@ exports.handler = async (event, context) => {
       gaResponse = await analytics.properties.runReport({
         property: `properties/${process.env.GA_PROPERTY_ID}`,
         requestBody: {
-          dateRanges: [{ startDate: '30daysAgo', endDate: 'today' }],
+          dateRanges: [{ startDate: thirtyDaysAgo, endDate: today }],
           metrics: [
             { name: 'activeUsers' },
             { name: 'screenPageViews' },
@@ -69,8 +66,8 @@ exports.handler = async (event, context) => {
       gscResponse = await searchconsole.searchanalytics.query({
         siteUrl: process.env.SITE_URL,
         requestBody: {
-          startDate: '30daysAgo',
-          endDate: 'today',
+          startDate: thirtyDaysAgo,
+          endDate: today,
           dimensions: ['query'],
           rowLimit: 5,
         },

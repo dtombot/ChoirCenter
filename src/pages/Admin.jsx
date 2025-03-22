@@ -141,23 +141,33 @@ function Admin() {
             .select('id')
             .eq('is_admin', true);
           if (adminError) throw adminError;
-
           const adminIds = adminProfiles.map(profile => profile.id);
+          console.log('Admin IDs:', adminIds); // Debug
 
-          // Fetch visitors, excluding those with user_id matching admins
-          const { data, error } = await supabase
+          // Fetch all visitors
+          const { data: allVisitors, error: visitorError } = await supabase
             .from('visitors')
-            .select('ip_address, page_url, device_type, visit_timestamp')
-            .not('user_id', 'in', `(${adminIds.join(',')})`)
+            .select('id, ip_address, page_url, device_type, visit_timestamp, user_id, referrer, city, country, duration')
             .order('visit_timestamp', { ascending: false });
-          if (error) throw error;
+          if (visitorError) throw visitorError;
+          console.log('All Visitors:', allVisitors); // Debug
 
-          setVisitorData(data || []);
+          // Filter out visitors where user_id matches an admin ID
+          const filteredVisitors = allVisitors.filter(visitor => 
+            !visitor.user_id || !adminIds.includes(visitor.user_id)
+          );
+          console.log('Filtered Visitors:', filteredVisitors); // Debug
+
+          setVisitorData(filteredVisitors || []);
+          if (filteredVisitors.length === 0) {
+            console.log('No non-admin visitors found'); // Debug
+          }
         } catch (error) {
+          console.error('Visitor fetch error:', error.message); // Debug
           setError('Failed to load visitor data: ' + error.message);
         }
       };
-      if (activeTab === 'analytics') fetchVisitors();
+      if (activeTab === 'analytics' && analyticsSection === 'visitors') fetchVisitors();
 
       const visitorSubscription = supabase
         .channel('visitors')
@@ -223,7 +233,7 @@ function Admin() {
       };
     };
     fetchUser();
-  }, [navigate, location.search, activeTab]);
+  }, [navigate, location.search, activeTab, analyticsSection]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -290,7 +300,7 @@ function Admin() {
   };
 
   const handlePostSubmit = async (e) => {
-    e.preventDefault();
+    e.preventForm();
     try {
       const generatedPermalink = postForm.permalink.trim() || postForm.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
       if (!postForm.title.trim()) {
@@ -1127,16 +1137,26 @@ function Admin() {
                             <th>IP Address</th>
                             <th>Page URL</th>
                             <th>Device Type</th>
-                            <th>Visit Timestamp</th>
+                            <th>Timestamp</th>
+                            <th>User ID</th>
+                            <th>Referrer</th>
+                            <th>City</th>
+                            <th>Country</th>
+                            <th>Duration (s)</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {currentVisitors.map((visitor, index) => (
-                            <tr key={index}>
+                          {currentVisitors.map((visitor) => (
+                            <tr key={visitor.id}>
                               <td>{visitor.ip_address}</td>
                               <td>{visitor.page_url}</td>
                               <td>{visitor.device_type}</td>
                               <td>{new Date(visitor.visit_timestamp).toLocaleString()}</td>
+                              <td>{visitor.user_id || 'N/A'}</td>
+                              <td>{visitor.referrer || 'Direct'}</td>
+                              <td>{visitor.city || 'Unknown'}</td>
+                              <td>{visitor.country || 'Unknown'}</td>
+                              <td>{visitor.duration || 0}</td>
                             </tr>
                           ))}
                         </tbody>

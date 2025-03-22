@@ -37,6 +37,22 @@ exports.handler = async (event) => {
     ? 'tablet'
     : 'desktop';
 
+  // Extract user_id from Authorization header (JWT token)
+  let userId = null;
+  const token = event.headers['authorization']?.replace('Bearer ', '');
+  if (token) {
+    try {
+      const { data: { user }, error } = await supabase.auth.getUser(token);
+      if (error) {
+        console.error('Auth error:', error.message);
+      } else {
+        userId = user?.id || null;
+      }
+    } catch (authError) {
+      console.error('Token validation error:', authError.message);
+    }
+  }
+
   try {
     const { error } = await supabase.from('visitors').insert({
       ip_address: ip,
@@ -48,7 +64,8 @@ exports.handler = async (event) => {
       page_url: pageUrl || '/',
       click_events: clickEvents || [],
       duration: duration || 0,
-      visit_timestamp: new Date().toISOString()
+      visit_timestamp: new Date().toISOString(),
+      user_id: userId, // Add user_id (NULL if no authenticated user)
     });
 
     if (error) throw error;

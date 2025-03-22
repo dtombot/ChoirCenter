@@ -55,8 +55,17 @@ function Admin() {
   const [songCategoryFilter, setSongCategoryFilter] = useState('all');
   const [userSearch, setUserSearch] = useState('');
   const [analyticsSection, setAnalyticsSection] = useState('local');
+  const [currentPage, setCurrentPage] = useState({ songs: 1, posts: 1, users: 1, ads: 1, visitors: 1 });
+  const [itemsPerPage, setItemsPerPage] = useState(25);
   const navigate = useNavigate();
   const location = useLocation();
+
+  const songCategories = [
+    'Entrance', 'Kyrie', 'Gloria', 'Responsorial Psalm', 'Gospel Acclamation', 'Credo', 
+    'Response to prayers', 'Preconsecration', 'Offertory', 'Sanctus', 'Agnus Dei', 
+    'Communion', 'Dismissal', 'Lent', 'Pentecost', 'Easter', 'Advent', 'Christmas', 
+    'Trinity', 'Marian', 'Classical'
+  ];
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -98,15 +107,12 @@ function Admin() {
 
       const fetchUsers = async () => {
         try {
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 10000);
-          const response = await fetch('/.netlify/functions/fetch-users', { signal: controller.signal });
-          clearTimeout(timeoutId);
+          const response = await fetch('/.netlify/functions/fetch-users');
           if (!response.ok) throw new Error('Failed to fetch users');
           const users = await response.json();
           setUsers(users || []);
         } catch (err) {
-          setError('Failed to load users: ' + (err.name === 'AbortError' ? 'Request timed out' : err.message));
+          setError('Failed to load users: ' + err.message);
         }
       };
       fetchUsers();
@@ -134,9 +140,8 @@ function Admin() {
       const fetchVisitors = async () => {
         const { data, error } = await supabase
           .from('visitors')
-          .select('*')
-          .order('visit_timestamp', { ascending: false })
-          .limit(100);
+          .select('ip_address, page_visited, click_events, visit_timestamp, duration, city, country, device_type, referrer')
+          .order('visit_timestamp', { ascending: false });
         if (error) setError('Failed to load visitor data: ' + error.message);
         else setVisitorData(data || []);
       };
@@ -145,10 +150,7 @@ function Admin() {
       const visitorSubscription = supabase
         .channel('visitors')
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'visitors' }, (payload) => {
-          setVisitorData((current) => {
-            const newData = [payload.new, ...current].slice(0, 100);
-            return newData;
-          });
+          setVisitorData((current) => [payload.new, ...current]);
         })
         .subscribe();
 
@@ -270,6 +272,7 @@ function Admin() {
       });
       const { data } = await supabase.from('songs').select('*');
       setSongs(data || []);
+      setCurrentPage(prev => ({ ...prev, songs: 1 }));
     } catch (err) {
       setError('Failed to save song: ' + err.message);
     }
@@ -316,6 +319,7 @@ function Admin() {
       setPostForm({ title: '', content: '', permalink: '', meta_description: '', tags: '', category: '', focus_keyword: '', featured_image_url: '' });
       const { data } = await supabase.from('blog_posts').select('*');
       setPosts(data || []);
+      setCurrentPage(prev => ({ ...prev, posts: 1 }));
     } catch (err) {
       setError('Failed to save post: ' + err.message);
     }
@@ -350,6 +354,7 @@ function Admin() {
       setAdForm({ name: '', code: '', position: 'home_above_sotw', is_active: true });
       const { data } = await supabase.from('advertisements').select('*');
       setAds(data || []);
+      setCurrentPage(prev => ({ ...prev, ads: 1 }));
       setError('Advertisement saved successfully!');
     } catch (err) {
       setError('Failed to save advertisement: ' + err.message);
@@ -536,16 +541,58 @@ function Admin() {
 
   const fetchUsers = async () => {
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
-      const response = await fetch('/.netlify/functions/fetch-users', { signal: controller.signal });
-      clearTimeout(timeoutId);
+      const response = await fetch('/.netlify/functions/fetch-users');
       if (!response.ok) throw new Error('Failed to fetch users');
       const users = await response.json();
       setUsers(users || []);
     } catch (err) {
-      setError('Failed to load users: ' + (err.name === 'AbortError' ? 'Request timed out' : err.message));
+      setError('Failed to load users: ' + err.message);
     }
+  };
+
+  // Pagination Functions
+  const paginate = (items, pageKey) => {
+    const totalItems = items.length;
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    const startIndex = (currentPage[pageKey] - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return {
+      paginatedItems: items.slice(startIndex, endIndex),
+      totalPages,
+      totalItems
+    };
+  };
+
+  const handlePageChange = (pageKey, page) => {
+    setCurrentPage(prev => ({ ...prev, [pageKey]: page }));
+    window.scrollTo(0, 0);
+  };
+
+  const getPaginationRange = (pageKey) => {
+    const totalPages = Math.ceil(filteredSongs.length / itemsPerPage);
+    if (pageKey === 'posts') totalPages = Math.ceil(posts.length / itemsPerPage);
+    if (pageKey === 'users') totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+    if (pageKey === 'ads') totalPages = Math.ceil(ads.length / itemsPerPage);
+    if (pageKey === 'visitors') totalPages = Math.ceil(visitorData.length / itemsPerPage);
+    
+    const range = [];
+    const maxVisiblePages = 5;
+    const sideRange = 2;
+
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) range.push(i);
+    } else {
+      range.push(1);
+      const startRange = Math.max(2, currentPage[pageKey] - sideRange);
+      if (startRange > 2) range.push('...');
+      for (let i = startRange; i <= Math.min(totalPages - 1, currentPage[pageKey] + sideRange); i++) {
+        range.push(i);
+      }
+      const endRange = Math.min(totalPages - 1, currentPage[pageKey] + sideRange);
+      if (endRange < totalPages - 1) range.push('...');
+      if (totalPages > 1) range.push(totalPages);
+    }
+    return range;
   };
 
   if (!user) return null;
@@ -553,29 +600,12 @@ function Admin() {
   const totalDownloads = songs.reduce((sum, song) => sum + (song.downloads || 0), 0);
   const publicSongs = songs.filter(song => song.is_public).length;
   const privateSongs = songs.length - publicSongs;
-  const totalVisits = visitorData.length;
-  const uniqueVisitors = new Set(visitorData.map(v => v.ip_address)).size;
-  const avgDuration = visitorData.length
-    ? Math.round(visitorData.reduce((sum, v) => sum + (v.duration || 0), 0) / visitorData.length)
-    : 0;
-  const topCities = Object.entries(
-    visitorData.reduce((acc, v) => {
-      acc[v.city] = (acc[v.city] || 0) + 1;
-      return acc;
-    }, {})
-  ).sort((a, b) => b[1] - a[1]).slice(0, 3);
-  const topReferrers = Object.entries(
-    visitorData.reduce((acc, v) => {
-      acc[v.referrer] = (acc[v.referrer] || 0) + 1;
-      return acc;
-    }, {})
-  ).sort((a, b) => b[1] - a[1]).slice(0, 3);
-  const deviceTypes = Object.entries(
-    visitorData.reduce((acc, v) => {
-      acc[v.device_type] = (acc[v.device_type] || 0) + 1;
-      return acc;
-    }, {})
-  );
+
+  const { paginatedItems: paginatedSongs, totalPages: songPages } = paginate(filteredSongs, 'songs');
+  const { paginatedItems: paginatedPosts, totalPages: postPages } = paginate(posts, 'posts');
+  const { paginatedItems: paginatedUsers, totalPages: userPages } = paginate(filteredUsers, 'users');
+  const { paginatedItems: paginatedAds, totalPages: adPages } = paginate(ads, 'ads');
+  const { paginatedItems: paginatedVisitors, totalPages: visitorPages } = paginate(visitorData, 'visitors');
 
   return (
     <div className="admin-container">
@@ -601,180 +631,85 @@ function Admin() {
         )}
         {activeTab === 'overview' && (
           <div className="overview-grid">
-            <div className="overview-card">
-              <h3>Total Songs</h3>
-              <p>{songs.length}</p>
-            </div>
-            <div className="overview-card">
-              <h3>Total Downloads</h3>
-              <p>{totalDownloads}</p>
-            </div>
-            <div className="overview-card">
-              <h3>Total Users</h3>
-              <p>{users.length}</p>
-            </div>
-            <div className="overview-card">
-              <h3>Total Blog Posts</h3>
-              <p>{posts.length}</p>
-            </div>
+            <div className="overview-card"><h3>Total Songs</h3><p>{songs.length}</p></div>
+            <div className="overview-card"><h3>Total Downloads</h3><p>{totalDownloads}</p></div>
+            <div className="overview-card"><h3>Total Users</h3><p>{users.length}</p></div>
+            <div className="overview-card"><h3>Total Blog Posts</h3><p>{posts.length}</p></div>
           </div>
         )}
         {activeTab === 'songs' && (
           <>
             <form onSubmit={handleSongSubmit} className="admin-form-grid">
-              <input 
-                type="text" 
-                placeholder="Song Title" 
-                value={songForm.title} 
-                onChange={(e) => setSongForm({ ...songForm, title: e.target.value })} 
-                className="admin-form-input" 
-                required 
-              />
-              <input 
-                type="text" 
-                placeholder="Composer" 
-                value={songForm.composer} 
-                onChange={(e) => setSongForm({ ...songForm, composer: e.target.value })} 
-                className="admin-form-input" 
-                required 
-              />
+              <input type="text" placeholder="Song Title" value={songForm.title} onChange={(e) => setSongForm({ ...songForm, title: e.target.value })} className="admin-form-input" required />
+              <input type="text" placeholder="Composer" value={songForm.composer} onChange={(e) => setSongForm({ ...songForm, composer: e.target.value })} className="admin-form-input" required />
               <div className="admin-form-group">
                 <label htmlFor="source">File Source</label>
-                <select
-                  id="source"
-                  value={songForm.source}
-                  onChange={(e) => setSongForm({ ...songForm, source: e.target.value })}
-                  className="admin-form-input"
-                >
+                <select id="source" value={songForm.source} onChange={(e) => setSongForm({ ...songForm, source: e.target.value })} className="admin-form-input">
                   <option value="google_drive">Google Drive</option>
                   <option value="github">GitHub (/public/pdf)</option>
                 </select>
               </div>
               {songForm.source === 'google_drive' ? (
-                <input 
-                  type="text" 
-                  placeholder="Google Drive File ID" 
-                  value={songForm.google_drive_file_id} 
-                  onChange={(e) => setSongForm({ ...songForm, google_drive_file_id: e.target.value })} 
-                  className="admin-form-input" 
-                  required 
-                />
+                <input type="text" placeholder="Google Drive File ID" value={songForm.google_drive_file_id} onChange={(e) => setSongForm({ ...songForm, google_drive_file_id: e.target.value })} className="admin-form-input" required />
               ) : (
-                <input 
-                  type="text" 
-                  placeholder="GitHub Raw URL (e.g., https://raw.githubusercontent.com/.../song.pdf)" 
-                  value={songForm.github_file_url} 
-                  onChange={(e) => setSongForm({ ...songForm, github_file_url: e.target.value })} 
-                  className="admin-form-input" 
-                  required 
-                />
+                <input type="text" placeholder="GitHub Raw URL" value={songForm.github_file_url} onChange={(e) => setSongForm({ ...songForm, github_file_url: e.target.value })} className="admin-form-input" required />
               )}
-              <input 
-                type="text" 
-                placeholder="Permalink" 
-                value={songForm.permalink} 
-                onChange={(e) => setSongForm({ ...songForm, permalink: e.target.value })} 
-                className="admin-form-input" 
-              />
-              <input 
-                type="text" 
-                placeholder="Audio URL (e.g., https://archive.org/download/...)" 
-                value={songForm.audio_url} 
-                onChange={(e) => setSongForm({ ...songForm, audio_url: e.target.value })} 
-                className="admin-form-input" 
-              />
-              <textarea 
-                placeholder="Song Description" 
-                value={songForm.description} 
-                onChange={(e) => setSongForm({ ...songForm, description: e.target.value })} 
-                className="admin-form-input" 
-                rows="3"
-              />
+              <input type="text" placeholder="Permalink" value={songForm.permalink} onChange={(e) => setSongForm({ ...songForm, permalink: e.target.value })} className="admin-form-input" />
+              <input type="text" placeholder="Audio URL" value={songForm.audio_url} onChange={(e) => setSongForm({ ...songForm, audio_url: e.target.value })} className="admin-form-input" />
+              <textarea placeholder="Song Description" value={songForm.description} onChange={(e) => setSongForm({ ...songForm, description: e.target.value })} className="admin-form-input" rows="3" />
               <div className="admin-form-group">
                 <label htmlFor="category">Category</label>
-                <select
-                  id="category"
-                  value={songForm.category}
-                  onChange={(e) => setSongForm({ ...songForm, category: e.target.value })}
-                  className="admin-form-input"
-                >
+                <select id="category" value={songForm.category} onChange={(e) => setSongForm({ ...songForm, category: e.target.value })} className="admin-form-input">
                   <option value="">Select Category</option>
-                  <option value="Hymn">Hymn</option>
-                  <option value="Choral">Choral</option>
-                  <option value="Gospel">Gospel</option>
-                  <option value="Other">Other</option>
+                  {songCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                 </select>
               </div>
-              <input 
-                type="text" 
-                placeholder="Tags (comma-separated, e.g., piano, vocal)" 
-                value={songForm.tags} 
-                onChange={(e) => setSongForm({ ...songForm, tags: e.target.value })} 
-                className="admin-form-input" 
-              />
+              <input type="text" placeholder="Tags (comma-separated)" value={songForm.tags} onChange={(e) => setSongForm({ ...songForm, tags: e.target.value })} className="admin-form-input" />
               <label className="admin-checkbox">
-                <input 
-                  type="checkbox" 
-                  checked={songForm.is_public} 
-                  onChange={(e) => setSongForm({ ...songForm, is_public: e.target.checked })} 
-                />
+                <input type="checkbox" checked={songForm.is_public} onChange={(e) => setSongForm({ ...songForm, is_public: e.target.checked })} />
                 Public
               </label>
               <button type="submit" className="admin-form-submit">{editingSongId ? 'Update Song' : 'Add Song'}</button>
               {editingSongId && (
-                <button 
-                  type="button" 
-                  className="admin-cancel-button" 
-                  onClick={() => { 
-                    setSongForm({ 
-                      title: '', 
-                      composer: '', 
-                      google_drive_file_id: '', 
-                      github_file_url: '', 
-                      permalink: '', 
-                      is_public: true, 
-                      source: 'google_drive',
-                      audio_url: '',
-                      description: '',
-                      category: '',
-                      tags: ''
-                    }); 
-                    setEditingSongId(null); 
-                  }}
-                >
-                  Cancel
-                </button>
+                <button type="button" className="admin-cancel-button" onClick={() => { setSongForm({ title: '', composer: '', google_drive_file_id: '', github_file_url: '', permalink: '', is_public: true, source: 'google_drive', audio_url: '', description: '', category: '', tags: '' }); setEditingSongId(null); }}>Cancel</button>
               )}
             </form>
             <div className="admin-filter-bar">
-              <input 
-                type="text" 
-                placeholder="Search songs or tags..." 
-                value={songSearch} 
-                onChange={(e) => setSongSearch(e.target.value)} 
-                className="admin-filter-input" 
-              />
-              <select 
-                value={songFilter} 
-                onChange={(e) => setSongFilter(e.target.value)} 
-                className="admin-filter-select"
-              >
+              <input type="text" placeholder="Search songs or tags..." value={songSearch} onChange={(e) => setSongSearch(e.target.value)} className="admin-filter-input" />
+              <select value={songFilter} onChange={(e) => setSongFilter(e.target.value)} className="admin-filter-select">
                 <option value="all">All</option>
                 <option value="public">Public</option>
                 <option value="private">Private</option>
               </select>
-              <select 
-                value={songCategoryFilter} 
-                onChange={(e) => setSongCategoryFilter(e.target.value)} 
-                className="admin-filter-select"
-              >
+              <select value={songCategoryFilter} onChange={(e) => setSongCategoryFilter(e.target.value)} className="admin-filter-select">
                 <option value="all">All Categories</option>
-                <option value="Hymn">Hymn</option>
-                <option value="Choral">Choral</option>
-                <option value="Gospel">Gospel</option>
-                <option value="Other">Other</option>
+                {songCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
               </select>
             </div>
+            {filteredSongs.length > itemsPerPage && (
+              <div className="pagination-top">
+                <div className="pagination-controls">
+                  <label htmlFor="itemsPerPage">Items per page:</label>
+                  <select id="itemsPerPage" value={itemsPerPage} onChange={(e) => { setItemsPerPage(parseInt(e.target.value)); setCurrentPage(prev => ({ ...prev, songs: 1 })); }} className="pagination-select">
+                    <option value={25}>25</option>
+                    <option value={50}>50</option>
+                    <option value={100}>100</option>
+                    <option value={200}>200</option>
+                  </select>
+                </div>
+                <div className="pagination">
+                  <button onClick={() => handlePageChange('songs', currentPage.songs - 1)} disabled={currentPage.songs === 1} className="pagination-button">Previous</button>
+                  {getPaginationRange('songs').map((item, index) => (
+                    item === '...' ? (
+                      <span key={index} className="pagination-ellipsis">...</span>
+                    ) : (
+                      <button key={index} onClick={() => handlePageChange('songs', item)} className={`pagination-button ${currentPage.songs === item ? 'active' : ''}`}>{item}</button>
+                    )
+                  ))}
+                  <button onClick={() => handlePageChange('songs', currentPage.songs + 1)} disabled={currentPage.songs === songPages} className="pagination-button">Next</button>
+                </div>
+              </div>
+            )}
             <div className="admin-table-container">
               <table className="admin-table">
                 <thead>
@@ -790,7 +725,7 @@ function Admin() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredSongs.map(song => (
+                  {paginatedSongs.map(song => (
                     <tr key={song.id}>
                       <td>{song.title}</td>
                       <td>{song.composer}</td>
@@ -799,10 +734,7 @@ function Admin() {
                       <td>{song.google_drive_file_id ? 'Google Drive' : 'GitHub'}</td>
                       <td>{song.downloads || 0}</td>
                       <td>
-                        <button 
-                          onClick={() => toggleSongPublic(song.id, song.is_public)} 
-                          className={`admin-toggle-button ${song.is_public ? 'active' : ''}`}
-                        >
+                        <button onClick={() => toggleSongPublic(song.id, song.is_public)} className={`admin-toggle-button ${song.is_public ? 'active' : ''}`}>
                           {song.is_public ? 'Yes' : 'No'}
                         </button>
                       </td>
@@ -824,37 +756,15 @@ function Admin() {
               <form onSubmit={handlePostSubmit} className="admin-modern-form-grid">
                 <div className="admin-form-group">
                   <label htmlFor="title">Title *</label>
-                  <input
-                    id="title"
-                    type="text"
-                    placeholder="Enter post title"
-                    value={postForm.title}
-                    onChange={(e) => setPostForm({ ...postForm, title: e.target.value })}
-                    className="admin-form-input"
-                    required
-                  />
+                  <input id="title" type="text" placeholder="Enter post title" value={postForm.title} onChange={(e) => setPostForm({ ...postForm, title: e.target.value })} className="admin-form-input" required />
                 </div>
                 <div className="admin-form-group">
                   <label htmlFor="permalink">Permalink (auto-generated if blank)</label>
-                  <input
-                    id="permalink"
-                    type="text"
-                    placeholder="e.g., my-post-title"
-                    value={postForm.permalink}
-                    onChange={(e) => setPostForm({ ...postForm, permalink: e.target.value })}
-                    className="admin-form-input"
-                  />
+                  <input id="permalink" type="text" placeholder="e.g., my-post-title" value={postForm.permalink} onChange={(e) => setPostForm({ ...postForm, permalink: e.target.value })} className="admin-form-input" />
                 </div>
                 <div className="admin-form-group">
                   <label htmlFor="featured_image_url">Featured Image URL</label>
-                  <input
-                    id="featured_image_url"
-                    type="text"
-                    placeholder="e.g., https://storage.googleapis.com/your-bucket/image.jpg"
-                    value={postForm.featured_image_url}
-                    onChange={(e) => setPostForm({ ...postForm, featured_image_url: e.target.value })}
-                    className="admin-form-input"
-                  />
+                  <input id="featured_image_url" type="text" placeholder="e.g., https://storage.googleapis.com/your-bucket/image.jpg" value={postForm.featured_image_url} onChange={(e) => setPostForm({ ...postForm, featured_image_url: e.target.value })} className="admin-form-input" />
                 </div>
                 <div className="admin-form-group full-width">
                   <label htmlFor="content">Content</label>
@@ -863,53 +773,25 @@ function Admin() {
                     onChange={(content) => setPostForm({ ...postForm, content })}
                     modules={quillModules}
                     formats={quillFormats}
-                    className="admin-quill-editor"
+                    className="admin-quill-editor large"
                     placeholder="Write your blog post content here..."
                   />
                 </div>
                 <div className="admin-form-group">
                   <label htmlFor="meta_description">Meta Description</label>
-                  <input
-                    id="meta_description"
-                    type="text"
-                    placeholder="Short description for SEO"
-                    value={postForm.meta_description}
-                    onChange={(e) => setPostForm({ ...postForm, meta_description: e.target.value })}
-                    className="admin-form-input"
-                  />
+                  <input id="meta_description" type="text" placeholder="Short description for SEO" value={postForm.meta_description} onChange={(e) => setPostForm({ ...postForm, meta_description: e.target.value })} className="admin-form-input" />
                 </div>
                 <div className="admin-form-group">
                   <label htmlFor="tags">Tags (comma-separated)</label>
-                  <input
-                    id="tags"
-                    type="text"
-                    placeholder="e.g., music, choir"
-                    value={postForm.tags}
-                    onChange={(e) => setPostForm({ ...postForm, tags: e.target.value })}
-                    className="admin-form-input"
-                  />
+                  <input id="tags" type="text" placeholder="e.g., music, choir" value={postForm.tags} onChange={(e) => setPostForm({ ...postForm, tags: e.target.value })} className="admin-form-input" />
                 </div>
                 <div className="admin-form-group">
                   <label htmlFor="category">Category</label>
-                  <input
-                    id="category"
-                    type="text"
-                    placeholder="e.g., Vocal Tips"
-                    value={postForm.category}
-                    onChange={(e) => setPostForm({ ...postForm, category: e.target.value })}
-                    className="admin-form-input"
-                  />
+                  <input id="category" type="text" placeholder="e.g., Vocal Tips" value={postForm.category} onChange={(e) => setPostForm({ ...postForm, category: e.target.value })} className="admin-form-input" />
                 </div>
                 <div className="admin-form-group">
                   <label htmlFor="focus_keyword">Focus Keyword</label>
-                  <input
-                    id="focus_keyword"
-                    type="text"
-                    placeholder="e.g., vocal warm-ups"
-                    value={postForm.focus_keyword}
-                    onChange={(e) => setPostForm({ ...postForm, focus_keyword: e.target.value })}
-                    className="admin-form-input"
-                  />
+                  <input id="focus_keyword" type="text" placeholder="e.g., vocal warm-ups" value={postForm.focus_keyword} onChange={(e) => setPostForm({ ...postForm, focus_keyword: e.target.value })} className="admin-form-input" />
                 </div>
                 <div className="admin-form-actions">
                   <button type="submit" className="admin-form-submit">{editingPostId ? 'Update Post' : 'Add Post'}</button>
@@ -919,8 +801,32 @@ function Admin() {
                 </div>
               </form>
             </div>
+            {posts.length > itemsPerPage && (
+              <div className="pagination-top">
+                <div className="pagination-controls">
+                  <label htmlFor="itemsPerPagePosts">Items per page:</label>
+                  <select id="itemsPerPagePosts" value={itemsPerPage} onChange={(e) => { setItemsPerPage(parseInt(e.target.value)); setCurrentPage(prev => ({ ...prev, posts: 1 })); }} className="pagination-select">
+                    <option value={25}>25</option>
+                    <option value={50}>50</option>
+                    <option value={100}>100</option>
+                    <option value={200}>200</option>
+                  </select>
+                </div>
+                <div className="pagination">
+                  <button onClick={() => handlePageChange('posts', currentPage.posts - 1)} disabled={currentPage.posts === 1} className="pagination-button">Previous</button>
+                  {getPaginationRange('posts').map((item, index) => (
+                    item === '...' ? (
+                      <span key={index} className="pagination-ellipsis">...</span>
+                    ) : (
+                      <button key={index} onClick={() => handlePageChange('posts', item)} className={`pagination-button ${currentPage.posts === item ? 'active' : ''}`}>{item}</button>
+                    )
+                  ))}
+                  <button onClick={() => handlePageChange('posts', currentPage.posts + 1)} disabled={currentPage.posts === postPages} className="pagination-button">Next</button>
+                </div>
+              </div>
+            )}
             <div className="admin-posts-grid">
-              {posts.map(post => (
+              {paginatedPosts.map(post => (
                 <div key={post.id} className="admin-post-card">
                   <h4 className="admin-post-card-title">{post.title}</h4>
                   <p className="admin-post-card-meta"><strong>Permalink:</strong> {post.permalink || 'N/A'}</p>
@@ -947,53 +853,19 @@ function Admin() {
               <div className="analytics-section local-data">
                 <h3 className="analytics-section-title">Local Data</h3>
                 <div className="analytics-row">
+                  <div className="admin-analytics-item"><h4>Total Songs</h4><p>{songs.length}</p></div>
+                  <div className="admin-analytics-item"><h4>Total Downloads</h4><p>{totalDownloads}</p></div>
+                  <div className="admin-analytics-item"><h4>Public Songs</h4><p>{publicSongs}</p></div>
+                  <div className="admin-analytics-item"><h4>Private Songs</h4><p>{privateSongs}</p></div>
+                  <div className="admin-analytics-item"><h4>Total Blog Posts</h4><p>{posts.length}</p></div>
+                  <div className="admin-analytics-item"><h4>Total Users</h4><p>{users.length}</p></div>
                   <div className="admin-analytics-item">
-                    <h4 className="admin-analytics-title">Total Songs</h4>
-                    <p className="admin-analytics-value">{songs.length}</p>
+                    <h4>Top Songs</h4>
+                    {topSongs.length > 0 ? <ul className="top-items">{topSongs.map((song, index) => <li key={index}>{song.title}: {song.downloads || 0}</li>)}</ul> : <p>N/A</p>}
                   </div>
                   <div className="admin-analytics-item">
-                    <h4 className="admin-analytics-title">Total Downloads</h4>
-                    <p className="admin-analytics-value">{totalDownloads}</p>
-                  </div>
-                  <div className="admin-analytics-item">
-                    <h4 className="admin-analytics-title">Public Songs</h4>
-                    <p className="admin-analytics-value">{publicSongs}</p>
-                  </div>
-                  <div className="admin-analytics-item">
-                    <h4 className="admin-analytics-title">Private Songs</h4>
-                    <p className="admin-analytics-value">{privateSongs}</p>
-                  </div>
-                  <div className="admin-analytics-item">
-                    <h4 className="admin-analytics-title">Total Blog Posts</h4>
-                    <p className="admin-analytics-value">{posts.length}</p>
-                  </div>
-                  <div className="admin-analytics-item">
-                    <h4 className="admin-analytics-title">Total Users</h4>
-                    <p className="admin-analytics-value">{users.length}</p>
-                  </div>
-                  <div className="admin-analytics-item">
-                    <h4 className="admin-analytics-title">Top Songs</h4>
-                    {topSongs.length > 0 ? (
-                      <ul className="top-items">
-                        {topSongs.map((song, index) => (
-                          <li key={index}>{song.title}: {song.downloads || 0}</li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className="admin-analytics-value">N/A</p>
-                    )}
-                  </div>
-                  <div className="admin-analytics-item">
-                    <h4 className="admin-analytics-title">Top Posts</h4>
-                    {topPosts.length > 0 ? (
-                      <ul className="top-items">
-                        {topPosts.map((post, index) => (
-                          <li key={index}>{post.title}: {post.views || 0}</li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className="admin-analytics-value">N/A</p>
-                    )}
+                    <h4>Top Posts</h4>
+                    {topPosts.length > 0 ? <ul className="top-items">{topPosts.map((post, index) => <li key={index}>{post.title}: {post.views || 0}</li>)}</ul> : <p>N/A</p>}
                   </div>
                 </div>
               </div>
@@ -1003,115 +875,98 @@ function Admin() {
                 <h3 className="analytics-section-title">Google Analytics (Last 30 Days)</h3>
                 {analyticsData.ga ? (
                   <div className="analytics-row">
-                    <div className="admin-analytics-item">
-                      <h4 className="admin-analytics-title">Active Users</h4>
-                      <p className="admin-analytics-value">{analyticsData.ga.rows?.[0]?.metricValues?.[0]?.value || 'N/A'}</p>
-                    </div>
-                    <div className="admin-analytics-item">
-                      <h4 className="admin-analytics-title">Page Views</h4>
-                      <p className="admin-analytics-value">{analyticsData.ga.rows?.[0]?.metricValues?.[1]?.value || 'N/A'}</p>
-                    </div>
-                    <div className="admin-analytics-item">
-                      <h4 className="admin-analytics-title">Sessions</h4>
-                      <p className="admin-analytics-value">{analyticsData.ga.rows?.[0]?.metricValues?.[2]?.value || 'N/A'}</p>
-                    </div>
-                    <div className="admin-analytics-item">
-                      <h4 className="admin-analytics-title">Bounce Rate</h4>
-                      <p className="admin-analytics-value">{analyticsData.ga.rows?.[0]?.metricValues?.[3]?.value ? `${(parseFloat(analyticsData.ga.rows[0].metricValues[3].value) * 100).toFixed(1)}%` : 'N/A'}</p>
-                    </div>
-                    <div className="admin-analytics-item">
-                      <h4 className="admin-analytics-title">Avg. Duration</h4>
-                      <p className="admin-analytics-value">{analyticsData.ga.rows?.[0]?.metricValues?.[4]?.value ? `${Math.round(analyticsData.ga.rows[0].metricValues[4].value)}s` : 'N/A'}</p>
-                    </div>
-                    <div className="admin-analytics-item">
-                      <h4 className="admin-analytics-title">Event Count</h4>
-                      <p className="admin-analytics-value">{analyticsData.ga.rows?.[0]?.metricValues?.[5]?.value || 'N/A'}</p>
-                    </div>
-                    <div className="admin-analytics-item">
-                      <h4 className="admin-analytics-title">New Users</h4>
-                      <p className="admin-analytics-value">{analyticsData.ga.rows?.[0]?.metricValues?.[6]?.value || 'N/A'}</p>
-                    </div>
+                    <div className="admin-analytics-item"><h4>Active Users</h4><p>{analyticsData.ga.activeUsers || 'N/A'}</p></div>
+                    <div className="admin-analytics-item"><h4>Page Views</h4><p>{analyticsData.ga.screenPageViews || 'N/A'}</p></div>
+                    <div className="admin-analytics-item"><h4>Sessions</h4><p>{analyticsData.ga.sessions || 'N/A'}</p></div>
+                    <div className="admin-analytics-item"><h4>Bounce Rate</h4><p>{analyticsData.ga.bounceRate ? `${(analyticsData.ga.bounceRate * 100).toFixed(1)}%` : 'N/A'}</p></div>
+                    <div className="admin-analytics-item"><h4>Avg. Duration</h4><p>{analyticsData.ga.averageSessionDuration ? `${Math.round(analyticsData.ga.averageSessionDuration)}s` : 'N/A'}</p></div>
+                    <div className="admin-analytics-item"><h4>Event Count</h4><p>{analyticsData.ga.eventCount || 'N/A'}</p></div>
+                    <div className="admin-analytics-item"><h4>New Users</h4><p>{analyticsData.ga.newUsers || 'N/A'}</p></div>
                   </div>
                 ) : (
-                  <div className="analytics-row">
-                    <div className="admin-analytics-item">
-                      <h4 className="admin-analytics-title">Loading...</h4>
-                      <p className="admin-analytics-value">Awaiting data</p>
-                    </div>
-                  </div>
+                  <p>Loading Google Analytics data...</p>
                 )}
               </div>
             )}
             {analyticsSection === 'gsc' && (
               <div className="analytics-section google-data">
                 <h3 className="analytics-section-title">Google Search Console (Last 30 Days)</h3>
-                {analyticsData.gsc ? (
+                {analyticsData.gsc && analyticsData.gsc.rows ? (
                   <div className="analytics-row">
                     <div className="admin-analytics-item">
-                      <h4 className="admin-analytics-title">Top Queries</h4>
-                      {analyticsData.gsc.rows && analyticsData.gsc.rows.length > 0 ? (
-                        <ul className="search-queries">
-                          {analyticsData.gsc.rows.slice(0, 3).map((row, index) => (
-                            <li key={index}>
-                              {row.keys[0]}: {row.clicks} clicks, {row.impressions} imp., {(row.ctr * 100).toFixed(1)}% CTR, {row.position.toFixed(1)} pos.
-                            </li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <p className="admin-analytics-value">N/A</p>
-                      )}
+                      <h4>Top Queries</h4>
+                      <ul className="search-queries">
+                        {analyticsData.gsc.rows.slice(0, 5).map((row, index) => (
+                          <li key={index}>
+                            {row.keys[0]}: {row.clicks} clicks, {row.impressions} imp., {(row.ctr * 100).toFixed(1)}% CTR, Pos. {row.position.toFixed(1)}
+                          </li>
+                        ))}
+                      </ul>
                     </div>
                   </div>
                 ) : (
-                  <div className="analytics-row">
-                    <div className="admin-analytics-item">
-                      <h4 className="admin-analytics-title">Loading...</h4>
-                      <p className="admin-analytics-value">Awaiting data</p>
-                    </div>
-                  </div>
+                  <p>Loading Search Console data...</p>
                 )}
               </div>
             )}
             {analyticsSection === 'visitors' && (
               <div className="analytics-section visitor-data">
-                <h3 className="analytics-section-title">Site Visitors (Last 100 Visits)</h3>
-                <div className="analytics-row">
-                  <div className="admin-analytics-item">
-                    <h4 className="admin-analytics-title">Total Visits</h4>
-                    <p className="admin-analytics-value">{totalVisits}</p>
-                  </div>
-                  <div className="admin-analytics-item">
-                    <h4 className="admin-analytics-title">Unique Visitors</h4>
-                    <p className="admin-analytics-value">{uniqueVisitors}</p>
-                  </div>
-                  <div className="admin-analytics-item">
-                    <h4 className="admin-analytics-title">Avg. Duration</h4>
-                    <p className="admin-analytics-value">{avgDuration}s</p>
-                  </div>
-                  <div className="admin-analytics-item">
-                    <h4 className="admin-analytics-title">Top Cities</h4>
-                    <ul className="top-items">
-                      {topCities.map(([city, count]) => (
-                        <li key={city}>{city}: {count}</li>
+                <h3 className="analytics-section-title">Site Visitors</h3>
+                {visitorData.length > itemsPerPage && (
+                  <div className="pagination-top">
+                    <div className="pagination-controls">
+                      <label htmlFor="itemsPerPageVisitors">Items per page:</label>
+                      <select id="itemsPerPageVisitors" value={itemsPerPage} onChange={(e) => { setItemsPerPage(parseInt(e.target.value)); setCurrentPage(prev => ({ ...prev, visitors: 1 })); }} className="pagination-select">
+                        <option value={25}>25</option>
+                        <option value={50}>50</option>
+                        <option value={100}>100</option>
+                        <option value={200}>200</option>
+                      </select>
+                    </div>
+                    <div className="pagination">
+                      <button onClick={() => handlePageChange('visitors', currentPage.visitors - 1)} disabled={currentPage.visitors === 1} className="pagination-button">Previous</button>
+                      {getPaginationRange('visitors').map((item, index) => (
+                        item === '...' ? (
+                          <span key={index} className="pagination-ellipsis">...</span>
+                        ) : (
+                          <button key={index} onClick={() => handlePageChange('visitors', item)} className={`pagination-button ${currentPage.visitors === item ? 'active' : ''}`}>{item}</button>
+                        )
                       ))}
-                    </ul>
+                      <button onClick={() => handlePageChange('visitors', currentPage.visitors + 1)} disabled={currentPage.visitors === visitorPages} className="pagination-button">Next</button>
+                    </div>
                   </div>
-                  <div className="admin-analytics-item">
-                    <h4 className="admin-analytics-title">Top Referrers</h4>
-                    <ul className="top-items">
-                      {topReferrers.map(([referrer, count]) => (
-                        <li key={referrer}>{referrer}: {count}</li>
+                )}
+                <div className="admin-table-container">
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        <th>IP Address</th>
+                        <th>Page Visited</th>
+                        <th>Click Events</th>
+                        <th>Visit Time</th>
+                        <th>Duration (s)</th>
+                        <th>City</th>
+                        <th>Country</th>
+                        <th>Device</th>
+                        <th>Referrer</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {paginatedVisitors.map((visit, index) => (
+                        <tr key={index}>
+                          <td>{visit.ip_address}</td>
+                          <td>{visit.page_visited || 'N/A'}</td>
+                          <td>{visit.click_events ? JSON.stringify(visit.click_events) : 'None'}</td>
+                          <td>{new Date(visit.visit_timestamp).toLocaleString()}</td>
+                          <td>{visit.duration || 0}</td>
+                          <td>{visit.city || 'N/A'}</td>
+                          <td>{visit.country || 'N/A'}</td>
+                          <td>{visit.device_type || 'N/A'}</td>
+                          <td>{visit.referrer || 'Direct'}</td>
+                        </tr>
                       ))}
-                    </ul>
-                  </div>
-                  <div className="admin-analytics-item">
-                    <h4 className="admin-analytics-title">Device Types</h4>
-                    <ul className="top-items">
-                      {deviceTypes.map(([type, count]) => (
-                        <li key={type}>{type}: {count}</li>
-                      ))}
-                    </ul>
-                  </div>
+                    </tbody>
+                  </table>
                 </div>
               </div>
             )}
@@ -1120,14 +975,32 @@ function Admin() {
         {activeTab === 'users' && (
           <>
             <div className="admin-filter-bar">
-              <input 
-                type="text" 
-                placeholder="Search users by name or email..." 
-                value={userSearch} 
-                onChange={(e) => setUserSearch(e.target.value)} 
-                className="admin-filter-input" 
-              />
+              <input type="text" placeholder="Search users by name or email..." value={userSearch} onChange={(e) => setUserSearch(e.target.value)} className="admin-filter-input" />
             </div>
+            {filteredUsers.length > itemsPerPage && (
+              <div className="pagination-top">
+                <div className="pagination-controls">
+                  <label htmlFor="itemsPerPageUsers">Items per page:</label>
+                  <select id="itemsPerPageUsers" value={itemsPerPage} onChange={(e) => { setItemsPerPage(parseInt(e.target.value)); setCurrentPage(prev => ({ ...prev, users: 1 })); }} className="pagination-select">
+                    <option value={25}>25</option>
+                    <option value={50}>50</option>
+                    <option value={100}>100</option>
+                    <option value={200}>200</option>
+                  </select>
+                </div>
+                <div className="pagination">
+                  <button onClick={() => handlePageChange('users', currentPage.users - 1)} disabled={currentPage.users === 1} className="pagination-button">Previous</button>
+                  {getPaginationRange('users').map((item, index) => (
+                    item === '...' ? (
+                      <span key={index} className="pagination-ellipsis">...</span>
+                    ) : (
+                      <button key={index} onClick={() => handlePageChange('users', item)} className={`pagination-button ${currentPage.users === item ? 'active' : ''}`}>{item}</button>
+                    )
+                  ))}
+                  <button onClick={() => handlePageChange('users', currentPage.users + 1)} disabled={currentPage.users === userPages} className="pagination-button">Next</button>
+                </div>
+              </div>
+            )}
             <div className="admin-table-container">
               <table className="admin-table">
                 <thead>
@@ -1143,7 +1016,7 @@ function Admin() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredUsers.map(user => (
+                  {paginatedUsers.map(user => (
                     <tr key={user.id}>
                       <td>{user.full_name}</td>
                       <td>{user.email}</td>
@@ -1152,10 +1025,7 @@ function Admin() {
                       <td>{user.country || 'N/A'}</td>
                       <td>{user.state || 'N/A'}</td>
                       <td>
-                        <button 
-                          className={`admin-toggle-button ${user.has_donated ? 'active' : ''}`}
-                          disabled
-                        >
+                        <button className={`admin-toggle-button ${user.has_donated ? 'active' : ''}`} disabled>
                           {user.has_donated ? 'Yes' : 'No'}
                         </button>
                       </td>
@@ -1174,62 +1044,49 @@ function Admin() {
         )}
         {activeTab === 'songOfTheWeek' && (
           <form onSubmit={handleSongOfTheWeekSubmit} className="admin-form-grid">
-            <textarea
-              placeholder="Song of the Week Audio URL"
-              value={songOfTheWeekHtml}
-              onChange={(e) => setSongOfTheWeekHtml(e.target.value)}
-              className="admin-form-input"
-              rows="3"
-            />
+            <textarea placeholder="Song of the Week Audio URL" value={songOfTheWeekHtml} onChange={(e) => setSongOfTheWeekHtml(e.target.value)} className="admin-form-input" rows="3" />
             <button type="submit" className="admin-form-submit">Update Song of the Week</button>
           </form>
         )}
         {activeTab === 'advert' && (
           <form onSubmit={handleAdSubmit} className="admin-form-grid">
-            <input 
-              type="text" 
-              placeholder="Ad Name" 
-              value={adForm.name} 
-              onChange={(e) => setAdForm({ ...adForm, name: e.target.value })} 
-              className="admin-form-input" 
-              required 
-            />
-            <textarea 
-              placeholder="Ad Code" 
-              value={adForm.code} 
-              onChange={(e) => setAdForm({ ...adForm, code: e.target.value })} 
-              className="admin-form-input" 
-              rows="3" 
-              required 
-            />
-            <select 
-              value={adForm.position} 
-              onChange={(e) => setAdForm({ ...adForm, position: e.target.value })} 
-              className="admin-form-input"
-            >
+            <input type="text" placeholder="Ad Name" value={adForm.name} onChange={(e) => setAdForm({ ...adForm, name: e.target.value })} className="admin-form-input" required />
+            <textarea placeholder="Ad Code" value={adForm.code} onChange={(e) => setAdForm({ ...adForm, code: e.target.value })} className="admin-form-input" rows="3" required />
+            <select value={adForm.position} onChange={(e) => setAdForm({ ...adForm, position: e.target.value })} className="admin-form-input">
               <option value="home_above_sotw">Home (Above Song of the Week)</option>
               <option value="home_below_sotw">Home (Below Song of the Week)</option>
             </select>
             <label className="admin-checkbox">
-              <input 
-                type="checkbox" 
-                checked={adForm.is_active} 
-                onChange={(e) => setAdForm({ ...adForm, is_active: e.target.checked })} 
-              />
+              <input type="checkbox" checked={adForm.is_active} onChange={(e) => setAdForm({ ...adForm, is_active: e.target.checked })} />
               Active
             </label>
             <button type="submit" className="admin-form-submit">{editingAdId ? 'Update Ad' : 'Add Ad'}</button>
             {editingAdId && (
-              <button 
-                type="button" 
-                className="admin-cancel-button" 
-                onClick={() => { 
-                  setAdForm({ name: '', code: '', position: 'home_above_sotw', is_active: true }); 
-                  setEditingAdId(null); 
-                }}
-              >
-                Cancel
-              </button>
+              <button type="button" className="admin-cancel-button" onClick={() => { setAdForm({ name: '', code: '', position: 'home_above_sotw', is_active: true }); setEditingAdId(null); }}>Cancel</button>
+            )}
+            {ads.length > itemsPerPage && (
+              <div className="pagination-top">
+                <div className="pagination-controls">
+                  <label htmlFor="itemsPerPageAds">Items per page:</label>
+                  <select id="itemsPerPageAds" value={itemsPerPage} onChange={(e) => { setItemsPerPage(parseInt(e.target.value)); setCurrentPage(prev => ({ ...prev, ads: 1 })); }} className="pagination-select">
+                    <option value={25}>25</option>
+                    <option value={50}>50</option>
+                    <option value={100}>100</option>
+                    <option value={200}>200</option>
+                  </select>
+                </div>
+                <div className="pagination">
+                  <button onClick={() => handlePageChange('ads', currentPage.ads - 1)} disabled={currentPage.ads === 1} className="pagination-button">Previous</button>
+                  {getPaginationRange('ads').map((item, index) => (
+                    item === '...' ? (
+                      <span key={index} className="pagination-ellipsis">...</span>
+                    ) : (
+                      <button key={index} onClick={() => handlePageChange('ads', item)} className={`pagination-button ${currentPage.ads === item ? 'active' : ''}`}>{item}</button>
+                    )
+                  ))}
+                  <button onClick={() => handlePageChange('ads', currentPage.ads + 1)} disabled={currentPage.ads === adPages} className="pagination-button">Next</button>
+                </div>
+              </div>
             )}
             <div className="admin-table-container">
               <table className="admin-table">
@@ -1242,15 +1099,12 @@ function Admin() {
                   </tr>
                 </thead>
                 <tbody>
-                  {ads.map(ad => (
+                  {paginatedAds.map(ad => (
                     <tr key={ad.id}>
                       <td>{ad.name}</td>
                       <td>{ad.position}</td>
                       <td>
-                        <button 
-                          onClick={() => toggleAdActive(ad.id, ad.is_active)} 
-                          className={`admin-toggle-button ${ad.is_active ? 'active' : ''}`}
-                        >
+                        <button onClick={() => toggleAdActive(ad.id, ad.is_active)} className={`admin-toggle-button ${ad.is_active ? 'active' : ''}`}>
                           {ad.is_active ? 'Yes' : 'No'}
                         </button>
                       </td>

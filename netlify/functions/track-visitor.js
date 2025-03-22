@@ -19,17 +19,19 @@ exports.handler = async (event) => {
   const ip = event.headers['x-nf-client-connection-ip'] || 'unknown';
   const referrer = event.headers['referer'] || 'direct';
   const userAgent = event.headers['user-agent'] || 'unknown';
-  const { pageUrl, clickEvents, duration } = body;
+  const { pageUrl, clickEvents, duration, userId } = body;
 
   let city = 'unknown';
   let country = 'unknown';
   try {
     const geoResponse = await fetch(`https://ipapi.co/${ip}/json/`);
+    if (!geoResponse.ok) throw new Error('Geolocation API failed');
     const geoData = await geoResponse.json();
     city = geoData.city || 'unknown';
     country = geoData.country_name || 'unknown';
+    console.log('Geolocation success:', { city, country }); // Debug
   } catch (geoError) {
-    console.error('Geolocation fetch error:', geoError.message);
+    console.error('Geolocation fetch error:', geoError.message); // Debug
   }
 
   const deviceType = /mobile/i.test(userAgent)
@@ -38,17 +40,18 @@ exports.handler = async (event) => {
     ? 'tablet'
     : 'desktop';
 
-  let userId = null;
+  let authenticatedUserId = userId || null;
   const token = event.headers['authorization']?.replace('Bearer ', '');
-  console.log('Received headers:', { token, ip, referrer, userAgent }); // Debug
-  if (token) {
+  console.log('Request headers:', { token: token ? 'Present' : 'Absent', ip, referrer, userAgent }); // Debug
+
+  if (token && !authenticatedUserId) {
     try {
       const { data: { user }, error } = await supabase.auth.getUser(token);
       if (error) throw error;
-      userId = user?.id || null;
-      console.log('User fetched:', userId); // Debug
+      authenticatedUserId = user?.id || null;
+      console.log('User authenticated:', authenticatedUserId); // Debug
     } catch (authError) {
-      console.error('Auth error:', authError.message);
+      console.error('Auth error:', authError.message); // Debug
     }
   }
 
@@ -63,19 +66,21 @@ exports.handler = async (event) => {
     click_events: clickEvents || [],
     duration: duration || 0,
     visit_timestamp: new Date().toISOString(),
-    user_id: userId,
+    user_id: authenticatedUserId,
   };
+
+  console.log('Inserting visitor data:', visitorData); // Debug
 
   try {
     const { error } = await supabase.from('visitors').insert(visitorData);
     if (error) throw error;
-    console.log('Inserted visitor:', visitorData); // Debug
+    console.log('Visitor inserted successfully'); // Debug
     return {
       statusCode: 200,
-      body: JSON.stringify({ message: 'Visit tracked' }),
+      body: JSON.stringify({ message: 'Visit tracked', id: visitorData.id }),
     };
   } catch (error) {
-    console.error('Insert error:', error.message);
+    console.error('Insert error:', error.message); // Debug
     return {
       statusCode: 500,
       body: JSON.stringify({ error: 'Failed to track visitor: ' + error.message }),

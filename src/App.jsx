@@ -194,8 +194,17 @@ function App() {
     const trackVisit = async () => {
       if (!cookiesAccepted || !visitStartTime) return;
       const duration = Math.round((Date.now() - visitStartTime) / 1000);
+
+      // Fetch the current session to get the access token
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+
       await fetch('/.netlify/functions/track-visitor', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` }), // Add Authorization header if token exists
+        },
         body: JSON.stringify({
           pageUrl: window.location.pathname,
           clickEvents,
@@ -203,6 +212,11 @@ function App() {
         }),
       });
     };
+
+    // Track visit on page load (optional: remove if only tracking on unload is desired)
+    trackVisit();
+
+    // Track visit when the user leaves the page
     window.addEventListener('beforeunload', trackVisit);
 
     return () => {
@@ -225,7 +239,7 @@ function App() {
   return (
     <HelmetProvider>
       <Router>
-        <ScrollToTop /> {/* Added here to reset scroll on route change */}
+        <ScrollToTop />
         <AnalyticsTracker />
         <header className="header">
           <Link to="/" className="header-link">

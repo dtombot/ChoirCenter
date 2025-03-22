@@ -31,6 +31,7 @@ function Home() {
   const [filteredPosts, setFilteredPosts] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [suggestions, setSuggestions] = useState([]);
+  const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1); // For keyboard navigation
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [error, setError] = useState(null);
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -42,6 +43,7 @@ function Home() {
   const [progress, setProgress] = useState(0);
   const [expandedFaq, setExpandedFaq] = useState(null);
   const audioRef = useRef(null);
+  const searchInputRef = useRef(null); // For focusing input
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -154,6 +156,7 @@ function Home() {
       setFilteredSongs(songs.slice(0, 6));
       setFilteredPosts(posts.slice(0, 6));
       setSuggestions([]);
+      setSelectedSuggestionIndex(-1);
       setError(null);
     } else {
       const songMatches = songs.filter(song =>
@@ -172,6 +175,7 @@ function Home() {
         ...postMatches.map(post => ({ type: 'post', title: post.title, id: post.id, permalink: post.permalink }))
       ].slice(0, 5); // Limit to 5 suggestions
       setSuggestions(allSuggestions);
+      setSelectedSuggestionIndex(-1); // Reset selection
       if (songMatches.length === 0 && postMatches.length === 0) {
         setError(`No results found for "${query}".`);
       } else {
@@ -196,6 +200,7 @@ function Home() {
     }
     console.log('Attempting navigation to search page with query:', searchQuery);
     navigate(`/search?query=${encodeURIComponent(searchQuery)}`);
+    setSuggestions([]);
   };
 
   const handleSearchChange = (e) => {
@@ -205,7 +210,10 @@ function Home() {
   };
 
   const handleKeyPress = (e) => {
-    if (e.key === 'Enter') {
+    if (e.key === 'Enter' && selectedSuggestionIndex >= 0) {
+      e.preventDefault();
+      handleSuggestionClick(suggestions[selectedSuggestionIndex]);
+    } else if (e.key === 'Enter') {
       console.log('Enter key pressed in input');
       const honeypot = document.querySelector('input[name="honeypot"]').value;
       if (honeypot) {
@@ -220,17 +228,30 @@ function Home() {
       }
       console.log('Navigating via Enter keypress with query:', searchQuery);
       navigate(`/search?query=${encodeURIComponent(searchQuery)}`);
+      setSuggestions([]);
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setSelectedSuggestionIndex(prev => 
+        prev < suggestions.length - 1 ? prev + 1 : prev
+      );
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSelectedSuggestionIndex(prev => 
+        prev > -1 ? prev - 1 : prev
+      );
     }
   };
 
   const handleSuggestionClick = (suggestion) => {
     setSearchQuery(suggestion.title);
     setSuggestions([]);
+    setSelectedSuggestionIndex(-1);
     if (suggestion.type === 'song') {
       navigate(`/song/${suggestion.permalink || suggestion.id}`);
     } else {
       navigate(`/blog/${suggestion.permalink || `post-${suggestion.id}`}`);
     }
+    searchInputRef.current.blur(); // Remove focus after selection
   };
 
   const handleSongClick = (song) => {
@@ -308,7 +329,7 @@ function Home() {
           .eq('is_authenticated', true)
           .single();
 
-        if (limitError && limitError.codeadik !== 'PGRST116') {
+        if (limitError && limitError.code !== 'PGRST116') {
           console.error('Fetch download_limits error for user:', limitError.message);
         } else if (limitData) {
           downloadCount = Math.max(downloadCount, limitData.download_count);
@@ -498,25 +519,34 @@ function Home() {
           <div className="hero-content">
             <h1 className="hero-title animate-text">Everything Your Choir Needs in One Place</h1>
             <p className="hero-text animate-text">Discover free choir music and resources for choristers</p>
-            <form onSubmit={handleSearch} className="search-form">
-              <div style={{ position: 'relative' }}>
+            <form onSubmit={handleSearch} className="search-form modern-search-form">
+              <div className="search-container">
                 <input
                   type="text"
-                  placeholder="Search choir songs and posts..."
                   value={searchQuery}
                   onChange={handleSearchChange}
-                  onKeyPress={handleKeyPress}
-                  className="search-input animate-input"
+                  onKeyDown={handleKeyPress} // Changed to onKeyDown for better key handling
+                  className="search-input modern-search-input"
                   aria-label="Search choir songs and posts"
+                  ref={searchInputRef}
                 />
+                <label
+                  className={`floating-label ${searchQuery ? 'active' : ''}`}
+                >
+                  Search choir songs and posts...
+                </label>
                 {suggestions.length > 0 && (
-                  <ul className="suggestions-list">
+                  <ul className="suggestions-list modern-suggestions-list">
                     {suggestions.map((suggestion, index) => (
                       <li
                         key={index}
                         onClick={() => handleSuggestionClick(suggestion)}
+                        className={index === selectedSuggestionIndex ? 'selected' : ''}
+                        onMouseEnter={() => setSelectedSuggestionIndex(index)}
+                        onMouseLeave={() => setSelectedSuggestionIndex(-1)}
                       >
-                        {suggestion.title} <span style={{ color: '#3cb371', fontSize: '0.85rem' }}>({suggestion.type})</span>
+                        <span className="suggestion-title">{suggestion.title}</span>
+                        <span className="suggestion-type">({suggestion.type})</span>
                       </li>
                     ))}
                   </ul>
@@ -590,7 +620,7 @@ function Home() {
                     <h3 className="song-card-title-modern">{song.title}</h3>
                     <p className="song-card-composer-modern">{song.composer || 'Unknown Composer'}</p>
                     <p className="song-card-downloads-modern">Downloaded {song.downloads || 0} times</p>
-                    <p className="song-timestamp-modern">
+                    <p className="song-card-timestamp-modern">
                       Added on {new Date(song.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
                     </p>
                   </div>

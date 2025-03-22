@@ -72,12 +72,12 @@ exports.handler = async (event) => {
   console.log('Inserting visitor data:', visitorData); // Debug
 
   try {
-    const { error } = await supabase.from('visitors').insert(visitorData);
+    const { data, error } = await supabase.from('visitors').insert(visitorData).select('id'); // Return inserted ID
     if (error) throw error;
-    console.log('Visitor inserted successfully'); // Debug
+    console.log('Visitor inserted successfully:', { insertedId: data[0]?.id }); // Debug
     return {
       statusCode: 200,
-      body: JSON.stringify({ message: 'Visit tracked', id: visitorData.id }),
+      body: JSON.stringify({ message: 'Visit tracked', id: data[0]?.id }),
     };
   } catch (error) {
     console.error('Insert error:', error.message); // Debug

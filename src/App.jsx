@@ -194,31 +194,41 @@ function App() {
     const trackVisit = async () => {
       if (!cookiesAccepted || !visitStartTime) return;
       const duration = Math.round((Date.now() - visitStartTime) / 1000);
-
-      // Fetch the current session to get the access token
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData?.session?.access_token;
 
-      await fetch('/.netlify/functions/track-visitor', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` }), // Add Authorization header if token exists
-        },
-        body: JSON.stringify({
-          pageUrl: window.location.pathname,
-          clickEvents,
-          duration,
-        }),
-      });
+      console.log('Tracking visit:', { pageUrl: window.location.pathname, duration, token }); // Debug
+
+      try {
+        const response = await fetch('/.netlify/functions/track-visitor', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token && { 'Authorization': `Bearer ${token}` }),
+          },
+          body: JSON.stringify({
+            pageUrl: window.location.pathname,
+            clickEvents,
+            duration,
+          }),
+        });
+        if (!response.ok) {
+          console.error('Fetch error:', response.status, await response.text());
+        } else {
+          console.log('Track success:', await response.json());
+        }
+      } catch (error) {
+        console.error('Track visit failed:', error.message);
+      }
     };
 
-    // Track visit on page load (optional: remove if only tracking on unload is desired)
+    // Track on page load
     trackVisit();
 
-    // Track visit when the user leaves the page
+    // Track on page unload
     window.addEventListener('beforeunload', trackVisit);
 
+    // Track on route change (optional, for SPA navigation)
     return () => {
       authListener.subscription.unsubscribe();
       document.removeEventListener('click', handleClick);

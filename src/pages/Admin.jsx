@@ -12,6 +12,7 @@ function Admin() {
   const [posts, setPosts] = useState([]);
   const [users, setUsers] = useState([]);
   const [ads, setAds] = useState([]);
+  const [messages, setMessages] = useState([]);
   const [songForm, setSongForm] = useState({ 
     title: '', 
     composer: '', 
@@ -117,6 +118,16 @@ function Admin() {
         else setAds(data || []);
       };
       fetchAds();
+
+      const fetchMessages = async () => {
+        const { data, error } = await supabase
+          .from('contact_messages')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (error) setError('Failed to load messages: ' + error.message);
+        else setMessages(data || []);
+      };
+      fetchMessages();
 
       const fetchAnalytics = async () => {
         try {
@@ -493,6 +504,23 @@ function Admin() {
     }
   };
 
+  const toggleMessageRead = async (id, isRead) => {
+    const { error } = await supabase
+      .from('contact_messages')
+      .update({ is_read: !isRead })
+      .eq('id', id);
+    if (error) setError('Failed to update message status: ' + error.message);
+    else setMessages(messages.map(msg => msg.id === id ? { ...msg, is_read: !isRead } : msg));
+  };
+
+  const deleteMessage = async (id) => {
+    if (window.confirm('Are you sure you want to delete this message?')) {
+      const { error } = await supabase.from('contact_messages').delete().eq('id', id);
+      if (error) setError('Failed to delete message: ' + error.message);
+      else setMessages(messages.filter(msg => msg.id !== id));
+    }
+  };
+
   const quillModules = {
     toolbar: [
       [{ 'header': [1, 2, 3, false] }],
@@ -572,6 +600,7 @@ function Admin() {
         <button className={`tab-button ${activeTab === 'users' ? 'active' : ''}`} onClick={() => setActiveTab('users')}>Manage Users</button>
         <button className={`tab-button ${activeTab === 'songOfTheWeek' ? 'active' : ''}`} onClick={() => setActiveTab('songOfTheWeek')}>Song of the Week</button>
         <button className={`tab-button ${activeTab === 'advert' ? 'active' : ''}`} onClick={() => setActiveTab('advert')}>Advert</button>
+        <button className={`tab-button ${activeTab === 'messages' ? 'active' : ''}`} onClick={() => setActiveTab('messages')}>Messages</button>
       </div>
       <div className="admin-content">
         {error && (
@@ -1297,6 +1326,50 @@ function Admin() {
                 </tbody>
               </table>
             </div>
+          </div>
+        )}
+        {activeTab === 'messages' && (
+          <div className="admin-messages-container">
+            <h3 className="analytics-section-title">Contact Messages</h3>
+            {messages.length > 0 ? (
+              <div className="admin-table-container">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Email</th>
+                      <th>Message</th>
+                      <th>Received At (GMT+1)</th>
+                      <th>Read</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {messages.map((msg) => (
+                      <tr key={msg.id}>
+                        <td>{msg.name}</td>
+                        <td>{msg.email}</td>
+                        <td style={{ maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{msg.message}</td>
+                        <td>{toGMTPlus1(msg.created_at).toLocaleString()}</td>
+                        <td>
+                          <button
+                            onClick={() => toggleMessageRead(msg.id, msg.is_read)}
+                            className={`admin-toggle-button ${msg.is_read ? 'active' : ''}`}
+                          >
+                            {msg.is_read ? 'Yes' : 'No'}
+                          </button>
+                        </td>
+                        <td>
+                          <button onClick={() => deleteMessage(msg.id)} className="admin-delete-button">Delete</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p>No messages available.</p>
+            )}
           </div>
         )}
       </div>

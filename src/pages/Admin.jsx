@@ -1101,17 +1101,26 @@ function Admin() {
             {analyticsSection === 'visitors' && (
               <div className="analytics-section visitors-data">
                 <h3 className="analytics-section-title">Recent Visitors (Last 100 Visits)</h3>
+                <p>Total Visits Recorded: {visitorData.length}</p>
                 {visitorData.length > 0 ? (
-                  <>
-                    <p>Total Visits Recorded: {visitorData.length}</p>
-                    <ul className="visitor-list">
-                      {visitorData.map((visitor, index) => (
-                        <li key={index}>
-                          {toGMTPlus1(visitor.visit_timestamp).toLocaleString()} - {visitor.page_url}
-                        </li>
-                      ))}
-                    </ul>
-                  </>
+                  <div className="admin-table-container">
+                    <table className="admin-table">
+                      <thead>
+                        <tr>
+                          <th>Timestamp (GMT+1)</th>
+                          <th>Page URL</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {visitorData.map((visitor, index) => (
+                          <tr key={index}>
+                            <td>{toGMTPlus1(visitor.visit_timestamp).toLocaleString()}</td>
+                            <td>{visitor.page_url}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 ) : (
                   <p>No visitor data available.</p>
                 )}

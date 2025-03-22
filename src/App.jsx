@@ -54,43 +54,9 @@ function ScrollToTop() {
   return null;
 }
 
-function CookieConsent({ onAccept }) {
-  const [isVisible, setIsVisible] = useState(false);
-
-  useEffect(() => {
-    const consent = localStorage.getItem('cookieConsent');
-    if (!consent) {
-      setIsVisible(true);
-    }
-  }, []);
-
-  const handleAccept = () => {
-    localStorage.setItem('cookieConsent', 'accepted');
-    setIsVisible(false);
-    onAccept();
-  };
-
-  if (!isVisible) return null;
-
-  return (
-    <div className="cookie-consent-bar">
-      <div className="cookie-content">
-        <span className="cookie-text">
-          We use cookies to enhance your experience. See our <Link to="/privacy" className="cookie-link">Privacy Policy</Link>.
-        </span>
-        <div className="cookie-actions">
-          <button className="cookie-accept" onClick={handleAccept}>Accept</button>
-          <Link to="/privacy" className="cookie-learn-more">Learn More</Link>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function App() {
   const [user, setUser] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [cookiesAccepted, setCookiesAccepted] = useState(false);
   const [recaptchaLoaded, setRecaptchaLoaded] = useState(false);
   const [visitStartTime, setVisitStartTime] = useState(null);
   const [clickEvents, setClickEvents] = useState([]);
@@ -175,27 +141,18 @@ function App() {
       }
     });
 
-    const consent = localStorage.getItem('cookieConsent');
-    if (consent === 'accepted') {
-      setCookiesAccepted(true);
-    } else {
-      console.log('Cookies not accepted yet'); // Debug
-    }
-
     setVisitStartTime(Date.now());
     const handleClick = (e) => {
-      if (cookiesAccepted) {
-        setClickEvents((prev) => [
-          ...prev,
-          { element: e.target.tagName, timestamp: Date.now() },
-        ]);
-      }
+      setClickEvents((prev) => [
+        ...prev,
+        { element: e.target.tagName, timestamp: Date.now() },
+      ]);
     };
     document.addEventListener('click', handleClick);
 
     const trackVisit = async () => {
-      if (!cookiesAccepted || !visitStartTime) {
-        console.log('Tracking skipped: Cookies not accepted or no start time'); // Debug
+      if (!visitStartTime) {
+        console.log('Tracking skipped: No start time'); // Debug
         return;
       }
       const duration = Math.round((Date.now() - visitStartTime) / 1000);
@@ -219,11 +176,11 @@ function App() {
           },
           body: JSON.stringify(trackingData),
         });
-        const responseText = await response.text();
+        const responseData = await response.json(); // Parse JSON response
         if (!response.ok) {
-          console.error('Track visit failed:', response.status, responseText); // Debug
+          console.error('Track visit failed:', response.status, responseData); // Debug
         } else {
-          console.log('Track success:', JSON.parse(responseText)); // Debug
+          console.log('Track success:', responseData); // Debug
           setClickEvents([]); // Reset click events after successful track
           setVisitStartTime(Date.now()); // Reset start time
         }
@@ -247,16 +204,12 @@ function App() {
       window.removeEventListener('beforeunload', trackVisit);
       clearInterval(intervalId);
     };
-  }, [cookiesAccepted, user]);
+  }, [user]); // Removed cookiesAccepted dependency
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setUser(null);
     setIsAdmin(false);
-  };
-
-  const handleCookiesAccepted = () => {
-    setCookiesAccepted(true);
   };
 
   return (
@@ -316,7 +269,6 @@ function App() {
           <Route path="/song/:id" element={<Song />} />
           <Route path="/search" element={<Search />} />
         </Routes>
-        <CookieConsent onAccept={handleCookiesAccepted} />
         <footer className="footer">
           <div className="footer-text">
             <p>About Us: Choir Center is a platform for choristers to access music resources.</p>

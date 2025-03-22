@@ -513,22 +513,25 @@ function Admin() {
   ];
 
   const filteredSongs = songs.filter(song => {
+    const title = song.title || '';
+    const composer = song.composer || '';
+    const tags = song.tags || [];
     const matchesSearch = 
-      song.title.toLowerCase().includes(songSearch.toLowerCase()) || 
-      song.composer.toLowerCase().includes(songSearch.toLowerCase()) ||
-      (song.tags && song.tags.some(tag => tag.toLowerCase().includes(songSearch.toLowerCase())));
+      title.toLowerCase().includes(songSearch.toLowerCase()) || 
+      composer.toLowerCase().includes(songSearch.toLowerCase()) ||
+      (tags && tags.some(tag => (tag || '').toLowerCase().includes(songSearch.toLowerCase())));
     const matchesFilter = 
       songFilter === 'all' || 
       (songFilter === 'public' && song.is_public) || 
       (songFilter === 'private' && !song.is_public);
     const matchesCategory = 
-      songCategoryFilter === 'all' || song.category === songCategoryFilter;
+      songCategoryFilter === 'all' || (song.category || '') === songCategoryFilter;
     return matchesSearch && matchesFilter && matchesCategory;
   });
 
   const filteredUsers = users.filter(user => 
-    user.full_name.toLowerCase().includes(userSearch.toLowerCase()) ||
-    user.email.toLowerCase().includes(userSearch.toLowerCase())
+    (user.full_name || '').toLowerCase().includes(userSearch.toLowerCase()) ||
+    (user.email || '').toLowerCase().includes(userSearch.toLowerCase())
   );
 
   const fetchUsers = async () => {

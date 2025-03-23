@@ -57,6 +57,7 @@ function ScrollToTop() {
 function App() {
   const [user, setUser] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [loading, setLoading] = useState(true); // Added loading state
   const [recaptchaLoaded, setRecaptchaLoaded] = useState(false);
   const [lastTracked, setLastTracked] = useState({}); // Store last tracked time per page/IP
 
@@ -67,10 +68,9 @@ function App() {
         script.src = 'https://www.google.com/recaptcha/api.js?render=explicit';
         script.async = true;
         script.defer = true;
-        script.id = 'recaptcha-script'; // Add ID for clarity
+        script.id = 'recaptcha-script';
         script.onload = () => {
           console.log('reCAPTCHA script loaded');
-          // Wait briefly to ensure grecaptcha is fully initialized
           setTimeout(() => setRecaptchaLoaded(true), 100);
         };
         script.onerror = () => {
@@ -79,7 +79,6 @@ function App() {
         };
         document.head.appendChild(script);
       } else {
-        // If script already exists, check if grecaptcha is ready
         if (window.grecaptcha && window.grecaptcha.render) {
           setRecaptchaLoaded(true);
         }
@@ -100,10 +99,12 @@ function App() {
     loadGoogleAnalyticsScript();
 
     const fetchUserAndProfile = async () => {
+      setLoading(true); // Start loading
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       if (sessionError || !sessionData.session) {
         setUser(null);
         setIsAdmin(false);
+        setLoading(false); // Done loading
         return;
       }
 
@@ -111,6 +112,7 @@ function App() {
       if (authError) {
         setUser(null);
         setIsAdmin(false);
+        setLoading(false); // Done loading
         return;
       }
       const currentUser = authData.user;
@@ -129,6 +131,7 @@ function App() {
           setIsAdmin(profileData?.is_admin || false);
         }
       }
+      setLoading(false); // Done loading after all checks
     };
     fetchUserAndProfile();
 
@@ -195,13 +198,31 @@ function App() {
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, [user]);
+  }, []); // Removed [user] dependency to prevent re-running unnecessarily
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setUser(null);
     setIsAdmin(false);
   };
+
+  // Show loading screen until auth state is fully resolved
+  if (loading) {
+    return (
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh',
+        backgroundColor: '#e6f0e6',
+        color: '#2f4f2f',
+        fontSize: '1.5rem',
+        fontFamily: "'Inter', Arial, sans-serif"
+      }}>
+        Loading...
+      </div>
+    );
+  }
 
   return (
     <HelmetProvider>

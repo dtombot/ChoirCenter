@@ -13,27 +13,37 @@ function Login({ recaptchaLoaded }) {
 
   useEffect(() => {
     const renderRecaptcha = () => {
-      if (recaptchaLoaded && window.grecaptcha && window.grecaptcha.render && recaptchaRef.current) {
-        try {
-          console.log('Attempting to render reCAPTCHA on Login');
-          window.grecaptcha.render(recaptchaRef.current, {
-            sitekey: '6LczEuYqAAAAANYh6VG8jSj1Fmt6LKMK7Ee1OcfU',
-            callback: (token) => console.log('reCAPTCHA token received:', token),
-          });
-          console.log('reCAPTCHA rendered successfully on Login');
-        } catch (err) {
-          console.error('Error rendering reCAPTCHA on Login:', err);
-          setError('Failed to load reCAPTCHA. Please refresh the page or try again later.');
-        }
-      } else if (!recaptchaLoaded) {
-        console.log('reCAPTCHA not loaded yet on Login');
-      } else {
-        console.log('reCAPTCHA script present but not fully initialized:', {
-          grecaptchaExists: !!window.grecaptcha,
-          renderExists: window.grecaptcha && !!window.grecaptcha.render,
-          refExists: !!recaptchaRef.current,
-        });
+      console.log('reCAPTCHA render check (Login):', {
+        recaptchaLoaded,
+        grecaptchaExists: !!window.grecaptcha,
+        renderExists: window.grecaptcha && !!window.grecaptcha.render,
+        refExists: !!recaptchaRef.current,
+      });
+
+      if (!recaptchaLoaded || !window.grecaptcha || !recaptchaRef.current) {
+        console.log('reCAPTCHA not ready yet on Login');
+        return;
       }
+
+      const attemptRender = () => {
+        if (window.grecaptcha && window.grecaptcha.render) {
+          try {
+            window.grecaptcha.render(recaptchaRef.current, {
+              sitekey: '6LczEuYqAAAAANYh6VG8jSj1Fmt6LKMK7Ee1OcfU',
+              callback: (token) => console.log('reCAPTCHA token received (Login):', token),
+            });
+            console.log('reCAPTCHA rendered successfully on Login');
+          } catch (err) {
+            console.error('Error rendering reCAPTCHA on Login:', err);
+            setError('Failed to load reCAPTCHA. Please refresh the page or try again later.');
+          }
+        } else {
+          console.log('reCAPTCHA render not available yet on Login, retrying...');
+          setTimeout(attemptRender, 100); // Retry every 100ms
+        }
+      };
+
+      attemptRender();
     };
 
     renderRecaptcha();
@@ -46,10 +56,10 @@ function Login({ recaptchaLoaded }) {
         body: JSON.stringify({ token }),
       });
       const result = await response.json();
-      console.log('reCAPTCHA verification result:', result);
+      console.log('reCAPTCHA verification result (Login):', result);
       return result.success;
     } catch (err) {
-      console.error('reCAPTCHA verification error:', err);
+      console.error('reCAPTCHA verification error (Login):', err);
       return false;
     }
   };
@@ -66,7 +76,7 @@ function Login({ recaptchaLoaded }) {
     }
 
     const token = window.grecaptcha.getResponse();
-    console.log('Token retrieved on submit:', token);
+    console.log('Token retrieved on submit (Login):', token);
 
     if (!token) {
       setError('Please complete the reCAPTCHA.');

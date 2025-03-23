@@ -6,11 +6,11 @@ import '../styles.css';
 function Signup({ recaptchaLoaded }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [fullName, setFullName] = useState(''); // New field
-  const [choirName, setChoirName] = useState(''); // New field
-  const [churchName, setChurchName] = useState(''); // New field
-  const [country, setCountry] = useState(''); // New field
-  const [state, setState] = useState(''); // New field
+  const [fullName, setFullName] = useState('');
+  const [choirName, setChoirName] = useState('');
+  const [churchName, setChurchName] = useState('');
+  const [country, setCountry] = useState('');
+  const [state, setState] = useState('');
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -19,27 +19,37 @@ function Signup({ recaptchaLoaded }) {
 
   useEffect(() => {
     const renderRecaptcha = () => {
-      if (recaptchaLoaded && window.grecaptcha && window.grecaptcha.render && recaptchaRef.current) {
-        try {
-          console.log('Attempting to render reCAPTCHA on Signup');
-          window.grecaptcha.render(recaptchaRef.current, {
-            sitekey: '6LczEuYqAAAAANYh6VG8jSj1Fmt6LKMK7Ee1OcfU',
-            callback: (token) => console.log('reCAPTCHA token received:', token),
-          });
-          console.log('reCAPTCHA rendered successfully on Signup');
-        } catch (err) {
-          console.error('Error rendering reCAPTCHA on Signup:', err);
-          setError('Failed to load reCAPTCHA. Please refresh the page or try again later.');
-        }
-      } else if (!recaptchaLoaded) {
-        console.log('reCAPTCHA not loaded yet on Signup');
-      } else {
-        console.log('reCAPTCHA script present but not fully initialized:', {
-          grecaptchaExists: !!window.grecaptcha,
-          renderExists: window.grecaptcha && !!window.grecaptcha.render,
-          refExists: !!recaptchaRef.current,
-        });
+      console.log('reCAPTCHA render check (Signup):', {
+        recaptchaLoaded,
+        grecaptchaExists: !!window.grecaptcha,
+        renderExists: window.grecaptcha && !!window.grecaptcha.render,
+        refExists: !!recaptchaRef.current,
+      });
+
+      if (!recaptchaLoaded || !window.grecaptcha || !recaptchaRef.current) {
+        console.log('reCAPTCHA not ready yet on Signup');
+        return;
       }
+
+      const attemptRender = () => {
+        if (window.grecaptcha && window.grecaptcha.render) {
+          try {
+            window.grecaptcha.render(recaptchaRef.current, {
+              sitekey: '6LczEuYqAAAAANYh6VG8jSj1Fmt6LKMK7Ee1OcfU',
+              callback: (token) => console.log('reCAPTCHA token received (Signup):', token),
+            });
+            console.log('reCAPTCHA rendered successfully on Signup');
+          } catch (err) {
+            console.error('Error rendering reCAPTCHA on Signup:', err);
+            setError('Failed to load reCAPTCHA. Please refresh the page or try again later.');
+          }
+        } else {
+          console.log('reCAPTCHA render not available yet on Signup, retrying...');
+          setTimeout(attemptRender, 100); // Retry every 100ms
+        }
+      };
+
+      attemptRender();
     };
 
     renderRecaptcha();
@@ -52,10 +62,10 @@ function Signup({ recaptchaLoaded }) {
         body: JSON.stringify({ token }),
       });
       const result = await response.json();
-      console.log('reCAPTCHA verification result:', result);
+      console.log('reCAPTCHA verification result (Signup):', result);
       return result.success;
     } catch (err) {
-      console.error('reCAPTCHA verification error:', err);
+      console.error('reCAPTCHA verification error (Signup):', err);
       return false;
     }
   };
@@ -80,10 +90,10 @@ function Signup({ recaptchaLoaded }) {
     }
 
     const token = window.grecaptcha.getResponse();
-    console.log('Token retrieved on submit:', token);
+    console.log('Token retrieved on submit (Signup):', token);
 
     if (!token || token === '') {
-      console.log('No token received, reCAPTCHA not completed');
+      console.log('No token received, reCAPTCHA not completed (Signup)');
       setError('Please complete the reCAPTCHA.');
       setLoading(false);
       return;
@@ -91,7 +101,7 @@ function Signup({ recaptchaLoaded }) {
 
     const isRecaptchaValid = await verifyRecaptcha(token);
     if (!isRecaptchaValid) {
-      console.log('reCAPTCHA verification failed');
+      console.log('reCAPTCHA verification failed (Signup)');
       setError('reCAPTCHA verification failed. Please try again.');
       setLoading(false);
       if (window.grecaptcha) window.grecaptcha.reset();
@@ -112,11 +122,11 @@ function Signup({ recaptchaLoaded }) {
           .upsert({
             id: data.user.id,
             email: data.user.email,
-            full_name: fullName, // New field
-            choir_name: choirName || null, // Optional
-            church_name: churchName || null, // Optional
-            country: country || null, // Optional
-            state: state || null, // Optional
+            full_name: fullName,
+            choir_name: choirName || null,
+            church_name: churchName || null,
+            country: country || null,
+            state: state || null,
             is_admin: false,
           });
         if (profileError) throw profileError;

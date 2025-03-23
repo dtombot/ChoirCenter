@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../supabase';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom'; // Removed useLocation
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import '../styles.css';
@@ -59,7 +59,6 @@ function Admin() {
   const [userSearch, setUserSearch] = useState('');
   const [analyticsSection, setAnalyticsSection] = useState('local');
   const navigate = useNavigate();
-  const location = useLocation();
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -146,7 +145,7 @@ function Admin() {
 
       const fetchVisitors = async () => {
         try {
-          // Fetch last 100 visits with IP, then aggregate by IP and page_url
+          // Fetch last 1000 visits with IP, then aggregate by IP and page_url
           const { data, error } = await supabase
             .from('visitors')
             .select('visit_timestamp, page_url, ip_address')
@@ -210,32 +209,13 @@ function Admin() {
       };
       fetchSongOfTheWeek();
 
-      const params = new URLSearchParams(location.search);
-      const tab = params.get('tab');
-      const editSongId = params.get('editSongId');
-      if (tab === 'songs' && editSongId) {
-        setActiveTab('songs');
-        const songToEdit = songs.find(song => song.id === parseInt(editSongId, 10));
-        if (songToEdit) {
-          editSong(songToEdit);
-        } else {
-          const { data: songData, error: songError } = await supabase
-            .from('songs')
-            .select('*')
-            .eq('id', parseInt(editSongId, 10))
-            .single();
-          if (!songError && songData) {
-            editSong(songData);
-          }
-        }
-      }
-
+      // Removed location.search dependency and related song edit logic
       return () => {
         clearInterval(visitorInterval);
       };
     };
     fetchUser();
-  }, [navigate, location.search]);
+  }, [navigate]); // Removed location from dependency array
 
   const handleLogout = async () => {
     await supabase.auth.signOut();

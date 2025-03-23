@@ -49,6 +49,16 @@ function Home() {
   useEffect(() => {
     const fetchData = async () => {
       console.log('Fetching all data');
+
+      // Helper to clean audio URL
+      const cleanAudioUrl = (url) => {
+        if (!url) return null;
+        const cleaned = url
+          .replace(/<[^>]+>/g, '') // Remove HTML tags like <p>
+          .replace(/%3C[^%]+%3E/g, ''); // Remove encoded tags like %3Cp%3E
+        return cleaned.match(/\.(mp3|wav|ogg)$/) ? cleaned : null;
+      };
+
       const { data: songData, error: songError } = await supabase
         .from('songs')
         .select('id, title, composer, google_drive_file_id, permalink, is_public, downloads, created_at')
@@ -85,10 +95,10 @@ function Home() {
         setError('Failed to load Song of the Week: ' + sotwError.message);
       } else {
         console.log('Song of the Week data:', JSON.stringify(songOfTheWeekData, null, 2));
-        const audioUrl = songOfTheWeekData && songOfTheWeekData.length > 0 ? songOfTheWeekData[0].audio_url : null;
+        const audioUrl = songOfTheWeekData && songOfTheWeekData.length > 0 ? cleanAudioUrl(songOfTheWeekData[0].audio_url) : null;
         const title = songOfTheWeekData && songOfTheWeekData.length > 0 ? songOfTheWeekData[0].title : 'Unknown Title';
         const composer = songOfTheWeekData && songOfTheWeekData.length > 0 ? songOfTheWeekData[0].composer || 'Unknown Composer' : 'Unknown Composer';
-        console.log('Song of the Week audio URL:', audioUrl, 'Title:', title, 'Composer:', composer);
+        console.log('Cleaned Song of the Week audio URL:', audioUrl, 'Title:', title, 'Composer:', composer);
         setSongOfTheWeek(audioUrl);
         setSongTitle(title);
         setSongComposer(composer);

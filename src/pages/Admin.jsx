@@ -47,8 +47,8 @@ function Admin() {
   const [topSongs, setTopSongs] = useState([]);
   const [topPosts, setTopPosts] = useState([]);
   const [songOfTheWeekHtml, setSongOfTheWeekHtml] = useState('');
-  const [songOfTheWeekTitle, setSongOfTheWeekTitle] = useState(''); // New field
-  const [songOfTheWeekComposer, setSongOfTheWeekComposer] = useState(''); // New field
+  const [songOfTheWeekTitle, setSongOfTheWeekTitle] = useState('');
+  const [songOfTheWeekComposer, setSongOfTheWeekComposer] = useState('');
   const [editingSongId, setEditingSongId] = useState(null);
   const [editingPostId, setEditingPostId] = useState(null);
   const [editingAdId, setEditingAdId] = useState(null);
@@ -159,7 +159,6 @@ function Admin() {
       };
       fetchVisitors();
 
-      // Periodic fetch every 5 minutes (300,000 ms)
       const visitorInterval = setInterval(fetchVisitors, 300000);
 
       const fetchTopSongs = async () => {
@@ -373,6 +372,17 @@ function Admin() {
   const handleSongOfTheWeekSubmit = async (e) => {
     e.preventDefault();
     try {
+      // Clean the audio URL by stripping HTML tags and encoded characters
+      const cleanAudioUrl = (url) => {
+        if (!url) return '';
+        return url
+          .replace(/<[^>]+>/g, '') // Remove HTML tags like <p>
+          .replace(/%3C[^%]+%3E/g, '') // Remove encoded tags like %3Cp%3E
+          .trim();
+      };
+
+      const cleanedAudioUrl = cleanAudioUrl(songOfTheWeekHtml);
+
       const { data: existingData, error: fetchError } = await supabase
         .from('song_of_the_week')
         .select('id')
@@ -382,7 +392,7 @@ function Admin() {
       const songData = {
         title: songOfTheWeekTitle,
         composer: songOfTheWeekComposer,
-        audio_url: songOfTheWeekHtml,
+        audio_url: cleanedAudioUrl,
       };
 
       if (existingData) {
@@ -591,10 +601,9 @@ function Admin() {
   const publicSongs = songs.filter(song => song.is_public).length;
   const privateSongs = songs.length - publicSongs;
 
-  // Helper function to convert UTC to GMT+1
   const toGMTPlus1 = (date) => {
     const utcDate = new Date(date);
-    const gmtPlus1Offset = 1 * 60 * 60 * 1000; // 1 hour in milliseconds
+    const gmtPlus1Offset = 1 * 60 * 60 * 1000;
     return new Date(utcDate.getTime() + gmtPlus1Offset);
   };
 

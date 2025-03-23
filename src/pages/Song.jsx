@@ -31,7 +31,8 @@ function Song() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [thumbnailError, setThumbnailError] = useState(false); // New state for thumbnail fallback
+  const [thumbnailError, setThumbnailError] = useState(false);
+  const [showAudioPrompt, setShowAudioPrompt] = useState(false); // New state for audio download modal
   const audioRef = useRef(null);
   const navigate = useNavigate();
 
@@ -443,12 +444,16 @@ function Song() {
 
   const handleAudioDownload = () => {
     if (!song || !song.audio_url) return;
-    const link = document.createElement('a');
-    link.href = song.audio_url;
-    link.download = `${song.title}-${song.id}.mp3`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    if (hasDonated) {
+      const link = document.createElement('a');
+      link.href = song.audio_url;
+      link.download = `${song.title}-${song.id}.mp3`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } else {
+      setShowAudioPrompt(true); // Show modal for non-donated users
+    }
   };
 
   const handleShare = () => {
@@ -568,11 +573,9 @@ function Song() {
                     onError={(e) => console.error('Audio error for URL:', song.audio_url, 'Error:', e.target.error)}
                   />
                 </div>
-                {hasDonated && (
-                  <button onClick={handleAudioDownload} className="download-button-modern audio-download-button">
-                    Download Audio
-                  </button>
-                )}
+                <button onClick={handleAudioDownload} className="download-button-modern audio-download-button">
+                  Download Audio
+                </button>
                 {!song.audio_url.includes('.mp3') && !song.audio_url.includes('.wav') && (
                   <p style={{ fontSize: '0.8rem', color: '#999', marginTop: '0.5rem' }}>
                     Audio player not displayed. Please use a direct audio file URL (e.g., .mp3) in the admin panel.
@@ -600,7 +603,7 @@ function Song() {
                   src={thumbnailUrl}
                   alt={`Preview of ${song.title}`}
                   className="song-preview-image"
-                  onError={() => setThumbnailError(true)} // Fallback to PDF if thumbnail fails
+                  onError={() => setThumbnailError(true)}
                 />
               ) : (
                 <Document
@@ -683,6 +686,21 @@ function Song() {
                     <Link to="/login" className="modal-link">Log In</Link>
                   </button>{' '}
                   <button onClick={() => setShowLoginPrompt(false)} className="cancel-button">Close</button>
+                </div>
+              </div>
+            )}
+
+            {showAudioPrompt && (
+              <div className="modal-overlay">
+                <div className="modal-content download-modal">
+                  <h3 className="modal-title">Support Choir Center</h3>
+                  <p className="modal-text">
+                    To download this audio and gain unlimited access to Choir Center, please support us by buying a Meat Pie ☕. Your contribution helps keep the site running!
+                  </p>
+                  <button className="meatpie-button">
+                    <Link to="/signup-donate" className="modal-link">Sign Up & Donate</Link>
+                  </button>{' '}
+                  <button onClick={() => setShowAudioPrompt(false)} className="cancel-button">Cancel</button>
                 </div>
               </div>
             )}

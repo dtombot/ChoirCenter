@@ -43,7 +43,7 @@ function Admin() {
     is_active: true
   });
   const [analyticsData, setAnalyticsData] = useState({ ga: null, gsc: null });
-  const [visitorData, setVisitorData] = useState([]);
+  const [visitorData, setVisitorData] = useState([]); // Will store aggregated visitor data
   const [topSongs, setTopSongs] = useState([]);
   const [topPosts, setTopPosts] = useState([]);
   const [songOfTheWeekHtml, setSongOfTheWeekHtml] = useState('');
@@ -146,20 +146,33 @@ function Admin() {
 
       const fetchVisitors = async () => {
         try {
+          // Fetch last 100 visits with IP, then aggregate by IP and page_url
           const { data, error } = await supabase
             .from('visitors')
-            .select('visit_timestamp, page_url')
+            .select('visit_timestamp, page_url, ip_address')
             .order('visit_timestamp', { ascending: false })
-            .limit(100);
+            .limit(1000); // Fetch more to aggregate, then trim
           if (error) throw error;
-          setVisitorData(data || []);
+
+          // Aggregate: latest visit per IP per page_url
+          const aggregated = {};
+          (data || []).forEach(visit => {
+            const key = `${visit.ip_address}-${visit.page_url}`;
+            if (!aggregated[key] || new Date(visit.visit_timestamp) > new Date(aggregated[key].visit_timestamp)) {
+              aggregated[key] = visit;
+            }
+          });
+          const uniqueVisits = Object.values(aggregated)
+            .sort((a, b) => new Date(b.visit_timestamp) - new Date(a.visit_timestamp))
+            .slice(0, 100); // Limit to 100 after aggregation
+          setVisitorData(uniqueVisits);
         } catch (error) {
           setError('Failed to load visitor data: ' + error.message);
         }
       };
       fetchVisitors();
 
-      const visitorInterval = setInterval(fetchVisitors, 300000);
+      const visitorInterval = setInterval(fetchVisitors, 300000); // Refresh every 5 minutes
 
       const fetchTopSongs = async () => {
         const { data, error } = await supabase
@@ -372,12 +385,11 @@ function Admin() {
   const handleSongOfTheWeekSubmit = async (e) => {
     e.preventDefault();
     try {
-      // Clean the audio URL by stripping HTML tags and encoded characters
       const cleanAudioUrl = (url) => {
         if (!url) return '';
         return url
-          .replace(/<[^>]+>/g, '') // Remove HTML tags like <p>
-          .replace(/%3C[^%]+%3E/g, '') // Remove encoded tags like %3Cp%3E
+          .replace(/<[^>]+>/g, '')
+          .replace(/%3C[^%]+%3E/g, '')
           .trim();
       };
 
@@ -1150,8 +1162,8 @@ function Admin() {
             )}
             {analyticsSection === 'visitors' && (
               <div className="analytics-section visitors-data">
-                <h3 className="analytics-section-title">Recent Visitors (Last 100 Visits)</h3>
-                <p>Total Visits Recorded: {visitorData.length}</p>
+                <h3 className="analytics-section-title">Recent Visitors (Last 100 Unique Visits)</h3>
+                <p>Total Unique Visits Displayed: {visitorData.length}</p>
                 {visitorData.length > 0 ? (
                   <div className="admin-table-container">
                     <table className="admin-table">
@@ -1159,6 +1171,7 @@ function Admin() {
                         <tr>
                           <th>Timestamp (GMT+1)</th>
                           <th>Page URL</th>
+                          <th>IP Address</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -1166,6 +1179,7 @@ function Admin() {
                           <tr key={index}>
                             <td>{toGMTPlus1(visitor.visit_timestamp).toLocaleString()}</td>
                             <td>{visitor.page_url}</td>
+                            <td>{visitor.ip_address || 'N/A'}</td>
                           </tr>
                         ))}
                       </tbody>

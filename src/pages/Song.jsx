@@ -31,6 +31,7 @@ function Song() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [thumbnailError, setThumbnailError] = useState(false); // New state for thumbnail fallback
   const audioRef = useRef(null);
   const navigate = useNavigate();
 
@@ -440,6 +441,16 @@ function Song() {
     }
   };
 
+  const handleAudioDownload = () => {
+    if (!song || !song.audio_url) return;
+    const link = document.createElement('a');
+    link.href = song.audio_url;
+    link.download = `${song.title}-${song.id}.mp3`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const handleShare = () => {
     if (!song) return;
     const shareUrl = `${window.location.origin}/song/${song.permalink || song.id}`;
@@ -486,6 +497,21 @@ function Song() {
     );
   };
 
+  if (!song && !error) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px' }}>
+        <svg width="60" height="60" viewBox="0 0 60 60">
+          <circle cx="30" cy="30" r="25" fill="none" stroke="#ccc" strokeWidth="4" />
+          <circle cx="30" cy="30" r="25" fill="none" stroke="#333" strokeWidth="4" strokeDasharray="157" strokeDashoffset={157 - (157 * pdfProgress) / 100} style={{ transition: 'stroke-dashoffset 0.2s ease-in-out' }} />
+        </svg>
+      </div>
+    );
+  }
+
+  const thumbnailUrl = song?.google_drive_file_id
+    ? `https://drive.google.com/thumbnail?id=${song.google_drive_file_id}&sz=s500`
+    : null;
+
   return (
     <>
       <section className="ad-section">
@@ -497,13 +523,6 @@ function Song() {
             <p className="error-message">{error}</p>
             <Link to="/library" className="action-button">Back to Library</Link>
           </>
-        ) : !song ? (
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px' }}>
-            <svg width="60" height="60" viewBox="0 0 60 60">
-              <circle cx="30" cy="30" r="25" fill="none" stroke="#ccc" strokeWidth="4" />
-              <circle cx="30" cy="30" r="25" fill="none" stroke="#333" strokeWidth="4" strokeDasharray="157" strokeDashoffset={157 - (157 * pdfProgress) / 100} style={{ transition: 'stroke-dashoffset 0.2s ease-in-out' }} />
-            </svg>
-          </div>
         ) : (
           <div className="song-card-modern">
             <h1 className="song-title-modern">{song.title}</h1>
@@ -514,7 +533,7 @@ function Song() {
             {song.audio_url && (
               <div className="song-preview-modern">
                 <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '0.5rem' }}>
-                  Listen to an audio preview of {song.title}
+                  Listen to an audio preview and {song.title} mp3 download
                 </p>
                 <div className="modern-audio-player">
                   <div className="player-container">
@@ -549,6 +568,11 @@ function Song() {
                     onError={(e) => console.error('Audio error for URL:', song.audio_url, 'Error:', e.target.error)}
                   />
                 </div>
+                {hasDonated && (
+                  <button onClick={handleAudioDownload} className="download-button-modern audio-download-button">
+                    Download Audio
+                  </button>
+                )}
                 {!song.audio_url.includes('.mp3') && !song.audio_url.includes('.wav') && (
                   <p style={{ fontSize: '0.8rem', color: '#999', marginTop: '0.5rem' }}>
                     Audio player not displayed. Please use a direct audio file URL (e.g., .mp3) in the admin panel.
@@ -571,16 +595,25 @@ function Song() {
             )}
 
             <div className="song-preview-modern">
-              <Document
-                file={`/.netlify/functions/proxy-pdf?fileId=${song.google_drive_file_id}`}
-                onLoadSuccess={onDocumentLoadSuccess}
-                onLoadError={(err) => setError('Failed to load PDF preview: ' + err.message)}
-                loading={<PdfLoadingProgress />}
-              >
-                <Page pageNumber={1} scale={scale} />
-              </Document>
+              {thumbnailUrl && !thumbnailError ? (
+                <img
+                  src={thumbnailUrl}
+                  alt={`Preview of ${song.title}`}
+                  className="song-preview-image"
+                  onError={() => setThumbnailError(true)} // Fallback to PDF if thumbnail fails
+                />
+              ) : (
+                <Document
+                  file={`/.netlify/functions/proxy-pdf?fileId=${song.google_drive_file_id}`}
+                  onLoadSuccess={onDocumentLoadSuccess}
+                  onLoadError={(err) => setError('Failed to load PDF preview: ' + err.message)}
+                  loading={<PdfLoadingProgress />}
+                >
+                  <Page pageNumber={1} scale={scale} />
+                </Document>
+              )}
               <p className="preview-note-modern">
-                Previewing page 1{numPages ? ` of ${numPages}` : ''}. Click the Download button to view the full song.
+                Previewing page 1{numPages && thumbnailError ? ` of ${numPages}` : ''}. Click the Download button to view the full song.
               </p>
             </div>
 

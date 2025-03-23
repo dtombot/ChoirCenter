@@ -57,10 +57,12 @@ function ScrollToTop() {
 function App() {
   const [user, setUser] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [loading, setLoading] = useState(true); // Added loading state
+  const [loading, setLoading] = useState(true);
   const [recaptchaLoaded, setRecaptchaLoaded] = useState(false);
-  const [lastTracked, setLastTracked] = useState({}); // Store last tracked time per page/IP
+  const [lastTracked, setLastTracked] = useState({});
+  const location = useLocation(); // Get current URL
 
+  // Load auth state once on mount
   useEffect(() => {
     const loadRecaptchaScript = () => {
       if (!document.querySelector('script[src="https://www.google.com/recaptcha/api.js?render=explicit"]')) {
@@ -99,12 +101,12 @@ function App() {
     loadGoogleAnalyticsScript();
 
     const fetchUserAndProfile = async () => {
-      setLoading(true); // Start loading
+      setLoading(true);
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       if (sessionError || !sessionData.session) {
         setUser(null);
         setIsAdmin(false);
-        setLoading(false); // Done loading
+        setLoading(false);
         return;
       }
 
@@ -112,7 +114,7 @@ function App() {
       if (authError) {
         setUser(null);
         setIsAdmin(false);
-        setLoading(false); // Done loading
+        setLoading(false);
         return;
       }
       const currentUser = authData.user;
@@ -131,7 +133,7 @@ function App() {
           setIsAdmin(profileData?.is_admin || false);
         }
       }
-      setLoading(false); // Done loading after all checks
+      setLoading(false);
     };
     fetchUserAndProfile();
 
@@ -157,12 +159,20 @@ function App() {
       }
     });
 
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
+
+  // Track visits only on page change
+  useEffect(() => {
     const trackVisit = async () => {
-      const pageUrl = window.location.pathname;
+      const pageUrl = location.pathname;
       const trackingKey = `${pageUrl}-${user?.id || 'anonymous'}`;
       const now = Date.now();
       const lastTrackedTime = lastTracked[trackingKey] || 0;
 
+      // Only track if 1 hour has passed since last visit to this page
       if (now - lastTrackedTime < 60 * 60 * 1000) {
         return;
       }
@@ -194,11 +204,7 @@ function App() {
     };
 
     trackVisit();
-
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
-  }, []); // Removed [user] dependency to prevent re-running unnecessarily
+  }, [location.pathname, user]); // Trigger only when URL or user changes
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -206,7 +212,6 @@ function App() {
     setIsAdmin(false);
   };
 
-  // Show loading screen until auth state is fully resolved
   if (loading) {
     return (
       <div style={{

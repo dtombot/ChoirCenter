@@ -64,15 +64,25 @@ function App() {
     const loadRecaptchaScript = () => {
       if (!document.querySelector('script[src="https://www.google.com/recaptcha/api.js?render=explicit"]')) {
         const script = document.createElement('script');
-        script.src = 'https://www.google.com/recaptcha/api.js?render=explicit'; // Changed to explicit mode
+        script.src = 'https://www.google.com/recaptcha/api.js?render=explicit';
         script.async = true;
         script.defer = true;
+        script.id = 'recaptcha-script'; // Add ID for clarity
         script.onload = () => {
           console.log('reCAPTCHA script loaded');
-          setRecaptchaLoaded(true);
+          // Wait briefly to ensure grecaptcha is fully initialized
+          setTimeout(() => setRecaptchaLoaded(true), 100);
         };
-        script.onerror = () => console.error('Failed to load reCAPTCHA script');
+        script.onerror = () => {
+          console.error('Failed to load reCAPTCHA script');
+          setRecaptchaLoaded(false);
+        };
         document.head.appendChild(script);
+      } else {
+        // If script already exists, check if grecaptcha is ready
+        if (window.grecaptcha && window.grecaptcha.render) {
+          setRecaptchaLoaded(true);
+        }
       }
     };
 
@@ -146,11 +156,10 @@ function App() {
 
     const trackVisit = async () => {
       const pageUrl = window.location.pathname;
-      const trackingKey = `${pageUrl}-${user?.id || 'anonymous'}`; // Unique key per page/user
+      const trackingKey = `${pageUrl}-${user?.id || 'anonymous'}`;
       const now = Date.now();
       const lastTrackedTime = lastTracked[trackingKey] || 0;
 
-      // Only track if >1 hour since last track for this page/user combo
       if (now - lastTrackedTime < 60 * 60 * 1000) {
         return;
       }
@@ -181,7 +190,6 @@ function App() {
       }
     };
 
-    // Track on page load
     trackVisit();
 
     return () => {
@@ -244,7 +252,7 @@ function App() {
             element={user ? <Navigate to="/" /> : <Login recaptchaLoaded={recaptchaLoaded} />}
           />
           <Route path="/about" element={<About />} />
-          <Route path="/contact" element={<Contact recaptchaLoaded={recaptchaLoaded} />} /> {/* Added recaptchaLoaded prop */}
+          <Route path="/contact" element={<Contact recaptchaLoaded={recaptchaLoaded} />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/blog" element={<Blog />} />

@@ -6,11 +6,11 @@ import '../styles.css';
 function SignupDonate({ recaptchaLoaded }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [fullName, setFullName] = useState(''); // New field
-  const [choirName, setChoirName] = useState(''); // New field
-  const [churchName, setChurchName] = useState(''); // New field
-  const [country, setCountry] = useState(''); // New field
-  const [state, setState] = useState(''); // New field
+  const [fullName, setFullName] = useState('');
+  const [choirName, setChoirName] = useState('');
+  const [churchName, setChurchName] = useState('');
+  const [country, setCountry] = useState('');
+  const [state, setState] = useState('');
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -23,27 +23,37 @@ function SignupDonate({ recaptchaLoaded }) {
 
   useEffect(() => {
     const renderRecaptcha = () => {
-      if (recaptchaLoaded && window.grecaptcha && window.grecaptcha.render && recaptchaRef.current) {
-        try {
-          console.log('Attempting to render reCAPTCHA on SignupDonate');
-          window.grecaptcha.render(recaptchaRef.current, {
-            sitekey: '6LczEuYqAAAAANYh6VG8jSj1Fmt6LKMK7Ee1OcfU',
-            callback: (token) => console.log('reCAPTCHA token received:', token),
-          });
-          console.log('reCAPTCHA rendered successfully on SignupDonate');
-        } catch (err) {
-          console.error('Error rendering reCAPTCHA on SignupDonate:', err);
-          setError('Failed to load reCAPTCHA. Please refresh the page or try again later.');
-        }
-      } else if (!recaptchaLoaded) {
-        console.log('reCAPTCHA not loaded yet on SignupDonate');
-      } else {
-        console.log('reCAPTCHA script present but not fully initialized:', {
-          grecaptchaExists: !!window.grecaptcha,
-          renderExists: window.grecaptcha && !!window.grecaptcha.render,
-          refExists: !!recaptchaRef.current,
-        });
+      console.log('reCAPTCHA render check (SignupDonate):', {
+        recaptchaLoaded,
+        grecaptchaExists: !!window.grecaptcha,
+        renderExists: window.grecaptcha && !!window.grecaptcha.render,
+        refExists: !!recaptchaRef.current,
+      });
+
+      if (!recaptchaLoaded || !window.grecaptcha || !recaptchaRef.current) {
+        console.log('reCAPTCHA not ready yet on SignupDonate');
+        return;
       }
+
+      const attemptRender = () => {
+        if (window.grecaptcha && window.grecaptcha.render) {
+          try {
+            window.grecaptcha.render(recaptchaRef.current, {
+              sitekey: '6LczEuYqAAAAANYh6VG8jSj1Fmt6LKMK7Ee1OcfU',
+              callback: (token) => console.log('reCAPTCHA token received (SignupDonate):', token),
+            });
+            console.log('reCAPTCHA rendered successfully on SignupDonate');
+          } catch (err) {
+            console.error('Error rendering reCAPTCHA on SignupDonate:', err);
+            setError('Failed to load reCAPTCHA. Please refresh the page or try again later.');
+          }
+        } else {
+          console.log('reCAPTCHA render not available yet on SignupDonate, retrying...');
+          setTimeout(attemptRender, 100); // Retry every 100ms
+        }
+      };
+
+      attemptRender();
     };
 
     renderRecaptcha();
@@ -56,10 +66,10 @@ function SignupDonate({ recaptchaLoaded }) {
         body: JSON.stringify({ token }),
       });
       const result = await response.json();
-      console.log('reCAPTCHA verification result:', result);
+      console.log('reCAPTCHA verification result (SignupDonate):', result);
       return result.success;
     } catch (err) {
-      console.error('reCAPTCHA verification error:', err);
+      console.error('reCAPTCHA verification error (SignupDonate):', err);
       return false;
     }
   };
@@ -77,10 +87,10 @@ function SignupDonate({ recaptchaLoaded }) {
     }
 
     const token = window.grecaptcha.getResponse();
-    console.log('Token retrieved on submit:', token);
+    console.log('Token retrieved on submit (SignupDonate):', token);
 
     if (!token || token === '') {
-      console.log('No token received, reCAPTCHA not completed');
+      console.log('No token received, reCAPTCHA not completed (SignupDonate)');
       setError('Please complete the reCAPTCHA.');
       setLoading(false);
       return;
@@ -88,7 +98,7 @@ function SignupDonate({ recaptchaLoaded }) {
 
     const isRecaptchaValid = await verifyRecaptcha(token);
     if (!isRecaptchaValid) {
-      console.log('reCAPTCHA verification failed');
+      console.log('reCAPTCHA verification failed (SignupDonate)');
       setError('reCAPTCHA verification failed. Please try again.');
       setLoading(false);
       if (window.grecaptcha) window.grecaptcha.reset();
@@ -109,11 +119,11 @@ function SignupDonate({ recaptchaLoaded }) {
         .upsert({
           id: data.user.id,
           email: data.user.email,
-          full_name: fullName, // New field
-          choir_name: choirName || null, // Optional
-          church_name: churchName || null, // Optional
-          country: country || null, // Optional
-          state: state || null, // Optional
+          full_name: fullName,
+          choir_name: choirName || null,
+          church_name: churchName || null,
+          country: country || null,
+          state: state || null,
           is_admin: false,
         });
       if (profileError) throw profileError;
@@ -121,11 +131,11 @@ function SignupDonate({ recaptchaLoaded }) {
       setSuccess('Signup successful! Redirecting to donation page...');
       setEmail('');
       setPassword('');
-      setFullName(''); // Reset new field
-      setChoirName(''); // Reset new field
-      setChurchName(''); // Reset new field
-      setCountry(''); // Reset new field
-      setState(''); // Reset new field
+      setFullName('');
+      setChoirName('');
+      setChurchName('');
+      setCountry('');
+      setState('');
 
       setTimeout(() => {
         window.location.href = 'https://paystack.com/pay/choircenterdonation';

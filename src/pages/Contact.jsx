@@ -16,20 +16,30 @@ function Contact({ recaptchaLoaded }) {
         refExists: !!recaptchaRef.current,
       });
 
-      if (recaptchaLoaded && window.grecaptcha && window.grecaptcha.render && recaptchaRef.current) {
-        try {
-          window.grecaptcha.render(recaptchaRef.current, {
-            sitekey: '6LczEuYqAAAAANYh6VG8jSj1Fmt6LKMK7Ee1OcfU',
-            callback: (token) => console.log('reCAPTCHA token received:', token),
-          });
-          console.log('reCAPTCHA rendered successfully');
-        } catch (err) {
-          console.error('Error rendering reCAPTCHA:', err);
-          setStatus('Failed to load reCAPTCHA. Please refresh the page.');
-        }
-      } else {
+      if (!recaptchaLoaded || !window.grecaptcha || !recaptchaRef.current) {
         console.log('reCAPTCHA not ready yet');
+        return;
       }
+
+      const attemptRender = () => {
+        if (window.grecaptcha && window.grecaptcha.render) {
+          try {
+            window.grecaptcha.render(recaptchaRef.current, {
+              sitekey: '6LczEuYqAAAAANYh6VG8jSj1Fmt6LKMK7Ee1OcfU',
+              callback: (token) => console.log('reCAPTCHA token received:', token),
+            });
+            console.log('reCAPTCHA rendered successfully');
+          } catch (err) {
+            console.error('Error rendering reCAPTCHA:', err);
+            setStatus('Failed to load reCAPTCHA. Please refresh the page.');
+          }
+        } else {
+          console.log('reCAPTCHA render not available yet, retrying...');
+          setTimeout(attemptRender, 100); // Retry every 100ms
+        }
+      };
+
+      attemptRender();
     };
 
     renderRecaptcha();

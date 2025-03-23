@@ -32,7 +32,7 @@ function Song() {
   const [progress, setProgress] = useState(0);
   const [isAdmin, setIsAdmin] = useState(false);
   const [thumbnailError, setThumbnailError] = useState(false);
-  const [showAudioPrompt, setShowAudioPrompt] = useState(false); // New state for audio download modal
+  const [showAudioPrompt, setShowAudioPrompt] = useState(false);
   const audioRef = useRef(null);
   const navigate = useNavigate();
 
@@ -442,7 +442,7 @@ function Song() {
     }
   };
 
-  const handleAudioDownload = () => {
+  const handleAudioDownload = async () => {
     if (!song || !song.audio_url) return;
     if (hasDonated) {
       const link = document.createElement('a');
@@ -452,7 +452,12 @@ function Song() {
       link.click();
       document.body.removeChild(link);
     } else {
-      setShowAudioPrompt(true); // Show modal for non-donated users
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !sessionData?.session) {
+        setShowAudioPrompt('not_logged_in'); // Not logged in
+      } else {
+        setShowAudioPrompt('logged_in_no_donation'); // Logged in, no donation
+      }
     }
   };
 
@@ -695,10 +700,17 @@ function Song() {
                 <div className="modal-content download-modal">
                   <h3 className="modal-title">Support Choir Center</h3>
                   <p className="modal-text">
-                    To download this audio and gain unlimited access to Choir Center, please support us by buying a Meat Pie ☕. Your contribution helps keep the site running!
+                    {showAudioPrompt === 'logged_in_no_donation'
+                      ? 'You’re logged in! To download this audio and enjoy unlimited access, please support us with a small donation (Buy us a Meat Pie ☕). Every contribution helps keep Choir Center running!'
+                      : 'To download this audio and gain unlimited access to Choir Center, please sign up and support us by buying a Meat Pie ☕. Your contribution helps sustain the site!'}
                   </p>
                   <button className="meatpie-button">
-                    <Link to="/signup-donate" className="modal-link">Sign Up & Donate</Link>
+                    <Link
+                      to={showAudioPrompt === 'logged_in_no_donation' ? '/donate' : '/signup-donate'}
+                      className="modal-link"
+                    >
+                      {showAudioPrompt === 'logged_in_no_donation' ? 'Donate Now' : 'Sign Up & Donate'}
+                    </Link>
                   </button>{' '}
                   <button onClick={() => setShowAudioPrompt(false)} className="cancel-button">Cancel</button>
                 </div>

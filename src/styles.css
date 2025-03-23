@@ -3153,3 +3153,53 @@ input[type="range"]:hover {
 .top-items li {
   margin-bottom: 0.5rem;
 }
+
+
+
+
+/* Song Preview Image */
+.song-preview-image {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+}
+
+.song-preview-modern:hover .song-preview-image {
+  transform: scale(1.02);
+}
+
+/* Audio Download Button */
+.audio-download-button {
+  margin-top: 0.75rem;
+  width: 100%;
+  max-width: 250px;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (max-width: 768px) {
+  .song-preview-image {
+    max-width: 90%;
+    margin: 0 auto;
+    display: block;
+  }
+
+  .audio-download-button {
+    max-width: 200px;
+  }
+}
+
+@media (max-width: 480px) {
+  .song-preview-image {
+    max-width: 85%;
+  }
+
+  .audio-download-button {
+    max-width: 180px;
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+  }
+}

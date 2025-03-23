@@ -27,29 +27,62 @@ function initGoogleAnalytics() {
   gtag('config', 'G-0VEW528YY9');
 }
 
-// Component to track page views with correct page paths
-function AnalyticsTracker() {
+// Component to handle analytics, scroll, and visitor tracking
+function RouteEnhancer({ user, setLastTracked, lastTracked }) {
   const location = useLocation();
 
   useEffect(() => {
+    // Analytics tracking
     if (window.gtag) {
       window.gtag('event', 'page_view', {
         page_path: location.pathname,
         page_title: document.title,
       });
     }
-  }, [location.pathname]);
 
-  return null;
-}
-
-// Component to scroll to top on route change
-function ScrollToTop() {
-  const { pathname } = useLocation();
-
-  useEffect(() => {
+    // Scroll to top
     window.scrollTo(0, 0);
-  }, [pathname]);
+
+    // Visitor tracking
+    const trackVisit = async () => {
+      const pageUrl = location.pathname;
+      const trackingKey = `${pageUrl}-${user?.id || 'anonymous'}`;
+      const now = Date.now();
+      const lastTrackedTime = lastTracked[trackingKey] || 0;
+
+      // Only track if 1 hour has passed since last visit to this page
+      if (now - lastTrackedTime < 60 * 60 * 1000) {
+        return;
+      }
+
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+
+      const trackingData = {
+        pageUrl,
+      };
+
+      try {
+        const response = await fetch('/.netlify/functions/track-visitor', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token && { 'Authorization': `Bearer ${token}` }),
+          },
+          body: JSON.stringify(trackingData),
+        });
+        if (!response.ok) {
+          console.error('Track visit failed:', await response.text());
+        } else {
+          setLastTracked((prev) => ({ ...prev, [trackingKey]: now }));
+        }
+      } catch (error) {
+        console.error('Track visit error:', error.message);
+      }
+    };
+
+    trackVisit();
+  }, [location.pathname, user]); // Trigger on path or user change
 
   return null;
 }
@@ -60,7 +93,6 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [recaptchaLoaded, setRecaptchaLoaded] = useState(false);
   const [lastTracked, setLastTracked] = useState({});
-  const location = useLocation(); // Get current URL
 
   // Load auth state once on mount
   useEffect(() => {
@@ -164,48 +196,6 @@ function App() {
     };
   }, []);
 
-  // Track visits only on page change
-  useEffect(() => {
-    const trackVisit = async () => {
-      const pageUrl = location.pathname;
-      const trackingKey = `${pageUrl}-${user?.id || 'anonymous'}`;
-      const now = Date.now();
-      const lastTrackedTime = lastTracked[trackingKey] || 0;
-
-      // Only track if 1 hour has passed since last visit to this page
-      if (now - lastTrackedTime < 60 * 60 * 1000) {
-        return;
-      }
-
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData?.session?.access_token;
-
-      const trackingData = {
-        pageUrl,
-      };
-
-      try {
-        const response = await fetch('/.netlify/functions/track-visitor', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token && { 'Authorization': `Bearer ${token}` }),
-          },
-          body: JSON.stringify(trackingData),
-        });
-        if (!response.ok) {
-          console.error('Track visit failed:', await response.text());
-        } else {
-          setLastTracked((prev) => ({ ...prev, [trackingKey]: now }));
-        }
-      } catch (error) {
-        console.error('Track visit error:', error.message);
-      }
-    };
-
-    trackVisit();
-  }, [location.pathname, user]); // Trigger only when URL or user changes
-
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setUser(null);
@@ -232,8 +222,6 @@ function App() {
   return (
     <HelmetProvider>
       <Router>
-        <ScrollToTop />
-        <AnalyticsTracker />
         <header className="header">
           <Link to="/" className="header-link">
             <div className="header-logo-title">
@@ -286,6 +274,7 @@ function App() {
           <Route path="/song/:id" element={<Song />} />
           <Route path="/search" element={<Search />} />
         </Routes>
+        <RouteEnhancer user={user} setLastTracked={setLastTracked} lastTracked={lastTracked} />
         <footer className="footer">
           <div className="footer-text">
             <p>About Us: Choir Center is a platform for choristers to access music resources.</p>

@@ -31,7 +31,7 @@ function Song() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false); // Added to state
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [thumbnailError, setThumbnailError] = useState(false);
   const [showAudioPrompt, setShowAudioPrompt] = useState(false);
   const audioRef = useRef(null);
@@ -170,13 +170,13 @@ function Song() {
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       if (sessionError) {
         console.error('Session fetch error:', sessionError.message);
-        setIsAuthenticated(false); // Set authentication status
+        setIsAuthenticated(false);
         setHasDonated(false);
         setIsAdmin(false);
         return;
       }
       const authStatus = !!sessionData?.session;
-      setIsAuthenticated(authStatus); // Set authentication status
+      setIsAuthenticated(authStatus);
 
       if (!authStatus) {
         setHasDonated(false);
@@ -281,7 +281,7 @@ function Song() {
         console.error('Session fetch error:', sessionError.message);
         throw sessionError;
       }
-      console.log('Authenticated:', isAuthenticated); // Use state variable
+      console.log('Authenticated:', isAuthenticated);
 
       const now = new Date();
       const year = now.getFullYear();
@@ -369,7 +369,6 @@ function Song() {
           .maybeSingle();
         if (profileError) {
           console.error('Profile fetch error:', profileError.message);
-          // Assume no donation if profile fetch fails
           if (downloadCount >= 6) {
             setDownloadPrompt({
               message: `Download Limit Reached for ${monthName}! This resets on the 1st of every month. You’re allowed 6 downloads per month, have used ${downloadsUsed}, and have ${downloadsRemaining} remaining. Buy us a Meat Pie ☕ to gain unlimited access to Choir Center!`,

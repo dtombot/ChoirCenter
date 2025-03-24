@@ -233,12 +233,7 @@ function Song() {
     }
   }, [song]);
 
-  const togglePlay = async () => {
-    const { data: sessionData, error } = await supabase.auth.getSession();
-    if (error || !sessionData?.session) {
-      setShowLoginPrompt(true);
-      return;
-    }
+  const togglePlay = () => {
     if (audioRef.current) {
       console.log('Attempting to play audio from URL:', audioRef.current.src);
       if (isPlaying) {
@@ -524,6 +519,32 @@ function Song() {
 
   return (
     <>
+      <style>
+        {`
+          .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            z-index: 1000;
+            padding-top: 20px; /* Adds space from the very top */
+          }
+          .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            max-width: 90%;
+            width: 500px;
+            text-align: center;
+            position: relative;
+          }
+        `}
+      </style>
       <section className="ad-section">
         <AdBanner position="song_page_below_header" />
       </section>

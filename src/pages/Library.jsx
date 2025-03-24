@@ -28,7 +28,8 @@ function Library() {
   const [itemsPerPage, setItemsPerPage] = useState(25);
   const navigate = useNavigate();
   const location = useLocation();
-  const lastPageRef = useRef(currentPage); // Track last intentional page change
+  const lastIntentionalPage = useRef(currentPage); // Track last user-initiated page change
+  const isInitialMount = useRef(true); // Flag for initial render
 
   useEffect(() => {
     const fetchSongs = async () => {
@@ -47,12 +48,20 @@ function Library() {
     fetchSongs();
   }, [sortBy, sortOrder]);
 
-  // Scroll handling: only scroll to top for intentional page changes, not back navigation
+  // Scroll handling: scroll to top only on intentional page changes
   useEffect(() => {
     const isBackNavigation = sessionStorage.getItem(`scrollPosition-${location.pathname}`) !== null;
-    if (!isBackNavigation && currentPage !== lastPageRef.current) {
-      window.scrollTo(0, 0);
-      lastPageRef.current = currentPage; // Update last intentional page
+
+    if (isInitialMount.current) {
+      // Skip on initial mount, let App.jsx handle scroll restoration
+      isInitialMount.current = false;
+    } else if (!isBackNavigation && currentPage !== lastIntentionalPage.current) {
+      // Scroll to top only for intentional page changes (e.g., clicking "Next")
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth' // Smooth scroll for pagination
+      });
+      lastIntentionalPage.current = currentPage;
     }
   }, [currentPage, location.pathname]);
 

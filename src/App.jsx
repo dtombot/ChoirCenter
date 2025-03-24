@@ -43,7 +43,7 @@ function RouteEnhancer({ user, setLastTracked, lastTracked }) {
     }
 
     // Save scroll position and currentPage before leaving the page
-    const handleBeforeUnload = () => {
+    const saveScrollAndPage = () => {
       const scrollPosition = window.scrollY;
       const state = history.state || {};
       const currentPage = state.currentPage || 1;
@@ -51,26 +51,34 @@ function RouteEnhancer({ user, setLastTracked, lastTracked }) {
       sessionStorage.setItem(`currentPage-${location.pathname}`, currentPage.toString());
     };
 
-    // Restore scroll position and currentPage based on navigation action
-    const handlePopState = () => {
+    // Restore scroll position and currentPage on navigation
+    const restoreScrollAndPage = () => {
       const savedPosition = sessionStorage.getItem(`scrollPosition-${location.pathname}`);
       const savedPage = sessionStorage.getItem(`currentPage-${location.pathname}`);
       if (savedPosition !== null && savedPage !== null) {
-        // Delay restoration to ensure component renders fully
-        setTimeout(() => {
-          navigate(location.pathname, { state: { currentPage: parseInt(savedPage, 10) }, replace: true });
-          window.scrollTo(0, parseInt(savedPosition, 10));
-        }, 100); // Increased delay to 100ms
+        const page = parseInt(savedPage, 10);
+        const position = parseInt(savedPosition, 10);
+        // Update state first
+        navigate(location.pathname, { state: { currentPage: page }, replace: true });
+        // Scroll after a short delay to ensure DOM is ready
+        requestAnimationFrame(() => {
+          window.scrollTo({
+            top: position,
+            behavior: 'auto' // Instant scroll for back navigation
+          });
+        });
       } else {
-        window.scrollTo(0, 0); // New page, scroll to top
+        window.scrollTo(0, 0); // Fresh navigation, go to top
       }
     };
 
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    window.addEventListener('popstate', handlePopState);
+    // Save on every navigation away
+    window.addEventListener('beforeunload', saveScrollAndPage);
+    // Restore on popstate (browser back/forward)
+    window.addEventListener('popstate', restoreScrollAndPage);
 
-    // Initial scroll and page restoration
-    handlePopState();
+    // Initial restoration on mount
+    restoreScrollAndPage();
 
     // Visitor tracking
     const trackVisit = async () => {
@@ -108,8 +116,10 @@ function RouteEnhancer({ user, setLastTracked, lastTracked }) {
     trackVisit();
 
     return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('beforeunload', saveScrollAndPage);
+      window.removeEventListener('popstate', restoreScrollAndPage);
+      // Save scroll position on unmount (e.g., manual navigation)
+      saveScrollAndPage();
     };
   }, [location.pathname, user, navigate]);
 

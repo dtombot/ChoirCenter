@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { BrowserRouter as Router, Route, Routes, Link, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import { supabase } from './supabase';
 import './styles.css';
@@ -17,7 +17,7 @@ import Blog from './pages/Blog';
 import BlogPost from './pages/BlogPost';
 import Song from './pages/Song';
 import Search from './pages/Search';
-import Donate from './pages/Donate'; // Added import for Donate
+import Donate from './pages/Donate';
 
 // Google Analytics initialization function
 function initGoogleAnalytics() {
@@ -31,6 +31,7 @@ function initGoogleAnalytics() {
 // Component to handle analytics, scroll, and visitor tracking
 function RouteEnhancer({ user, setLastTracked, lastTracked }) {
   const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Analytics tracking
@@ -41,8 +42,31 @@ function RouteEnhancer({ user, setLastTracked, lastTracked }) {
       });
     }
 
-    // Scroll to top
-    window.scrollTo(0, 0);
+    // Save scroll position before leaving the page
+    const handleBeforeUnload = () => {
+      const scrollPosition = window.scrollY;
+      sessionStorage.setItem(`scrollPosition-${location.pathname}`, scrollPosition.toString());
+    };
+
+    // Restore scroll position or scroll to top based on navigation action
+    const handlePopState = () => {
+      const savedPosition = sessionStorage.getItem(`scrollPosition-${location.pathname}`);
+      if (savedPosition !== null) {
+        // Restore scroll position when navigating back
+        setTimeout(() => window.scrollTo(0, parseInt(savedPosition, 10)), 0);
+      } else {
+        // Scroll to top for forward navigation or initial load
+        window.scrollTo(0, 0);
+      }
+    };
+
+    // Save scroll position when navigating away
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    // Handle back/forward navigation
+    window.addEventListener('popstate', handlePopState);
+
+    // Initial scroll restoration or top scroll
+    handlePopState();
 
     // Visitor tracking
     const trackVisit = async () => {
@@ -51,7 +75,6 @@ function RouteEnhancer({ user, setLastTracked, lastTracked }) {
       const now = Date.now();
       const lastTrackedTime = lastTracked[trackingKey] || 0;
 
-      // Only track if 1 hour has passed since last visit to this page
       if (now - lastTrackedTime < 60 * 60 * 1000) {
         return;
       }
@@ -83,7 +106,12 @@ function RouteEnhancer({ user, setLastTracked, lastTracked }) {
     };
 
     trackVisit();
-  }, [location.pathname, user]); // Trigger on path or user change
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [location.pathname, user]);
 
   return null;
 }
@@ -95,7 +123,6 @@ function App() {
   const [recaptchaLoaded, setRecaptchaLoaded] = useState(false);
   const [lastTracked, setLastTracked] = useState({});
 
-  // Load auth state once on mount
   useEffect(() => {
     const loadRecaptchaScript = () => {
       if (!document.querySelector('script[src="https://www.google.com/recaptcha/api.js?render=explicit"]')) {
@@ -274,7 +301,7 @@ function App() {
           <Route path="/blog/:permalink" element={<BlogPost />} />
           <Route path="/song/:id" element={<Song />} />
           <Route path="/search" element={<Search />} />
-          <Route path="/donate" element={<Donate />} /> {/* Added Donate route */}
+          <Route path="/donate" element={<Donate />} />
         </Routes>
         <RouteEnhancer user={user} setLastTracked={setLastTracked} lastTracked={lastTracked} />
         <footer className="footer">

@@ -17,6 +17,7 @@ import Blog from './pages/Blog';
 import BlogPost from './pages/BlogPost';
 import Song from './pages/Song';
 import Search from './pages/Search';
+import Donate from './pages/Donate'; // Added import for Donate
 
 // Google Analytics initialization function
 function initGoogleAnalytics() {
@@ -273,6 +274,7 @@ function App() {
           <Route path="/blog/:permalink" element={<BlogPost />} />
           <Route path="/song/:id" element={<Song />} />
           <Route path="/search" element={<Search />} />
+          <Route path="/donate" element={<Donate />} /> {/* Added Donate route */}
         </Routes>
         <RouteEnhancer user={user} setLastTracked={setLastTracked} lastTracked={lastTracked} />
         <footer className="footer">

@@ -19,7 +19,7 @@ function Library() {
   const [sortBy, setSortBy] = useState('created_at');
   const [sortOrder, setSortOrder] = useState('desc');
   const [error, setError] = useState(null);
-  const [downloadPrompt, setDownloadPrompt] = useState(null);
+  const [downloadPrompt, setDownloadPrompt] = useState(null); // Now an object { message, redirect }
   const [currentPage, setCurrentPage] = useState(() => {
     const savedPage = sessionStorage.getItem('currentPage-/library');
     const locationState = useLocation().state || {};
@@ -119,7 +119,7 @@ function Library() {
           .eq('id', clientId)
           .eq('year_month', yearMonth)
           .eq('is_authenticated', false)
-          .single();
+          .maybeSingle(); // Use maybeSingle to avoid errors if no row exists
 
         if (limitError && limitError.code !== 'PGRST116') {
           console.error('Fetch download_limits error:', limitError.message);
@@ -142,7 +142,7 @@ function Library() {
           .eq('user_id', userId)
           .eq('year_month', yearMonth)
           .eq('is_authenticated', true)
-          .single();
+          .maybeSingle(); // Use maybeSingle for consistency
 
         if (limitError && limitError.code !== 'PGRST116') {
           console.error('Fetch download_limits error for user:', limitError.message);
@@ -158,7 +158,10 @@ function Library() {
       const downloadsRemaining = maxDownloads - downloadsUsed;
 
       if (!isAuthenticated && downloadCount >= 3) {
-        setDownloadPrompt(`Download Limit Reached for ${monthName}! This resets on the 1st of every month. You’re allowed 3 downloads per month, have used ${downloadsUsed}, and have ${downloadsRemaining} remaining. Want to keep downloading? Buy us a Meat Pie ☕ to help sustain the site and enjoy unlimited access, or Just Sign up for additional downloads. Every little bit helps keep the site running! 🤗`);
+        setDownloadPrompt({
+          message: `Download Limit Reached for ${monthName}! This resets on the 1st of every month. You’re allowed 3 downloads per month, have used ${downloadsUsed}, and have ${downloadsRemaining} remaining. Want to keep downloading? Buy us a Meat Pie ☕ to gain unlimited access to Choir Center!`,
+          redirect: '/signup-donate'
+        });
         return;
       } else if (isAuthenticated) {
         const { data: userData, error: userError } = await supabase.auth.getUser();
@@ -171,15 +174,22 @@ function Library() {
           .from('profiles')
           .select('has_donated')
           .eq('id', userData.user.id)
-          .single();
+          .maybeSingle(); // Use maybeSingle to handle missing profiles gracefully
         if (profileError) {
           console.error('Profile fetch error:', profileError.message);
-          throw profileError;
-        }
-        console.log('Profile data:', JSON.stringify(profileData, null, 2));
-
-        if (!profileData?.has_donated && downloadCount >= 6) {
-          setDownloadPrompt(`Download Limit Reached for ${monthName}! This resets on the 1st of every month. You’re allowed 6 downloads per month, have used ${downloadsUsed}, and have ${downloadsRemaining} remaining. Want to keep downloading? Buy us a Meat Pie ☕ to help sustain the site and enjoy unlimited access, or Just Sign up for additional downloads. Every little bit helps keep the site running! 🤗`);
+          // Assume no donation if profile fetch fails
+          if (downloadCount >= 6) {
+            setDownloadPrompt({
+              message: `Download Limit Reached for ${monthName}! This resets on the 1st of every month. You’re allowed 6 downloads per month, have used ${downloadsUsed}, and have ${downloadsRemaining} remaining. Buy us a Meat Pie ☕ to gain unlimited access to Choir Center!`,
+              redirect: '/donate'
+            });
+            return;
+          }
+        } else if (!profileData?.has_donated && downloadCount >= 6) {
+          setDownloadPrompt({
+            message: `Download Limit Reached for ${monthName}! This resets on the 1st of every month. You’re allowed 6 downloads per month, have used ${downloadsUsed}, and have ${downloadsRemaining} remaining. Buy us a Meat Pie ☕ to gain unlimited access to Choir Center!`,
+            redirect: '/donate'
+          });
           return;
         }
       }
@@ -518,13 +528,15 @@ function Library() {
         <div className="modal-overlay">
           <div className="modal-content download-modal">
             <h3 className="modal-title">Download Limit Reached</h3>
-            <p className="modal-text">{downloadPrompt}</p>
+            <p className="modal-text">{downloadPrompt.message}</p>
             <button className="meatpie-button">
-              <Link to="/signup-donate" className="modal-link">Buy us a Meat Pie ☕</Link>
+              <Link to={downloadPrompt.redirect} className="modal-link">Buy us a Meat Pie ☕</Link>
             </button>{' '}
-            <button className="signup-button">
-              <Link to="/signup" className="modal-link">Just Sign up</Link>
-            </button>{' '}
+            {!sessionStorage.getItem('supabase.auth.token') && ( // Check if not authenticated
+              <button className="signup-button">
+                <Link to="/signup" className="modal-link">Just Sign Up</Link>
+              </button>
+            )}{' '}
             <button onClick={() => setDownloadPrompt(null)} className="cancel-button">Close</button>
           </div>
         </div>

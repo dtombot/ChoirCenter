@@ -42,30 +42,35 @@ function RouteEnhancer({ user, setLastTracked, lastTracked }) {
       });
     }
 
-    // Save scroll position before leaving the page
+    // Save scroll position and state before leaving the page
     const handleBeforeUnload = () => {
       const scrollPosition = window.scrollY;
+      const state = history.state || {};
       sessionStorage.setItem(`scrollPosition-${location.pathname}`, scrollPosition.toString());
+      sessionStorage.setItem(`state-${location.pathname}`, JSON.stringify(state));
     };
 
-    // Restore scroll position or scroll to top based on navigation action
+    // Restore scroll position and state based on navigation action
     const handlePopState = () => {
       const savedPosition = sessionStorage.getItem(`scrollPosition-${location.pathname}`);
+      const savedState = JSON.parse(sessionStorage.getItem(`state-${location.pathname}`) || '{}');
       if (savedPosition !== null) {
-        // Restore scroll position when navigating back
-        setTimeout(() => window.scrollTo(0, parseInt(savedPosition, 10)), 0);
+        // Delay restoration to ensure component mounts first
+        setTimeout(() => {
+          window.scrollTo(0, parseInt(savedPosition, 10));
+          if (savedState.currentPage) {
+            navigate(location.pathname, { state: savedState, replace: true });
+          }
+        }, 0);
       } else {
-        // Scroll to top for forward navigation or initial load
-        window.scrollTo(0, 0);
+        window.scrollTo(0, 0); // New page, scroll to top
       }
     };
 
-    // Save scroll position when navigating away
     window.addEventListener('beforeunload', handleBeforeUnload);
-    // Handle back/forward navigation
     window.addEventListener('popstate', handlePopState);
 
-    // Initial scroll restoration or top scroll
+    // Initial scroll and state restoration
     handlePopState();
 
     // Visitor tracking
@@ -75,16 +80,12 @@ function RouteEnhancer({ user, setLastTracked, lastTracked }) {
       const now = Date.now();
       const lastTrackedTime = lastTracked[trackingKey] || 0;
 
-      if (now - lastTrackedTime < 60 * 60 * 1000) {
-        return;
-      }
+      if (now - lastTrackedTime < 60 * 60 * 1000) return;
 
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData?.session?.access_token;
 
-      const trackingData = {
-        pageUrl,
-      };
+      const trackingData = { pageUrl };
 
       try {
         const response = await fetch('/.netlify/functions/track-visitor', {
@@ -111,7 +112,7 @@ function RouteEnhancer({ user, setLastTracked, lastTracked }) {
       window.removeEventListener('beforeunload', handleBeforeUnload);
       window.removeEventListener('popstate', handlePopState);
     };
-  }, [location.pathname, user]);
+  }, [location.pathname, user, navigate]);
 
   return null;
 }

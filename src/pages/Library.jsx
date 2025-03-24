@@ -19,7 +19,7 @@ function Library() {
   const [sortBy, setSortBy] = useState('created_at');
   const [sortOrder, setSortOrder] = useState('desc');
   const [error, setError] = useState(null);
-  const [downloadPrompt, setDownloadPrompt] = useState(null); // Now an object { message, redirect }
+  const [downloadPrompt, setDownloadPrompt] = useState(null);
   const [currentPage, setCurrentPage] = useState(() => {
     const savedPage = sessionStorage.getItem('currentPage-/library');
     const locationState = useLocation().state || {};
@@ -28,8 +28,8 @@ function Library() {
   const [itemsPerPage, setItemsPerPage] = useState(25);
   const navigate = useNavigate();
   const location = useLocation();
-  const lastIntentionalPage = useRef(currentPage); // Track last user-initiated page change
-  const isInitialMount = useRef(true); // Flag for initial render
+  const lastIntentionalPage = useRef(currentPage);
+  const isInitialMount = useRef(true);
 
   useEffect(() => {
     const fetchSongs = async () => {
@@ -48,18 +48,15 @@ function Library() {
     fetchSongs();
   }, [sortBy, sortOrder]);
 
-  // Scroll handling: scroll to top only on intentional page changes
   useEffect(() => {
     const isBackNavigation = sessionStorage.getItem(`scrollPosition-${location.pathname}`) !== null;
 
     if (isInitialMount.current) {
-      // Skip on initial mount, let App.jsx handle scroll restoration
       isInitialMount.current = false;
     } else if (!isBackNavigation && currentPage !== lastIntentionalPage.current) {
-      // Scroll to top only for intentional page changes (e.g., clicking "Next")
       window.scrollTo({
         top: 0,
-        behavior: 'smooth' // Smooth scroll for pagination
+        behavior: 'smooth'
       });
       lastIntentionalPage.current = currentPage;
     }
@@ -119,7 +116,7 @@ function Library() {
           .eq('id', clientId)
           .eq('year_month', yearMonth)
           .eq('is_authenticated', false)
-          .maybeSingle(); // Use maybeSingle to avoid errors if no row exists
+          .maybeSingle();
 
         if (limitError && limitError.code !== 'PGRST116') {
           console.error('Fetch download_limits error:', limitError.message);
@@ -142,7 +139,7 @@ function Library() {
           .eq('user_id', userId)
           .eq('year_month', yearMonth)
           .eq('is_authenticated', true)
-          .maybeSingle(); // Use maybeSingle for consistency
+          .maybeSingle();
 
         if (limitError && limitError.code !== 'PGRST116') {
           console.error('Fetch download_limits error for user:', limitError.message);
@@ -174,10 +171,9 @@ function Library() {
           .from('profiles')
           .select('has_donated')
           .eq('id', userData.user.id)
-          .maybeSingle(); // Use maybeSingle to handle missing profiles gracefully
+          .maybeSingle();
         if (profileError) {
           console.error('Profile fetch error:', profileError.message);
-          // Assume no donation if profile fetch fails
           if (downloadCount >= 6) {
             setDownloadPrompt({
               message: `Download Limit Reached for ${monthName}! This resets on the 1st of every month. You’re allowed 6 downloads per month, have used ${downloadsUsed}, and have ${downloadsRemaining} remaining. Buy us a Meat Pie ☕ to gain unlimited access to Choir Center!`,
@@ -532,7 +528,7 @@ function Library() {
             <button className="meatpie-button">
               <Link to={downloadPrompt.redirect} className="modal-link">Buy us a Meat Pie ☕</Link>
             </button>{' '}
-            {!sessionStorage.getItem('supabase.auth.token') && ( // Check if not authenticated
+            {!supabase.auth.getSession().data?.session && (
               <button className="signup-button">
                 <Link to="/signup" className="modal-link">Just Sign Up</Link>
               </button>

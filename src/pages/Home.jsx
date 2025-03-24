@@ -31,11 +31,11 @@ function Home() {
   const [filteredPosts, setFilteredPosts] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [suggestions, setSuggestions] = useState([]);
-  const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1); // For keyboard navigation
+  const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1);
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [error, setError] = useState(null);
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [downloadPrompt, setDownloadPrompt] = useState(null); // Now an object { message, redirect }
+  const [downloadPrompt, setDownloadPrompt] = useState(null);
   const [songOfTheWeek, setSongOfTheWeek] = useState(null);
   const [songTitle, setSongTitle] = useState('');
   const [songComposer, setSongComposer] = useState('');
@@ -43,19 +43,18 @@ function Home() {
   const [progress, setProgress] = useState(0);
   const [expandedFaq, setExpandedFaq] = useState(null);
   const audioRef = useRef(null);
-  const searchInputRef = useRef(null); // For focusing input
+  const searchInputRef = useRef(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchData = async () => {
       console.log('Fetching all data');
 
-      // Helper to clean audio URL
       const cleanAudioUrl = (url) => {
         if (!url) return null;
         const cleaned = url
-          .replace(/<[^>]+>/g, '') // Remove HTML tags like <p>
-          .replace(/%3C[^%]+%3E/g, ''); // Remove encoded tags like %3Cp%3E
+          .replace(/<[^>]+>/g, '')
+          .replace(/%3C[^%]+%3E/g, '');
         return cleaned.match(/\.(mp3|wav|ogg)$/) ? cleaned : null;
       };
 
@@ -183,9 +182,9 @@ function Home() {
       const allSuggestions = [
         ...songMatches.map(song => ({ type: 'song', title: song.title, id: song.id, permalink: song.permalink })),
         ...postMatches.map(post => ({ type: 'post', title: post.title, id: post.id, permalink: post.permalink }))
-      ].slice(0, 5); // Limit to 5 suggestions
+      ].slice(0, 5);
       setSuggestions(allSuggestions);
-      setSelectedSuggestionIndex(-1); // Reset selection
+      setSelectedSuggestionIndex(-1);
       if (songMatches.length === 0 && postMatches.length === 0) {
         setError(`No results found for "${query}".`);
       } else {
@@ -261,7 +260,7 @@ function Home() {
     } else {
       navigate(`/blog/${suggestion.permalink || `post-${suggestion.id}`}`);
     }
-    searchInputRef.current.blur(); // Remove focus after selection
+    searchInputRef.current.blur();
   };
 
   const handleSongClick = (song) => {
@@ -314,7 +313,7 @@ function Home() {
           .eq('id', clientId)
           .eq('year_month', yearMonth)
           .eq('is_authenticated', false)
-          .maybeSingle(); // Use maybeSingle for consistency
+          .maybeSingle();
 
         if (limitError && limitError.code !== 'PGRST116') {
           console.error('Fetch download_limits error:', limitError.message);
@@ -337,7 +336,7 @@ function Home() {
           .eq('user_id', userId)
           .eq('year_month', yearMonth)
           .eq('is_authenticated', true)
-          .maybeSingle(); // Use maybeSingle for consistency
+          .maybeSingle();
 
         if (limitError && limitError.code !== 'PGRST116') {
           console.error('Fetch download_limits error for user:', limitError.message);
@@ -369,10 +368,9 @@ function Home() {
           .from('profiles')
           .select('has_donated')
           .eq('id', userData.user.id)
-          .maybeSingle(); // Use maybeSingle to handle missing profiles
+          .maybeSingle();
         if (profileError) {
           console.error('Profile fetch error:', profileError.message);
-          // Assume no donation if profile fetch fails
           if (downloadCount >= 6) {
             setDownloadPrompt({
               message: `Download Limit Reached for ${monthName}! This resets on the 1st of every month. You’re allowed 6 downloads per month, have used ${downloadsUsed}, and have ${downloadsRemaining} remaining. Buy us a Meat Pie ☕ to gain unlimited access to Choir Center!`,
@@ -760,7 +758,7 @@ function Home() {
             <button className="meatpie-button">
               <Link to={downloadPrompt.redirect} className="modal-link">Buy us a Meat Pie ☕</Link>
             </button>{' '}
-            {!sessionStorage.getItem('supabase.auth.token') && ( // Show "Just Sign Up" only for unauthenticated users
+            {!sessionStorage.getItem('supabase.auth.token') && (
               <button className="signup-button">
                 <Link to="/signup" className="modal-link">Just Sign Up</Link>
               </button>

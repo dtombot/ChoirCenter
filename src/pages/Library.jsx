@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../supabase';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import AdBanner from '../components/AdBanner';
 import '../styles.css';
 
@@ -23,8 +23,15 @@ function Library() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(25);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
+    // Restore currentPage from navigation state if present
+    const savedState = location.state || {};
+    if (savedState.currentPage && savedState.currentPage !== currentPage) {
+      setCurrentPage(savedState.currentPage);
+    }
+
     const fetchSongs = async () => {
       const { data: songData, error: songError } = await supabase
         .from('songs')
@@ -39,12 +46,15 @@ function Library() {
       }
     };
     fetchSongs();
-  }, [sortBy, sortOrder]);
+  }, [sortBy, sortOrder, location.state]);
 
-  // Scroll to top when currentPage changes
+  // Scroll to top only when currentPage changes via pagination, not back navigation
   useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [currentPage]);
+    const isBackNavigation = sessionStorage.getItem(`scrollPosition-${location.pathname}`) !== null;
+    if (!isBackNavigation) {
+      window.scrollTo(0, 0);
+    }
+  }, [currentPage, location.pathname]);
 
   const handleFilterSubmit = (e) => {
     e.preventDefault();
@@ -280,7 +290,8 @@ function Library() {
 
   const handleSongClick = (song) => {
     const songPath = song.permalink || song.id;
-    navigate(`/song/${songPath}`);
+    // Save currentPage in navigation state
+    navigate(`/song/${songPath}`, { state: { currentPage } });
   };
 
   const filteredSongs = songs.filter(song =>
@@ -308,36 +319,26 @@ function Library() {
   // Function to generate modern pagination range
   const getPaginationRange = () => {
     const range = [];
-    const maxVisiblePages = 5; // Show current page ± 2, plus first and last
-    const sideRange = 2; // Pages to show on either side of currentPage
+    const maxVisiblePages = 5;
+    const sideRange = 2;
 
     if (totalPages <= maxVisiblePages) {
-      // If total pages are few, show all
       for (let i = 1; i <= totalPages; i++) {
         range.push(i);
       }
     } else {
-      // Always include first page
       range.push(1);
-
-      // Add ellipsis if gap between 1 and start of range
       const startRange = Math.max(2, currentPage - sideRange);
       if (startRange > 2) {
         range.push('...');
       }
-
-      // Add pages around currentPage
       for (let i = startRange; i <= Math.min(totalPages - 1, currentPage + sideRange); i++) {
         range.push(i);
       }
-
-      // Add ellipsis if gap between end of range and last page
       const endRange = Math.min(totalPages - 1, currentPage + sideRange);
       if (endRange < totalPages - 1) {
         range.push('...');
       }
-
-      // Always include last page
       if (totalPages > 1) {
         range.push(totalPages);
       }

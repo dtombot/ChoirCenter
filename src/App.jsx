@@ -56,12 +56,11 @@ function RouteEnhancer({ user, setLastTracked, lastTracked }) {
       const savedPosition = sessionStorage.getItem(`scrollPosition-${location.pathname}`);
       const savedPage = sessionStorage.getItem(`currentPage-${location.pathname}`);
       if (savedPosition !== null && savedPage !== null) {
-        // Delay restoration to ensure component mounts first
+        // Delay restoration to ensure component renders fully
         setTimeout(() => {
-          window.scrollTo(0, parseInt(savedPosition, 10));
-          // Update state with restored currentPage
           navigate(location.pathname, { state: { currentPage: parseInt(savedPage, 10) }, replace: true });
-        }, 0);
+          window.scrollTo(0, parseInt(savedPosition, 10));
+        }, 100); // Increased delay to 100ms
       } else {
         window.scrollTo(0, 0); // New page, scroll to top
       }

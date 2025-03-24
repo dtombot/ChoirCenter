@@ -42,6 +42,7 @@ function Home() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [expandedFaq, setExpandedFaq] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false); // Added state
   const audioRef = useRef(null);
   const searchInputRef = useRef(null);
   const navigate = useNavigate();
@@ -101,6 +102,15 @@ function Home() {
         setSongOfTheWeek(audioUrl);
         setSongTitle(title);
         setSongComposer(composer);
+      }
+
+      // Check authentication status
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) {
+        console.error('Session fetch error:', sessionError.message);
+        setIsAuthenticated(false);
+      } else {
+        setIsAuthenticated(!!sessionData?.session);
       }
     };
     fetchData();
@@ -277,8 +287,8 @@ function Home() {
         console.error('Session fetch error:', sessionError.message);
         throw sessionError;
       }
-      const isAuthenticated = !!sessionData?.session;
-      console.log('Authenticated:', isAuthenticated);
+      const authStatus = !!sessionData?.session;
+      console.log('Authenticated:', authStatus);
 
       const now = new Date();
       const year = now.getFullYear();
@@ -296,11 +306,11 @@ function Home() {
       }
 
       let downloadCount = parseInt(localStorage.getItem(downloadKey) || '0', 10);
-      const maxDownloads = isAuthenticated ? 6 : 3;
+      const maxDownloads = authStatus ? 6 : 3;
       const clientIdKey = 'client_id';
       let clientId = localStorage.getItem(clientIdKey);
 
-      if (!isAuthenticated) {
+      if (!authStatus) {
         if (!clientId) {
           clientId = generateUUID();
           localStorage.setItem(clientIdKey, clientId);
@@ -351,13 +361,13 @@ function Home() {
       const downloadsUsed = downloadCount;
       const downloadsRemaining = maxDownloads - downloadsUsed;
 
-      if (!isAuthenticated && downloadCount >= 3) {
+      if (!authStatus && downloadCount >= 3) {
         setDownloadPrompt({
           message: `Download Limit Reached for ${monthName}! This resets on the 1st of every month. You’re allowed 3 downloads per month, have used ${downloadsUsed}, and have ${downloadsRemaining} remaining. Want to keep downloading? Buy us a Meat Pie ☕ to gain unlimited access to Choir Center!`,
           redirect: '/signup-donate'
         });
         return;
-      } else if (isAuthenticated) {
+      } else if (authStatus) {
         const { data: userData, error: userError } = await supabase.auth.getUser();
         if (userError) {
           console.error('User fetch error:', userError.message);
@@ -391,7 +401,7 @@ function Home() {
       localStorage.setItem(downloadKey, downloadCount.toString());
       console.log('Download count after:', downloadCount);
 
-      if (!isAuthenticated && clientId) {
+      if (!authStatus && clientId) {
         const { error: upsertError } = await supabase
           .from('download_limits')
           .upsert({
@@ -405,7 +415,7 @@ function Home() {
         } else {
           console.log('Updated server download count for anonymous user:', downloadCount);
         }
-      } else if (isAuthenticated) {
+      } else if (authStatus) {
         const { data: userData } = await supabase.auth.getUser();
         const { error: upsertError } = await supabase
           .from('download_limits')
@@ -758,7 +768,7 @@ function Home() {
             <button className="meatpie-button">
               <Link to={downloadPrompt.redirect} className="modal-link">Buy us a Meat Pie ☕</Link>
             </button>{' '}
-            {!sessionStorage.getItem('supabase.auth.token') && (
+            {!isAuthenticated && (
               <button className="signup-button">
                 <Link to="/signup" className="modal-link">Just Sign Up</Link>
               </button>

@@ -1543,7 +1543,7 @@ body {
   display: flex;
   justify-content: center;
   z-index: 1000;
-  padding-top: 90px; /* Adds space from the top edge */
+  padding-top: 20px; /* Adds space from the top edge */
 }
 
 .modal-content {

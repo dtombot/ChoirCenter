@@ -26,13 +26,15 @@ function Library() {
     return parseInt(savedPage, 10) || locationState.currentPage || 1;
   });
   const [itemsPerPage, setItemsPerPage] = useState(25);
+  const [isAuthenticated, setIsAuthenticated] = useState(false); // Added state
   const navigate = useNavigate();
   const location = useLocation();
   const lastIntentionalPage = useRef(currentPage);
   const isInitialMount = useRef(true);
 
   useEffect(() => {
-    const fetchSongs = async () => {
+    const fetchSongsAndAuth = async () => {
+      // Fetch songs
       const { data: songData, error: songError } = await supabase
         .from('songs')
         .select('id, title, composer, google_drive_file_id, permalink, is_public, downloads, created_at')
@@ -44,8 +46,17 @@ function Library() {
         console.log('Initial songs:', JSON.stringify(songData, null, 2));
         setSongs(songData || []);
       }
+
+      // Check authentication status
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) {
+        console.error('Session fetch error:', sessionError.message);
+        setIsAuthenticated(false);
+      } else {
+        setIsAuthenticated(!!sessionData?.session);
+      }
     };
-    fetchSongs();
+    fetchSongsAndAuth();
   }, [sortBy, sortOrder]);
 
   useEffect(() => {
@@ -80,8 +91,8 @@ function Library() {
         console.error('Session fetch error:', sessionError.message);
         throw sessionError;
       }
-      const isAuthenticated = !!sessionData?.session;
-      console.log('Authenticated:', isAuthenticated);
+      const authStatus = !!sessionData?.session;
+      console.log('Authenticated:', authStatus);
 
       const now = new Date();
       const year = now.getFullYear();
@@ -99,11 +110,11 @@ function Library() {
       }
 
       let downloadCount = parseInt(localStorage.getItem(downloadKey) || '0', 10);
-      const maxDownloads = isAuthenticated ? 6 : 3;
+      const maxDownloads = authStatus ? 6 : 3;
       const clientIdKey = 'client_id';
       let clientId = localStorage.getItem(clientIdKey);
 
-      if (!isAuthenticated) {
+      if (!authStatus) {
         if (!clientId) {
           clientId = generateUUID();
           localStorage.setItem(clientIdKey, clientId);
@@ -154,13 +165,13 @@ function Library() {
       const downloadsUsed = downloadCount;
       const downloadsRemaining = maxDownloads - downloadsUsed;
 
-      if (!isAuthenticated && downloadCount >= 3) {
+      if (!authStatus && downloadCount >= 3) {
         setDownloadPrompt({
           message: `Download Limit Reached for ${monthName}! This resets on the 1st of every month. You’re allowed 3 downloads per month, have used ${downloadsUsed}, and have ${downloadsRemaining} remaining. Want to keep downloading? Buy us a Meat Pie ☕ to gain unlimited access to Choir Center!`,
           redirect: '/signup-donate'
         });
         return;
-      } else if (isAuthenticated) {
+      } else if (authStatus) {
         const { data: userData, error: userError } = await supabase.auth.getUser();
         if (userError) {
           console.error('User fetch error:', userError.message);
@@ -194,7 +205,7 @@ function Library() {
       localStorage.setItem(downloadKey, downloadCount.toString());
       console.log('Download count after:', downloadCount);
 
-      if (!isAuthenticated && clientId) {
+      if (!authStatus && clientId) {
         const { error: upsertError } = await supabase
           .from('download_limits')
           .upsert({
@@ -208,7 +219,7 @@ function Library() {
         } else {
           console.log('Updated server download count for anonymous user:', downloadCount);
         }
-      } else if (isAuthenticated) {
+      } else if (authStatus) {
         const { data: userData } = await supabase.auth.getUser();
         const { error: upsertError } = await supabase
           .from('download_limits')
@@ -528,7 +539,7 @@ function Library() {
             <button className="meatpie-button">
               <Link to={downloadPrompt.redirect} className="modal-link">Buy us a Meat Pie ☕</Link>
             </button>{' '}
-            {!supabase.auth.getSession().data?.session && (
+            {!isAuthenticated && (
               <button className="signup-button">
                 <Link to="/signup" className="modal-link">Just Sign Up</Link>
               </button>

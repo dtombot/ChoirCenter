@@ -42,25 +42,25 @@ function RouteEnhancer({ user, setLastTracked, lastTracked }) {
       });
     }
 
-    // Save scroll position and state before leaving the page
+    // Save scroll position and currentPage before leaving the page
     const handleBeforeUnload = () => {
       const scrollPosition = window.scrollY;
       const state = history.state || {};
+      const currentPage = state.currentPage || 1;
       sessionStorage.setItem(`scrollPosition-${location.pathname}`, scrollPosition.toString());
-      sessionStorage.setItem(`state-${location.pathname}`, JSON.stringify(state));
+      sessionStorage.setItem(`currentPage-${location.pathname}`, currentPage.toString());
     };
 
-    // Restore scroll position and state based on navigation action
+    // Restore scroll position and currentPage based on navigation action
     const handlePopState = () => {
       const savedPosition = sessionStorage.getItem(`scrollPosition-${location.pathname}`);
-      const savedState = JSON.parse(sessionStorage.getItem(`state-${location.pathname}`) || '{}');
-      if (savedPosition !== null) {
+      const savedPage = sessionStorage.getItem(`currentPage-${location.pathname}`);
+      if (savedPosition !== null && savedPage !== null) {
         // Delay restoration to ensure component mounts first
         setTimeout(() => {
           window.scrollTo(0, parseInt(savedPosition, 10));
-          if (savedState.currentPage) {
-            navigate(location.pathname, { state: savedState, replace: true });
-          }
+          // Update state with restored currentPage
+          navigate(location.pathname, { state: { currentPage: parseInt(savedPage, 10) }, replace: true });
         }, 0);
       } else {
         window.scrollTo(0, 0); // New page, scroll to top
@@ -70,7 +70,7 @@ function RouteEnhancer({ user, setLastTracked, lastTracked }) {
     window.addEventListener('beforeunload', handleBeforeUnload);
     window.addEventListener('popstate', handlePopState);
 
-    // Initial scroll and state restoration
+    // Initial scroll and page restoration
     handlePopState();
 
     // Visitor tracking

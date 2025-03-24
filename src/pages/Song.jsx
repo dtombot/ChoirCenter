@@ -183,12 +183,12 @@ function Song() {
         .from('profiles')
         .select('has_donated')
         .eq('id', userData.user.id)
-        .single();
+        .maybeSingle();
       if (profileError) {
         console.error('Profile fetch error:', profileError.message);
         setHasDonated(false);
       } else {
-        setHasDonated(profileData.has_donated || false);
+        setHasDonated(profileData?.has_donated || false);
       }
 
       const { data: adminData, error: adminError } = await supabase
@@ -271,6 +271,7 @@ function Song() {
       }
       const isAuthenticated = !!sessionData?.session;
       console.log('Authenticated:', isAuthenticated);
+
       const now = new Date();
       const year = now.getFullYear();
       const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -280,14 +281,17 @@ function Song() {
       const storedReset = localStorage.getItem(lastResetKey);
       const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
       const monthName = now.toLocaleString('default', { month: 'long' });
+
       if (!storedReset || storedReset !== currentMonthStart) {
         localStorage.setItem(downloadKey, '0');
         localStorage.setItem(lastResetKey, currentMonthStart);
       }
+
       let downloadCount = parseInt(localStorage.getItem(downloadKey) || '0', 10);
       const maxDownloads = isAuthenticated ? 6 : 3;
       const clientIdKey = 'client_id';
       let clientId = localStorage.getItem(clientIdKey);
+
       if (!isAuthenticated) {
         if (!clientId) {
           clientId = generateUUID();
@@ -300,7 +304,7 @@ function Song() {
           .eq('id', clientId)
           .eq('year_month', yearMonth)
           .eq('is_authenticated', false)
-          .single();
+          .maybeSingle();
         if (limitError && limitError.code !== 'PGRST116') {
           console.error('Fetch download_limits error:', limitError.message);
         } else if (limitData) {
@@ -321,7 +325,7 @@ function Song() {
           .eq('user_id', userId)
           .eq('year_month', yearMonth)
           .eq('is_authenticated', true)
-          .single();
+          .maybeSingle();
         if (limitError && limitError.code !== 'PGRST116') {
           console.error('Fetch download_limits error for user:', limitError.message);
         } else if (limitData) {
@@ -330,11 +334,16 @@ function Song() {
           console.log('Synced server download count for user:', downloadCount);
         }
       }
+
       console.log('Download count before check:', downloadCount);
       const downloadsUsed = downloadCount;
       const downloadsRemaining = maxDownloads - downloadsUsed;
+
       if (!isAuthenticated && downloadCount >= 3) {
-        setDownloadPrompt(`Download Limit Reached for ${monthName}! This resets on the 1st of every month. You’re allowed 3 downloads per month, have used ${downloadsUsed}, and have ${downloadsRemaining} remaining. Want to keep downloading? Buy us a Meat Pie ☕ to help sustain the site and enjoy unlimited access, or Just Sign up for additional downloads. Every little bit helps keep the site running! 🤗`);
+        setDownloadPrompt({
+          message: `Download Limit Reached for ${monthName}! This resets on the 1st of every month. You’re allowed 3 downloads per month, have used ${downloadsUsed}, and have ${downloadsRemaining} remaining. Want to keep downloading? Buy us a Meat Pie ☕ to gain unlimited access to Choir Center!`,
+          redirect: '/signup-donate'
+        });
         return;
       } else if (isAuthenticated) {
         const { data: userData, error: userError } = await supabase.auth.getUser();
@@ -346,20 +355,30 @@ function Song() {
           .from('profiles')
           .select('has_donated')
           .eq('id', userData.user.id)
-          .single();
+          .maybeSingle();
         if (profileError) {
           console.error('Profile fetch error:', profileError.message);
-          throw profileError;
-        }
-        console.log('Profile data:', JSON.stringify(profileData, null, 2));
-        if (!profileData?.has_donated && downloadCount >= 6) {
-          setDownloadPrompt(`Download Limit Reached for ${monthName}! This resets on the 1st of every month. You’re allowed 6 downloads per month, have used ${downloadsUsed}, and have ${downloadsRemaining} remaining. Want to keep downloading? Buy us a Meat Pie ☕ to help sustain the site and enjoy unlimited access, or Just Sign up for additional downloads. Every little bit helps keep the site running! 🤗`);
+          // Assume no donation if profile fetch fails
+          if (downloadCount >= 6) {
+            setDownloadPrompt({
+              message: `Download Limit Reached for ${monthName}! This resets on the 1st of every month. You’re allowed 6 downloads per month, have used ${downloadsUsed}, and have ${downloadsRemaining} remaining. Buy us a Meat Pie ☕ to gain unlimited access to Choir Center!`,
+              redirect: '/donate'
+            });
+            return;
+          }
+        } else if (!profileData?.has_donated && downloadCount >= 6) {
+          setDownloadPrompt({
+            message: `Download Limit Reached for ${monthName}! This resets on the 1st of every month. You’re allowed 6 downloads per month, have used ${downloadsUsed}, and have ${downloadsRemaining} remaining. Buy us a Meat Pie ☕ to gain unlimited access to Choir Center!`,
+            redirect: '/donate'
+          });
           return;
         }
       }
+
       downloadCount += 1;
       localStorage.setItem(downloadKey, downloadCount.toString());
       console.log('Download count after:', downloadCount);
+
       if (!isAuthenticated && clientId) {
         const { error: upsertError } = await supabase
           .from('download_limits')
@@ -391,9 +410,11 @@ function Song() {
           console.log('Updated server download count for authenticated user:', downloadCount);
         }
       }
+
       const numericSongId = parseInt(song.id, 10);
       if (isNaN(numericSongId)) throw new Error('Invalid song ID');
       console.log('Parsed song ID:', numericSongId);
+
       const url = `https://drive.google.com/uc?export=download&id=${song.google_drive_file_id}`;
       const link = document.createElement('a');
       link.href = url;
@@ -402,6 +423,7 @@ function Song() {
       link.click();
       document.body.removeChild(link);
       console.log('File download triggered');
+
       const { data: songData, error: fetchError } = await supabase
         .from('songs')
         .select('id, downloads')
@@ -413,6 +435,7 @@ function Song() {
       }
       const currentDownloads = songData.downloads || 0;
       console.log('Downloads before update:', currentDownloads);
+
       const { data: newDownloads, error: updateError } = await supabase
         .rpc('update_song_downloads', { p_song_id: numericSongId });
       if (updateError) {
@@ -420,6 +443,7 @@ function Song() {
         throw updateError;
       }
       console.log('New downloads value from RPC:', newDownloads);
+
       const { data: updatedSong, error: postUpdateFetchError } = await supabase
         .from('songs')
         .select('id, title, composer, google_drive_file_id, downloads, is_public, permalink, audio_url, description, created_at')
@@ -449,9 +473,9 @@ function Song() {
     } else {
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       if (sessionError || !sessionData?.session) {
-        setShowAudioPrompt('not_logged_in'); // Not logged in
+        setShowAudioPrompt('not_logged_in');
       } else {
-        setShowAudioPrompt('logged_in_no_donation'); // Logged in, no donation
+        setShowAudioPrompt('logged_in_no_donation');
       }
     }
   };
@@ -660,13 +684,15 @@ function Song() {
               <div className="modal-overlay">
                 <div className="modal-content download-modal">
                   <h3 className="modal-title">Download Limit Reached</h3>
-                  <p className="modal-text">{downloadPrompt}</p>
+                  <p className="modal-text">{downloadPrompt.message}</p>
                   <button className="meatpie-button">
-                    <Link to="/signup-donate" className="modal-link">Buy us a Meat Pie ☕</Link>
+                    <Link to={downloadPrompt.redirect} className="modal-link">Buy us a Meat Pie ☕</Link>
                   </button>{' '}
-                  <button className="signup-button">
-                    <Link to="/signup" className="modal-link">Just Sign up</Link>
-                  </button>{' '}
+                  {!isAuthenticated && (
+                    <button className="signup-button">
+                      <Link to="/signup" className="modal-link">Just Sign Up</Link>
+                    </button>
+                  )}{' '}
                   <button onClick={() => setDownloadPrompt(null)} className="cancel-button">Close</button>
                 </div>
               </div>

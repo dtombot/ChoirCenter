@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../supabase';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import AdBanner from '../components/AdBanner';
@@ -21,7 +21,6 @@ function Library() {
   const [error, setError] = useState(null);
   const [downloadPrompt, setDownloadPrompt] = useState(null);
   const [currentPage, setCurrentPage] = useState(() => {
-    // Initialize from sessionStorage or location.state, fallback to 1
     const savedPage = sessionStorage.getItem('currentPage-/library');
     const locationState = useLocation().state || {};
     return parseInt(savedPage, 10) || locationState.currentPage || 1;
@@ -29,6 +28,7 @@ function Library() {
   const [itemsPerPage, setItemsPerPage] = useState(25);
   const navigate = useNavigate();
   const location = useLocation();
+  const lastPageRef = useRef(currentPage); // Track last intentional page change
 
   useEffect(() => {
     const fetchSongs = async () => {
@@ -47,11 +47,12 @@ function Library() {
     fetchSongs();
   }, [sortBy, sortOrder]);
 
-  // Scroll handling: only scroll to top for pagination changes, not back navigation
+  // Scroll handling: only scroll to top for intentional page changes, not back navigation
   useEffect(() => {
     const isBackNavigation = sessionStorage.getItem(`scrollPosition-${location.pathname}`) !== null;
-    if (!isBackNavigation) {
+    if (!isBackNavigation && currentPage !== lastPageRef.current) {
       window.scrollTo(0, 0);
+      lastPageRef.current = currentPage; // Update last intentional page
     }
   }, [currentPage, location.pathname]);
 
@@ -289,7 +290,6 @@ function Library() {
 
   const handleSongClick = (song) => {
     const songPath = song.permalink || song.id;
-    // Save currentPage in navigation state and sessionStorage
     sessionStorage.setItem('currentPage-/library', currentPage.toString());
     navigate(`/song/${songPath}`, { state: { currentPage } });
   };

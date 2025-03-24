@@ -20,18 +20,17 @@ function Library() {
   const [sortOrder, setSortOrder] = useState('desc');
   const [error, setError] = useState(null);
   const [downloadPrompt, setDownloadPrompt] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(() => {
+    // Initialize from sessionStorage or location.state, fallback to 1
+    const savedPage = sessionStorage.getItem('currentPage-/library');
+    const locationState = useLocation().state || {};
+    return parseInt(savedPage, 10) || locationState.currentPage || 1;
+  });
   const [itemsPerPage, setItemsPerPage] = useState(25);
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
-    // Restore currentPage from navigation state if present
-    const savedState = location.state || {};
-    if (savedState.currentPage && savedState.currentPage !== currentPage) {
-      setCurrentPage(savedState.currentPage);
-    }
-
     const fetchSongs = async () => {
       const { data: songData, error: songError } = await supabase
         .from('songs')
@@ -46,9 +45,9 @@ function Library() {
       }
     };
     fetchSongs();
-  }, [sortBy, sortOrder, location.state]);
+  }, [sortBy, sortOrder]);
 
-  // Scroll to top only when currentPage changes via pagination, not back navigation
+  // Scroll handling: only scroll to top for pagination changes, not back navigation
   useEffect(() => {
     const isBackNavigation = sessionStorage.getItem(`scrollPosition-${location.pathname}`) !== null;
     if (!isBackNavigation) {
@@ -290,7 +289,8 @@ function Library() {
 
   const handleSongClick = (song) => {
     const songPath = song.permalink || song.id;
-    // Save currentPage in navigation state
+    // Save currentPage in navigation state and sessionStorage
+    sessionStorage.setItem('currentPage-/library', currentPage.toString());
     navigate(`/song/${songPath}`, { state: { currentPage } });
   };
 
@@ -316,7 +316,6 @@ function Library() {
     setCurrentPage(1);
   };
 
-  // Function to generate modern pagination range
   const getPaginationRange = () => {
     const range = [];
     const maxVisiblePages = 5;

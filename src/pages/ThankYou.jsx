@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '../supabase';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import '../styles.css';
 
@@ -13,35 +12,9 @@ function ThankYou() {
   const paymentSuccess = searchParams.get('trxref') && searchParams.get('reference');
 
   useEffect(() => {
-    const updateProfile = async () => {
-      try {
-        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-        if (sessionError || !sessionData.session) {
-          setError('Session missing after payment. Please log in again.');
-          navigate('/login');
-          return;
-        }
-
-        const userId = sessionData.session.user.id;
-        const { error } = await supabase
-          .from('profiles')
-          .upsert({ 
-            id: userId, 
-            has_donated: true, 
-            updated_at: new Date().toISOString() 
-          });
-        if (error) throw error;
-
-        setSuccess('Thank you for your donation! You now have unlimited downloads this month.');
-      } catch (err) {
-        setError('Donation recorded, but failed to update profile: ' + err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     if (paymentSuccess) {
-      updateProfile();
+      setSuccess('Thank you for your donation! You now have unlimited downloads this month.');
+      setLoading(false);
     } else {
       setLoading(false);
       setError('No donation detected. Redirecting to home...');

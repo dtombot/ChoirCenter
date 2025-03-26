@@ -9,6 +9,7 @@ function Donate() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const [userId, setUserId] = useState(null);
 
   const paymentSuccess = searchParams.get('trxref') && searchParams.get('reference');
 
@@ -18,20 +19,27 @@ function Donate() {
       if (sessionError || !sessionData?.session) {
         setError('You must be logged in to donate. Redirecting to login...');
         setTimeout(() => navigate('/login'), 2000);
+      } else {
+        setUserId(sessionData.session.user.id);
       }
     };
     checkSession();
   }, [navigate]);
 
   const handleDonate = () => {
+    if (!userId) {
+      setError('User ID not found. Please log in again.');
+      navigate('/login');
+      return;
+    }
     setLoading(true);
     setError(null);
     setSuccess(null);
-    window.location.href = 'https://paystack.com/pay/choircenterdonation';
+    window.location.href = `https://paystack.com/pay/choircenterdonation?callback_url=https://choircenter.com/thank-you?user_id=${userId}`;
   };
 
   useEffect(() => {
-    if (paymentSuccess) {
+    if (paymentSuccess && userId) {
       const updateProfile = async () => {
         try {
           const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
@@ -40,23 +48,23 @@ function Donate() {
             navigate('/login');
             return;
           }
-          const { data: userData, error: userError } = await supabase.auth.getUser();
-          if (userError) throw userError;
 
           const { error: profileError } = await supabase
             .from('profiles')
-            .upsert({ id: userData.user.id, has_donated: true, updated_at: new Date().toISOString() });
+            .update({ has_donated: true, updated_at: new Date().toISOString() })
+            .eq('id', userId);
           if (profileError) throw profileError;
 
           setSuccess('Thank you for your donation! You now have unlimited downloads this month.');
-          setTimeout(() => navigate('/library'), 2000); // Redirect to library after success
+          setTimeout(() => navigate('/library'), 2000);
         } catch (err) {
+          console.error('Profile update error:', err);
           setError('Donation recorded, but failed to update profile: ' + err.message);
         }
       };
       updateProfile();
     }
-  }, [paymentSuccess, navigate]);
+  }, [paymentSuccess, userId, navigate]);
 
   return (
     <div className="auth-container">
@@ -69,7 +77,7 @@ function Donate() {
         ) : (
           <>
             <p className="auth-subtitle">Buy us a Meat Pie ☕ to keep the music flowing!</p>
-            <button onClick={handleDonate} className="meatpie-button" disabled={loading}>
+            <button onClick={handleDonate} className="meatpie-button" disabled={loading || !userId}>
               {loading ? 'Processing...' : 'Donate Now'}
             </button>
           </>

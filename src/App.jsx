@@ -59,29 +59,23 @@ function RouteEnhancer({ user, setLastTracked, lastTracked }) {
       if (savedPosition !== null && savedPage !== null) {
         const page = parseInt(savedPage, 10);
         const position = parseInt(savedPosition, 10);
-        // Update state first
         navigate(location.pathname, { state: { currentPage: page }, replace: true });
-        // Scroll after a short delay to ensure DOM is ready
         requestAnimationFrame(() => {
           window.scrollTo({
             top: position,
-            behavior: 'auto' // Instant scroll for back navigation
+            behavior: 'auto'
           });
         });
       } else {
-        window.scrollTo(0, 0); // Fresh navigation, go to top
+        window.scrollTo(0, 0);
       }
     };
 
-    // Save on every navigation away
     window.addEventListener('beforeunload', saveScrollAndPage);
-    // Restore on popstate (browser back/forward)
     window.addEventListener('popstate', restoreScrollAndPage);
 
-    // Initial restoration on mount
     restoreScrollAndPage();
 
-    // Visitor tracking
     const trackVisit = async () => {
       const pageUrl = location.pathname;
       const trackingKey = `${pageUrl}-${user?.id || 'anonymous'}`;
@@ -119,7 +113,6 @@ function RouteEnhancer({ user, setLastTracked, lastTracked }) {
     return () => {
       window.removeEventListener('beforeunload', saveScrollAndPage);
       window.removeEventListener('popstate', restoreScrollAndPage);
-      // Save scroll position on unmount (e.g., manual navigation)
       saveScrollAndPage();
     };
   }, [location.pathname, user, navigate]);
@@ -130,6 +123,7 @@ function RouteEnhancer({ user, setLastTracked, lastTracked }) {
 function App() {
   const [user, setUser] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [userName, setUserName] = useState(''); // Added state for user's full name
   const [loading, setLoading] = useState(true);
   const [recaptchaLoaded, setRecaptchaLoaded] = useState(false);
   const [lastTracked, setLastTracked] = useState({});
@@ -177,6 +171,7 @@ function App() {
       if (sessionError || !sessionData.session) {
         setUser(null);
         setIsAdmin(false);
+        setUserName('');
         setLoading(false);
         return;
       }
@@ -185,6 +180,7 @@ function App() {
       if (authError) {
         setUser(null);
         setIsAdmin(false);
+        setUserName('');
         setLoading(false);
         return;
       }
@@ -194,14 +190,16 @@ function App() {
       if (currentUser) {
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
-          .select('is_admin')
+          .select('is_admin, full_name')
           .eq('id', currentUser.id)
           .limit(1)
           .maybeSingle();
         if (profileError) {
           setIsAdmin(false);
+          setUserName('');
         } else {
           setIsAdmin(profileData?.is_admin || false);
+          setUserName(profileData?.full_name || currentUser.email.split('@')[0]); // Fallback to email prefix
         }
       }
       setLoading(false);
@@ -214,19 +212,22 @@ function App() {
       if (event === 'SIGNED_IN' && currentUser && session?.user?.email_confirmed_at) {
         supabase
           .from('profiles')
-          .select('is_admin')
+          .select('is_admin, full_name')
           .eq('id', currentUser.id)
           .limit(1)
           .maybeSingle()
           .then(({ data, error }) => {
             if (error) {
               setIsAdmin(false);
+              setUserName('');
             } else {
               setIsAdmin(data?.is_admin || false);
+              setUserName(data?.full_name || currentUser.email.split('@')[0]);
             }
           });
       } else {
         setIsAdmin(false);
+        setUserName('');
       }
     });
 
@@ -239,6 +240,7 @@ function App() {
     await supabase.auth.signOut();
     setUser(null);
     setIsAdmin(false);
+    setUserName('');
   };
 
   if (loading) {
@@ -279,6 +281,7 @@ function App() {
                 {isAdmin && (
                   <Link to="/admin" className="nav-link">Admin Dashboard</Link>
                 )}
+                <span className="nav-user-name">Hi, {userName}</span>
                 <button onClick={handleLogout} className="nav-button">Logout</button>
               </>
             )}

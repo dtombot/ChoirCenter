@@ -19,7 +19,7 @@ function SignupDonate({ recaptchaLoaded }) {
   const [searchParams] = useSearchParams();
   const recaptchaRef = useRef(null);
 
-  const paymentSuccess = searchParams.get('trxref') && searchParams.get('reference');
+  const paymentSuccess = searchParams.get('reference'); // Simplified to check only reference
 
   useEffect(() => {
     const renderRecaptcha = () => {

@@ -3278,3 +3278,25 @@ input[type="range"]:hover {
     left: 100%;
   }
 }
+
+
+
+
+
+.auth-card {
+  max-width: 600px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  background-color: #fff;
+}
+.success-message {
+  color: #98fb98; /* Light green from your theme */
+}
+.auth-button {
+  background-color: #2f4f2f; /* Dark green */
+  border: none;
+  transition: background-color 0.3s;
+}
+.auth-button:hover {
+  background-color: #3f6f3f; /* Slightly lighter green */
+}

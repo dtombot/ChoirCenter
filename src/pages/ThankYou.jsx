@@ -10,13 +10,13 @@ function ThankYou() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  const paymentSuccess = searchParams.get('trxref') && searchParams.get('reference');
-  const userId = searchParams.get('user_id');
+  const paymentSuccess = searchParams.get('reference'); // Simplified to check only reference
+  const userIdFromUrl = searchParams.get('user_id');
 
   useEffect(() => {
     const handleDonation = async () => {
-      if (!paymentSuccess || !userId) {
-        setError('No donation detected or missing user ID. Redirecting to home...');
+      if (!paymentSuccess) {
+        setError('No donation detected. Redirecting to home...');
         setLoading(false);
         setTimeout(() => navigate('/'), 2000);
         return;
@@ -25,8 +25,9 @@ function ThankYou() {
       try {
         const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
         console.log('Session Data:', sessionData);
+        let userId = userIdFromUrl;
+
         if (sessionError || !sessionData.session) {
-          // Attempt to refresh session
           const { data, error: refreshError } = await supabase.auth.refreshSession();
           if (refreshError || !data.session) {
             setError('Session missing. Please log in again.');
@@ -35,6 +36,16 @@ function ThankYou() {
             return;
           }
           console.log('Session restored:', data.session);
+          userId = userId || data.session.user.id; // Fallback to session user ID
+        } else {
+          userId = userId || sessionData.session.user.id; // Fallback to session user ID
+        }
+
+        if (!userId) {
+          setError('User ID not found. Please log in again.');
+          setLoading(false);
+          navigate('/login');
+          return;
         }
 
         const { error: updateError } = await supabase
@@ -57,7 +68,7 @@ function ThankYou() {
     };
 
     handleDonation();
-  }, [paymentSuccess, userId, navigate]);
+  }, [paymentSuccess, userIdFromUrl, navigate]);
 
   const goToLibrary = () => {
     navigate('/library');

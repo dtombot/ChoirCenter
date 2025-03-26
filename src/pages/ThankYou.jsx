@@ -4,8 +4,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import '../styles.css';
 
 function ThankYou() {
-  const [message, setMessage] = useState(null); // Unified message state (error or success)
-  const [isError, setIsError] = useState(false); // Flag to style as error or success
+  const [message, setMessage] = useState(null); // Only success message
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -17,16 +16,11 @@ function ThankYou() {
     const handleDonation = async () => {
       setLoading(true);
       setMessage(null); // Clear any previous message
-      setIsError(false); // Reset error flag
 
-      // Wait briefly to ensure URL params are fully processed
-      await new Promise(resolve => setTimeout(resolve, 100));
-
+      // If no payment reference, redirect silently to home
       if (!paymentSuccess) {
-        setMessage('No donation detected. Redirecting to home...');
-        setIsError(true);
         setLoading(false);
-        setTimeout(() => navigate('/'), 2000);
+        navigate('/');
         return;
       }
 
@@ -38,8 +32,6 @@ function ThankYou() {
         if (sessionError || !sessionData.session) {
           const { data, error: refreshError } = await supabase.auth.refreshSession();
           if (refreshError || !data.session) {
-            setMessage('Session missing. Please log in again.');
-            setIsError(true);
             setLoading(false);
             navigate('/login');
             return;
@@ -51,8 +43,6 @@ function ThankYou() {
         }
 
         if (!userId) {
-          setMessage('User ID not found. Please log in again.');
-          setIsError(true);
           setLoading(false);
           navigate('/login');
           return;
@@ -78,14 +68,12 @@ function ThankYou() {
         }
 
         setMessage('Thank you for your donation! You now have unlimited downloads this month.');
-        setIsError(false);
         setLoading(false);
         setTimeout(() => navigate('/library'), 5000);
       } catch (err) {
         console.error('Error in handleDonation:', err);
-        setMessage('Donation processing failed: ' + err.message);
-        setIsError(true);
         setLoading(false);
+        navigate('/'); // Redirect silently on error
       }
     };
 
@@ -102,14 +90,12 @@ function ThankYou() {
         <h2 className="auth-title">Thank You!</h2>
         {loading && <p>Loading...</p>}
         {message && (
-          <p className={isError ? 'error-message' : 'success-message'}>
-            {message}
-          </p>
-        )}
-        {!isError && message && (
-          <button onClick={goToLibrary} className="auth-button" disabled={loading}>
-            Go to Library
-          </button>
+          <>
+            <p className="success-message">{message}</p>
+            <button onClick={goToLibrary} className="auth-button" disabled={loading}>
+              Go to Library
+            </button>
+          </>
         )}
       </div>
     </div>

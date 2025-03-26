@@ -3307,20 +3307,23 @@ input[type="range"]:hover {
 
 
 
-/* Song Card with Left Thumbnail */
+/* Song Card with A4 Proportions */
 .song-card-modern {
   display: flex;
   flex-direction: row;
   align-items: stretch;
   gap: 1rem;
   padding: 1rem;
-  min-height: 120px; /* Ensures enough height for thumbnail */
+  width: 400px; /* Fixed width for rectangular shape */
+  height: 130px; /* Slightly taller than thumbnail for padding */
+  max-width: 100%; /* Ensures it fits smaller screens */
+  box-sizing: border-box;
 }
 
 .song-card-thumbnail-left {
   flex-shrink: 0;
-  width: 100px;
-  height: 100%; /* Stretches to full card height */
+  width: 80px; /* Base width */
+  height: 113px; /* A4 ratio: 80px * 1.414 ≈ 113px */
 }
 
 .song-thumbnail-image-left {
@@ -3352,12 +3355,14 @@ input[type="range"]:hover {
 /* Responsive Adjustments */
 @media (max-width: 768px) {
   .song-card-modern {
+    width: 100%; /* Full width on smaller screens */
+    height: 120px;
     padding: 0.75rem;
-    min-height: 100px;
   }
 
   .song-card-thumbnail-left {
-    width: 80px;
+    width: 60px;
+    height: 85px; /* A4 ratio: 60px * 1.414 ≈ 85px */
   }
 
   .song-card-title-modern {
@@ -3377,12 +3382,13 @@ input[type="range"]:hover {
 
 @media (max-width: 480px) {
   .song-card-modern {
+    height: 100px;
     padding: 0.5rem;
-    min-height: 80px;
   }
 
   .song-card-thumbnail-left {
-    width: 60px;
+    width: 50px;
+    height: 71px; /* A4 ratio: 50px * 1.414 ≈ 71px */
   }
 
   .song-card-title-modern {

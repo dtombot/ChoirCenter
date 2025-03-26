@@ -3206,3 +3206,12 @@ input[type="range"]:hover {
     font-size: 0.85rem;
   }
 }
+
+
+
+
+.nav-user-name {
+  margin-right: 10px;
+  color: #2f4f2f;
+  font-weight: 500;
+}

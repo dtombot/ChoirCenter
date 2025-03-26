@@ -40,29 +40,8 @@ function Donate() {
 
   useEffect(() => {
     if (paymentSuccess && userId) {
-      const updateProfile = async () => {
-        try {
-          const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-          if (sessionError || !sessionData.session) {
-            setError('Session missing after payment. Please log in again.');
-            navigate('/login');
-            return;
-          }
-
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .update({ has_donated: true, updated_at: new Date().toISOString() })
-            .eq('id', userId);
-          if (profileError) throw profileError;
-
-          setSuccess('Thank you for your donation! You now have unlimited downloads this month.');
-          setTimeout(() => navigate('/library'), 2000);
-        } catch (err) {
-          console.error('Profile update error:', err);
-          setError('Donation recorded, but failed to update profile: ' + err.message);
-        }
-      };
-      updateProfile();
+      setSuccess('Thank you for your donation! Redirecting...');
+      setTimeout(() => navigate('/thank-you'), 1000);
     }
   }, [paymentSuccess, userId, navigate]);
 

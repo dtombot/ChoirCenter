@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../supabase';
-import { useNavigate } from 'react-router-dom'; // Removed useLocation
+import { useNavigate } from 'react-router-dom';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import '../styles.css';
@@ -43,7 +43,7 @@ function Admin() {
     is_active: true
   });
   const [analyticsData, setAnalyticsData] = useState({ ga: null, gsc: null });
-  const [visitorData, setVisitorData] = useState([]); // Will store aggregated visitor data
+  const [visitorData, setVisitorData] = useState([]);
   const [topSongs, setTopSongs] = useState([]);
   const [topPosts, setTopPosts] = useState([]);
   const [songOfTheWeekHtml, setSongOfTheWeekHtml] = useState('');
@@ -105,8 +105,23 @@ function Admin() {
           const response = await fetch('/.netlify/functions/fetch-users', { signal: controller.signal });
           clearTimeout(timeoutId);
           if (!response.ok) throw new Error('Failed to fetch users');
-          const users = await response.json();
-          setUsers(users || []);
+          const usersData = await response.json();
+          // Fetch profile data to merge with auth users
+          const { data: profiles, error: profileError } = await supabase
+            .from('profiles')
+            .select('id, full_name, email, is_admin');
+          if (profileError) throw new Error('Failed to fetch profiles: ' + profileError.message);
+          
+          const mergedUsers = usersData.map(authUser => {
+            const profile = profiles.find(p => p.id === authUser.id) || {};
+            return {
+              ...authUser,
+              full_name: profile.full_name || authUser.full_name || 'N/A',
+              email: profile.email || authUser.email,
+              is_admin: !!profile.is_admin
+            };
+          });
+          setUsers(mergedUsers || []);
         } catch (err) {
           setError('Failed to load users: ' + (err.name === 'AbortError' ? 'Request timed out' : err.message));
         }
@@ -145,15 +160,13 @@ function Admin() {
 
       const fetchVisitors = async () => {
         try {
-          // Fetch last 1000 visits with IP, then aggregate by IP and page_url
           const { data, error } = await supabase
             .from('visitors')
             .select('visit_timestamp, page_url, ip_address')
             .order('visit_timestamp', { ascending: false })
-            .limit(1000); // Fetch more to aggregate, then trim
+            .limit(1000);
           if (error) throw error;
 
-          // Aggregate: latest visit per IP per page_url
           const aggregated = {};
           (data || []).forEach(visit => {
             const key = `${visit.ip_address}-${visit.page_url}`;
@@ -163,7 +176,7 @@ function Admin() {
           });
           const uniqueVisits = Object.values(aggregated)
             .sort((a, b) => new Date(b.visit_timestamp) - new Date(a.visit_timestamp))
-            .slice(0, 100); // Limit to 100 after aggregation
+            .slice(0, 100);
           setVisitorData(uniqueVisits);
         } catch (error) {
           setError('Failed to load visitor data: ' + error.message);
@@ -171,7 +184,7 @@ function Admin() {
       };
       fetchVisitors();
 
-      const visitorInterval = setInterval(fetchVisitors, 300000); // Refresh every 5 minutes
+      const visitorInterval = setInterval(fetchVisitors, 300000);
 
       const fetchTopSongs = async () => {
         const { data, error } = await supabase
@@ -209,13 +222,12 @@ function Admin() {
       };
       fetchSongOfTheWeek();
 
-      // Removed location.search dependency and related song edit logic
       return () => {
         clearInterval(visitorInterval);
       };
     };
     fetchUser();
-  }, [navigate]); // Removed location from dependency array
+  }, [navigate]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -482,6 +494,34 @@ function Admin() {
     else setAds(ads.map(ad => ad.id === id ? { ...ad, is_active: !isActive } : ad));
   };
 
+  const fetchUsers = async () => {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      const response = await fetch('/.netlify/functions/fetch-users', { signal: controller.signal });
+      clearTimeout(timeoutId);
+      if (!response.ok) throw new Error('Failed to fetch users');
+      const usersData = await response.json();
+      const { data: profiles, error: profileError } = await supabase
+        .from('profiles')
+        .select('id, full_name, email, is_admin');
+      if (profileError) throw new Error('Failed to fetch profiles: ' + profileError.message);
+      
+      const mergedUsers = usersData.map(authUser => {
+        const profile = profiles.find(p => p.id === authUser.id) || {};
+        return {
+          ...authUser,
+          full_name: profile.full_name || authUser.full_name || 'N/A',
+          email: profile.email || authUser.email,
+          is_admin: !!profile.is_admin
+        };
+      });
+      setUsers(mergedUsers || []);
+    } catch (err) {
+      setError('Failed to load users: ' + (err.name === 'AbortError' ? 'Request timed out' : err.message));
+    }
+  };
+
   const toggleUserAdmin = async (id, isAdmin) => {
     if (id === user.id) {
       setError('Cannot modify your own admin status.');
@@ -495,7 +535,7 @@ function Admin() {
         const { error } = await supabase.from('admins').insert([{ user_id: id }]);
         if (error) throw error;
       }
-      fetchUsers();
+      await fetchUsers(); // Refresh user list
     } catch (err) {
       setError('Failed to update user status: ' + err.message);
     }
@@ -507,14 +547,23 @@ function Admin() {
       return;
     }
     if (window.confirm('Are you sure you want to delete this user?')) {
-      const { error: authError } = await supabase.auth.admin.deleteUser(id);
-      if (authError) {
-        setError('Failed to delete user from auth: ' + authError.message);
-        return;
+      try {
+        const response = await fetch('/.netlify/functions/delete-user', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: id })
+        });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to delete user');
+        }
+        // Delete profile from Supabase (optional, as auth deletion might cascade)
+        const { error: profileError } = await supabase.from('profiles').delete().eq('id', id);
+        if (profileError) console.warn('Profile delete warning: ' + profileError.message);
+        await fetchUsers(); // Refresh user list
+      } catch (err) {
+        setError('Failed to delete user: ' + err.message);
       }
-      const { error: profileError } = await supabase.from('profiles').delete().eq('id', id);
-      if (profileError) console.warn('Profile delete warning: ' + profileError.message);
-      setUsers(users.filter(u => u.id !== id));
     }
   };
 
@@ -572,20 +621,6 @@ function Admin() {
     (user.full_name || '').toLowerCase().includes(userSearch.toLowerCase()) ||
     (user.email || '').toLowerCase().includes(userSearch.toLowerCase())
   );
-
-  const fetchUsers = async () => {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
-      const response = await fetch('/.netlify/functions/fetch-users', { signal: controller.signal });
-      clearTimeout(timeoutId);
-      if (!response.ok) throw new Error('Failed to fetch users');
-      const users = await response.json();
-      setUsers(users || []);
-    } catch (err) {
-      setError('Failed to load users: ' + (err.name === 'AbortError' ? 'Request timed out' : err.message));
-    }
-  };
 
   if (!user) return null;
 

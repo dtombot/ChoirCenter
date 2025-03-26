@@ -106,7 +106,6 @@ function SignupDonate({ recaptchaLoaded }) {
     }
 
     try {
-      // Sign up the user
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -116,7 +115,6 @@ function SignupDonate({ recaptchaLoaded }) {
       const newUserId = data.user.id;
       setUserId(newUserId);
 
-      // Upsert the profile immediately after signup
       const { error: profileError } = await supabase
         .from('profiles')
         .upsert({
@@ -128,7 +126,7 @@ function SignupDonate({ recaptchaLoaded }) {
           country: country || null,
           state: state || null,
           is_admin: false,
-          has_donated: false, // Initialize as false
+          has_donated: false,
         });
       if (profileError) throw profileError;
 
@@ -141,7 +139,6 @@ function SignupDonate({ recaptchaLoaded }) {
       setCountry('');
       setState('');
 
-      // Redirect to Paystack with user_id in callback URL
       setTimeout(() => {
         window.location.href = `https://paystack.com/pay/choircenterdonation?callback_url=https://choircenter.com/thank-you?user_id=${newUserId}`;
       }, 1000);
@@ -164,29 +161,8 @@ function SignupDonate({ recaptchaLoaded }) {
 
   useEffect(() => {
     if (paymentSuccess && userId) {
-      const updateProfile = async () => {
-        try {
-          const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-          if (sessionError || !sessionData.session) {
-            setError('Session missing after payment. Please log in again.');
-            navigate('/login');
-            return;
-          }
-
-          const { error } = await supabase
-            .from('profiles')
-            .update({ has_donated: true, updated_at: new Date().toISOString() })
-            .eq('id', userId);
-          if (error) throw error;
-
-          setSuccess('Thank you for your donation! You now have unlimited downloads this month.');
-          setTimeout(() => navigate('/library'), 2000);
-        } catch (err) {
-          console.error('Profile update error:', err);
-          setError('Donation recorded, but failed to update profile: ' + err.message);
-        }
-      };
-      updateProfile();
+      setSuccess('Thank you for your donation! Redirecting...');
+      setTimeout(() => navigate('/thank-you'), 1000);
     }
   }, [paymentSuccess, userId, navigate]);
 

@@ -4,7 +4,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import '../styles.css';
 
 function ThankYou() {
-  const [message, setMessage] = useState(null); // Only success message
+  const [message, setMessage] = useState(null); // Success message state
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -67,9 +67,13 @@ function ThankYou() {
           }
         }
 
-        setMessage('Thank you for your donation! You now have unlimited downloads this month.');
+        setMessage({
+          heading: 'Thank You for Your Generous Donation!',
+          subheading: 'Your support ensures Choir Center remains a vibrant resource for choristers everywhere.',
+          details: 'You now have unlimited downloads this month. Enjoy exploring our library!',
+        });
         setLoading(false);
-        setTimeout(() => navigate('/library'), 5000);
+        setTimeout(() => navigate('/library'), 15000); // 15 seconds
       } catch (err) {
         console.error('Error in handleDonation:', err);
         setLoading(false);
@@ -86,17 +90,32 @@ function ThankYou() {
 
   return (
     <div className="auth-container">
-      <div className="auth-card">
-        <h2 className="auth-title">Thank You!</h2>
-        {loading && <p>Loading...</p>}
-        {message && (
+      <div className="auth-card" style={{ padding: '2rem', textAlign: 'center' }}>
+        {loading ? (
+          <p>Loading...</p>
+        ) : message ? (
           <>
-            <p className="success-message">{message}</p>
-            <button onClick={goToLibrary} className="auth-button" disabled={loading}>
-              Go to Library
+            <h2 className="auth-title" style={{ color: '#2f4f2f', marginBottom: '1rem' }}>
+              {message.heading}
+            </h2>
+            <p className="success-message" style={{ fontSize: '1.2rem', marginBottom: '1rem' }}>
+              {message.subheading}
+            </p>
+            <p style={{ fontSize: '1rem', color: '#555', marginBottom: '2rem' }}>
+              {message.details}
+            </p>
+            <button
+              onClick={goToLibrary}
+              className="auth-button"
+              style={{ padding: '0.75rem 2rem', fontSize: '1.1rem' }}
+            >
+              Explore the Library Now
             </button>
+            <p style={{ fontSize: '0.9rem', color: '#888', marginTop: '1rem' }}>
+              Redirecting in 15 seconds...
+            </p>
           </>
-        )}
+        ) : null}
       </div>
     </div>
   );

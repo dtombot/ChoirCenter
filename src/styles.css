@@ -3300,3 +3300,83 @@ input[type="range"]:hover {
 .auth-button:hover {
   background-color: #3f6f3f; /* Slightly lighter green */
 }
+
+
+
+
+
+
+/* Song Card Thumbnail and Details */
+.song-card-modern {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem;
+}
+
+.song-card-thumbnail {
+  flex-shrink: 0;
+  width: 100px;
+  height: 100px;
+}
+
+.song-thumbnail-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.song-card-details {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .song-card-modern {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 1rem;
+  }
+
+  .song-card-thumbnail {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto;
+  }
+
+  .song-card-details {
+    width: 100%;
+  }
+
+  .song-card-actions-modern {
+    flex-direction: row;
+    justify-content: space-between;
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .song-card-modern {
+    padding: 0.75rem;
+  }
+
+  .song-card-thumbnail {
+    width: 60px;
+    height: 60px;
+  }
+
+  .song-card-title-modern {
+    font-size: 1rem;
+  }
+
+  .song-card-composer-modern,
+  .song-card-downloads-modern,
+  .song-timestamp-modern {
+    font-size: 0.85rem;
+  }
+}

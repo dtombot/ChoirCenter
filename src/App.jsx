@@ -18,6 +18,7 @@ import BlogPost from './pages/BlogPost';
 import Song from './pages/Song';
 import Search from './pages/Search';
 import Donate from './pages/Donate';
+import ThankYou from './pages/ThankYou';
 
 // Google Analytics initialization function
 function initGoogleAnalytics() {
@@ -312,6 +313,7 @@ function App() {
           <Route path="/song/:id" element={<Song />} />
           <Route path="/search" element={<Search />} />
           <Route path="/donate" element={<Donate />} />
+          <Route path="/thank-you" element={<ThankYou />} />
         </Routes>
         <RouteEnhancer user={user} setLastTracked={setLastTracked} lastTracked={lastTracked} />
         <footer className="footer">

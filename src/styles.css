@@ -3307,17 +3307,18 @@ input[type="range"]:hover {
 
 
 
-/* Song Card with A4 Proportions, Left-Aligned Title, and Reduced Text Sizes */
+/* Song Card with A4 Proportions, Left-Aligned Title, Visible Buttons, and Smaller Timestamp */
 .song-card-modern {
   display: flex;
   flex-direction: row;
   align-items: stretch;
-  gap: 0.75rem; /* Reduced gap for more space */
+  gap: 0.75rem; /* Reduced gap */
   padding: 0.75rem; /* Reduced padding */
-  width: 400px; /* Fixed width for rectangular shape */
-  height: 130px; /* Slightly taller than thumbnail */
+  width: 400px; /* Fixed width */
+  height: 130px; /* Fixed height */
   max-width: 100%; /* Fits smaller screens */
   box-sizing: border-box;
+  overflow: hidden; /* Prevents overflow */
 }
 
 .song-card-thumbnail-left {
@@ -3339,46 +3340,65 @@ input[type="range"]:hover {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  min-height: 0; /* Allows shrinking if needed */
 }
 
 .song-card-content {
   flex-grow: 1;
   display: flex;
   flex-direction: column;
-  gap: 0.2rem; /* Tighter spacing between text */
+  gap: 0.15rem; /* Even tighter spacing */
+  overflow: hidden; /* Prevents text overflow */
 }
 
 .song-card-title-modern {
-  margin: 0; /* Remove default h2 margins */
+  margin: 0;
   font-size: 1rem; /* Reduced size */
   font-weight: 600;
   line-height: 1.1; /* Tighter line height */
   text-align: left; /* Explicitly left-aligned */
   color: #2f4f2f; /* Match existing color */
+  white-space: nowrap; /* Prevents wrapping */
+  overflow: hidden;
+  text-overflow: ellipsis; /* Truncates long titles */
 }
 
 .song-card-composer-modern,
-.song-card-downloads-modern,
-.song-card-timestamp-modern {
-  margin: 0; /* Remove default p margins */
+.song-card-downloads-modern {
+  margin: 0;
   font-size: 0.85rem; /* Reduced size */
   line-height: 1.1; /* Tighter line height */
-  text-align: left; /* Ensure consistency */
+  text-align: left;
+  white-space: nowrap; /* Prevents wrapping */
+  overflow: hidden;
+  text-overflow: ellipsis; /* Truncates long text */
+}
+
+.song-card-timestamp-modern {
+  margin: 0;
+  font-size: 0.75rem; /* Further reduced size */
+  line-height: 1.1; /* Tighter line height */
+  text-align: left;
+  color: #666; /* Match existing color */
+  white-space: nowrap; /* Prevents wrapping */
+  overflow: hidden;
+  text-overflow: ellipsis; /* Truncates long text */
 }
 
 .song-card-actions-modern {
   display: flex;
   gap: 0.5rem;
   justify-content: flex-end;
+  flex-shrink: 0; /* Prevents buttons from shrinking */
   margin-top: 0.3rem; /* Reduced margin */
 }
 
 /* Responsive Adjustments */
 @media (max-width: 768px) {
   .song-card-modern {
-    width: 100%; /* Full width on smaller screens */
+    width: 100%; /* Full width */
     height: 120px;
-    padding: 0.6rem; /* Adjusted padding */
+    padding: 0.6rem;
   }
 
   .song-card-thumbnail-left {
@@ -3387,13 +3407,16 @@ input[type="range"]:hover {
   }
 
   .song-card-title-modern {
-    font-size: 0.9rem; /* Further reduced */
+    font-size: 0.9rem;
   }
 
   .song-card-composer-modern,
-  .song-card-downloads-modern,
+  .song-card-downloads-modern {
+    font-size: 0.8rem;
+  }
+
   .song-card-timestamp-modern {
-    font-size: 0.8rem; /* Further reduced */
+    font-size: 0.7rem; /* Further reduced */
   }
 
   .song-card-actions-modern {
@@ -3413,18 +3436,21 @@ input[type="range"]:hover {
   }
 
   .song-card-title-modern {
-    font-size: 0.85rem; /* Smallest size */
+    font-size: 0.85rem;
   }
 
   .song-card-composer-modern,
-  .song-card-downloads-modern,
+  .song-card-downloads-modern {
+    font-size: 0.75rem;
+  }
+
   .song-card-timestamp-modern {
-    font-size: 0.75rem; /* Smallest size */
+    font-size: 0.65rem; /* Smallest size */
   }
 
   .download-button-modern,
   .share-button-modern {
-    padding: 0.35rem 0.7rem; /* Slightly smaller buttons */
-    font-size: 0.8rem;
+    padding: 0.3rem 0.6rem; /* Smaller buttons */
+    font-size: 0.75rem;
   }
 }

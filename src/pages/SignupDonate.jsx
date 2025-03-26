@@ -49,7 +49,7 @@ function SignupDonate({ recaptchaLoaded }) {
           }
         } else {
           console.log('reCAPTCHA render not available yet on SignupDonate, retrying...');
-          setTimeout(attemptRender, 100); // Retry every 100ms
+          setTimeout(attemptRender, 100);
         }
       };
 
@@ -113,17 +113,14 @@ function SignupDonate({ recaptchaLoaded }) {
       });
       if (error) throw error;
 
-      // Refresh the session to ensure the user is authenticated
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError || !sessionData.session) throw new Error('Failed to establish session after signup');
+      const newUserId = data.user.id;
+      setUserId(newUserId);
 
-      setUserId(data.user.id);
-
-      // Upsert the profile with the authenticated session
+      // Upsert the profile immediately after signup
       const { error: profileError } = await supabase
         .from('profiles')
         .upsert({
-          id: data.user.id,
+          id: newUserId,
           email: data.user.email,
           full_name: fullName,
           choir_name: choirName || null,
@@ -131,6 +128,7 @@ function SignupDonate({ recaptchaLoaded }) {
           country: country || null,
           state: state || null,
           is_admin: false,
+          has_donated: false, // Initialize as false
         });
       if (profileError) throw profileError;
 
@@ -143,10 +141,12 @@ function SignupDonate({ recaptchaLoaded }) {
       setCountry('');
       setState('');
 
+      // Redirect to Paystack with user_id in callback URL
       setTimeout(() => {
-        window.location.href = 'https://paystack.com/pay/choircenterdonation?callback_url=https://choircenter.com/thank-you';
+        window.location.href = `https://paystack.com/pay/choircenterdonation?callback_url=https://choircenter.com/thank-you?user_id=${newUserId}`;
       }, 1000);
     } catch (err) {
+      console.error('Signup error:', err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -155,30 +155,40 @@ function SignupDonate({ recaptchaLoaded }) {
   };
 
   const handleDonate = () => {
-    window.location.href = 'https://paystack.com/pay/choircenterdonation?callback_url=https://choircenter.com/thank-you';
+    if (!userId) {
+      setError('User ID not found. Please sign up again.');
+      return;
+    }
+    window.location.href = `https://paystack.com/pay/choircenterdonation?callback_url=https://choircenter.com/thank-you?user_id=${userId}`;
   };
 
-  if (paymentSuccess && userId) {
-    const updateProfile = async () => {
-      try {
-        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-        if (sessionError || !sessionData.session) {
-          setError('Session missing after payment. Please log in again.');
-          navigate('/login');
-          return;
-        }
+  useEffect(() => {
+    if (paymentSuccess && userId) {
+      const updateProfile = async () => {
+        try {
+          const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+          if (sessionError || !sessionData.session) {
+            setError('Session missing after payment. Please log in again.');
+            navigate('/login');
+            return;
+          }
 
-        const { error } = await supabase
-          .from('profiles')
-          .upsert({ id: userId, has_donated: true, updated_at: new Date().toISOString() });
-        if (error) throw error;
-        setSuccess('Thank you for your donation! You now have unlimited downloads this month.');
-      } catch (err) {
-        setError('Donation recorded, but failed to update profile: ' + err.message);
-      }
-    };
-    updateProfile();
-  }
+          const { error } = await supabase
+            .from('profiles')
+            .update({ has_donated: true, updated_at: new Date().toISOString() })
+            .eq('id', userId);
+          if (error) throw error;
+
+          setSuccess('Thank you for your donation! You now have unlimited downloads this month.');
+          setTimeout(() => navigate('/library'), 2000);
+        } catch (err) {
+          console.error('Profile update error:', err);
+          setError('Donation recorded, but failed to update profile: ' + err.message);
+        }
+      };
+      updateProfile();
+    }
+  }, [paymentSuccess, userId, navigate]);
 
   return (
     <div className="auth-container">

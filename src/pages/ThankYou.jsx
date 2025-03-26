@@ -4,24 +4,27 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import '../styles.css';
 
 function ThankYou() {
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null);
+  const [message, setMessage] = useState(null); // Unified message state (error or success)
+  const [isError, setIsError] = useState(false); // Flag to style as error or success
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  const paymentSuccess = searchParams.get('reference'); // Simplified to check only reference
+  const paymentSuccess = searchParams.get('reference'); // Check for payment reference
   const userIdFromUrl = searchParams.get('user_id');
 
   useEffect(() => {
     const handleDonation = async () => {
-      // Reset states to ensure only one message is displayed
       setLoading(true);
-      setError(null);
-      setSuccess(null);
+      setMessage(null); // Clear any previous message
+      setIsError(false); // Reset error flag
+
+      // Wait briefly to ensure URL params are fully processed
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       if (!paymentSuccess) {
-        setError('No donation detected. Redirecting to home...');
+        setMessage('No donation detected. Redirecting to home...');
+        setIsError(true);
         setLoading(false);
         setTimeout(() => navigate('/'), 2000);
         return;
@@ -35,25 +38,27 @@ function ThankYou() {
         if (sessionError || !sessionData.session) {
           const { data, error: refreshError } = await supabase.auth.refreshSession();
           if (refreshError || !data.session) {
-            setError('Session missing. Please log in again.');
+            setMessage('Session missing. Please log in again.');
+            setIsError(true);
             setLoading(false);
             navigate('/login');
             return;
           }
           console.log('Session restored:', data.session);
-          userId = userId || data.session.user.id; // Fallback to session user ID
+          userId = userId || data.session.user.id;
         } else {
-          userId = userId || sessionData.session.user.id; // Fallback to session user ID
+          userId = userId || sessionData.session.user.id;
         }
 
         if (!userId) {
-          setError('User ID not found. Please log in again.');
+          setMessage('User ID not found. Please log in again.');
+          setIsError(true);
           setLoading(false);
           navigate('/login');
           return;
         }
 
-        // Check if has_donated is already true to avoid redundant updates
+        // Check and update donation status
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('has_donated')
@@ -72,12 +77,14 @@ function ThankYou() {
           }
         }
 
-        setSuccess('Thank you for your donation! You now have unlimited downloads this month.');
+        setMessage('Thank you for your donation! You now have unlimited downloads this month.');
+        setIsError(false);
         setLoading(false);
-        setTimeout(() => navigate('/library'), 5000); // Increased to 5 seconds
+        setTimeout(() => navigate('/library'), 5000);
       } catch (err) {
         console.error('Error in handleDonation:', err);
-        setError('Donation processing failed: ' + err.message);
+        setMessage('Donation processing failed: ' + err.message);
+        setIsError(true);
         setLoading(false);
       }
     };
@@ -94,14 +101,15 @@ function ThankYou() {
       <div className="auth-card">
         <h2 className="auth-title">Thank You!</h2>
         {loading && <p>Loading...</p>}
-        {error && <p className="error-message">{error}</p>}
-        {success && (
-          <>
-            <p className="success-message">{success}</p>
-            <button onClick={goToLibrary} className="auth-button" disabled={loading}>
-              Go to Library
-            </button>
-          </>
+        {message && (
+          <p className={isError ? 'error-message' : 'success-message'}>
+            {message}
+          </p>
+        )}
+        {!isError && message && (
+          <button onClick={goToLibrary} className="auth-button" disabled={loading}>
+            Go to Library
+          </button>
         )}
       </div>
     </div>

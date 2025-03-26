@@ -3307,7 +3307,7 @@ input[type="range"]:hover {
 
 
 
-/* Song Card with A4 Proportions */
+/* Song Card with A4 Proportions and Aligned Title */
 .song-card-modern {
   display: flex;
   flex-direction: row;
@@ -3343,6 +3343,24 @@ input[type="range"]:hover {
 
 .song-card-content {
   flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem; /* Consistent spacing between text elements */
+}
+
+.song-card-title-modern {
+  margin: 0; /* Remove default h2 margins */
+  font-size: 1.2rem; /* Slightly larger but aligned */
+  font-weight: 600;
+  line-height: 1.2; /* Matches other text for vertical rhythm */
+}
+
+.song-card-composer-modern,
+.song-card-downloads-modern,
+.song-card-timestamp-modern {
+  margin: 0; /* Remove default p margins */
+  font-size: 0.95rem;
+  line-height: 1.2; /* Consistent with title */
 }
 
 .song-card-actions-modern {

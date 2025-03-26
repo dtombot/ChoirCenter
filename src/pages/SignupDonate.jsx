@@ -106,14 +106,20 @@ function SignupDonate({ recaptchaLoaded }) {
     }
 
     try {
+      // Sign up the user
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
       });
-
       if (error) throw error;
 
+      // Refresh the session to ensure the user is authenticated
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !sessionData.session) throw new Error('Failed to establish session after signup');
+
       setUserId(data.user.id);
+
+      // Upsert the profile with the authenticated session
       const { error: profileError } = await supabase
         .from('profiles')
         .upsert({
@@ -138,7 +144,7 @@ function SignupDonate({ recaptchaLoaded }) {
       setState('');
 
       setTimeout(() => {
-        window.location.href = 'https://paystack.com/pay/choircenterdonation';
+        window.location.href = 'https://paystack.com/pay/choircenterdonation?callback_url=https://choircenter.com/thank-you';
       }, 1000);
     } catch (err) {
       setError(err.message);
@@ -149,7 +155,7 @@ function SignupDonate({ recaptchaLoaded }) {
   };
 
   const handleDonate = () => {
-    window.location.href = 'https://paystack.com/pay/choircenterdonation';
+    window.location.href = 'https://paystack.com/pay/choircenterdonation?callback_url=https://choircenter.com/thank-you';
   };
 
   if (paymentSuccess && userId) {

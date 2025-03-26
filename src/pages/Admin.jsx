@@ -106,10 +106,10 @@ function Admin() {
           clearTimeout(timeoutId);
           if (!response.ok) throw new Error('Failed to fetch users');
           const usersData = await response.json();
-          // Fetch profile data to merge with auth users
+          // Fetch profile data including has_donated
           const { data: profiles, error: profileError } = await supabase
             .from('profiles')
-            .select('id, full_name, email, is_admin');
+            .select('id, full_name, email, is_admin, has_donated');
           if (profileError) throw new Error('Failed to fetch profiles: ' + profileError.message);
           
           const mergedUsers = usersData.map(authUser => {
@@ -118,7 +118,8 @@ function Admin() {
               ...authUser,
               full_name: profile.full_name || authUser.full_name || 'N/A',
               email: profile.email || authUser.email,
-              is_admin: !!profile.is_admin
+              is_admin: !!profile.is_admin,
+              has_donated: profile.has_donated || false
             };
           });
           setUsers(mergedUsers || []);
@@ -178,8 +179,8 @@ function Admin() {
             .sort((a, b) => new Date(b.visit_timestamp) - new Date(a.visit_timestamp))
             .slice(0, 100);
           setVisitorData(uniqueVisits);
-        } catch (error) {
-          setError('Failed to load visitor data: ' + error.message);
+        } catch (err) {
+          setError('Failed to load visitor data: ' + err.message);
         }
       };
       fetchVisitors();
@@ -504,7 +505,7 @@ function Admin() {
       const usersData = await response.json();
       const { data: profiles, error: profileError } = await supabase
         .from('profiles')
-        .select('id, full_name, email, is_admin');
+        .select('id, full_name, email, is_admin, has_donated');
       if (profileError) throw new Error('Failed to fetch profiles: ' + profileError.message);
       
       const mergedUsers = usersData.map(authUser => {
@@ -513,7 +514,8 @@ function Admin() {
           ...authUser,
           full_name: profile.full_name || authUser.full_name || 'N/A',
           email: profile.email || authUser.email,
-          is_admin: !!profile.is_admin
+          is_admin: !!profile.is_admin,
+          has_donated: profile.has_donated || false
         };
       });
       setUsers(mergedUsers || []);
@@ -535,9 +537,22 @@ function Admin() {
         const { error } = await supabase.from('admins').insert([{ user_id: id }]);
         if (error) throw error;
       }
-      await fetchUsers(); // Refresh user list
+      await fetchUsers();
     } catch (err) {
       setError('Failed to update user status: ' + err.message);
+    }
+  };
+
+  const toggleUserDonated = async (id, hasDonated) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ has_donated: !hasDonated })
+        .eq('id', id);
+      if (error) throw error;
+      await fetchUsers();
+    } catch (err) {
+      setError('Failed to update donation status: ' + err.message);
     }
   };
 
@@ -557,10 +572,9 @@ function Admin() {
           const errorData = await response.json();
           throw new Error(errorData.error || 'Failed to delete user');
         }
-        // Delete profile from Supabase (optional, as auth deletion might cascade)
         const { error: profileError } = await supabase.from('profiles').delete().eq('id', id);
         if (profileError) console.warn('Profile delete warning: ' + profileError.message);
-        await fetchUsers(); // Refresh user list
+        await fetchUsers();
       } catch (err) {
         setError('Failed to delete user: ' + err.message);
       }
@@ -1225,6 +1239,7 @@ function Admin() {
                     <th>Name</th>
                     <th>Email</th>
                     <th>Admin</th>
+                    <th>Donated</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
@@ -1240,6 +1255,14 @@ function Admin() {
                           disabled={u.id === user.id}
                         >
                           {u.is_admin ? 'Yes' : 'No'}
+                        </button>
+                      </td>
+                      <td>
+                        <button 
+                          onClick={() => toggleUserDonated(u.id, u.has_donated)} 
+                          className={`admin-toggle-button ${u.has_donated ? 'active' : ''}`}
+                        >
+                          {u.has_donated ? 'Yes' : 'No'}
                         </button>
                       </td>
                       <td>

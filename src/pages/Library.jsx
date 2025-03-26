@@ -26,7 +26,7 @@ function Library() {
     return parseInt(savedPage, 10) || locationState.currentPage || 1;
   });
   const [itemsPerPage, setItemsPerPage] = useState(25);
-  const [isAuthenticated, setIsAuthenticated] = useState(false); // Added state
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const lastIntentionalPage = useRef(currentPage);
@@ -34,7 +34,6 @@ function Library() {
 
   useEffect(() => {
     const fetchSongsAndAuth = async () => {
-      // Fetch songs
       const { data: songData, error: songError } = await supabase
         .from('songs')
         .select('id, title, composer, google_drive_file_id, permalink, is_public, downloads, created_at')
@@ -47,7 +46,6 @@ function Library() {
         setSongs(songData || []);
       }
 
-      // Check authentication status
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       if (sessionError) {
         console.error('Session fetch error:', sessionError.message);
@@ -466,33 +464,44 @@ function Library() {
               className={`song-card-modern ${index % 2 === 0 ? 'variant-1' : 'variant-2'}`}
               onClick={() => handleSongClick(song)}
             >
-              <div className="song-card-content">
-                <h2 className="song-card-title-modern">{song.title}</h2>
-                <p className="song-card-composer-modern">{song.composer || 'Unknown Composer'}</p>
-                <p className="song-card-downloads-modern">Downloaded {song.downloads || 0} times</p>
-                <p className="song-timestamp-modern">
-                  Added on {new Date(song.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-                </p>
+              <div className="song-card-thumbnail">
+                <img
+                  src={`https://drive.google.com/thumbnail?id=${song.google_drive_file_id}&sz=w100`}
+                  alt={`${song.title} thumbnail`}
+                  loading="lazy"
+                  className="song-thumbnail-image"
+                  onError={(e) => (e.target.src = '/path-to-fallback-image.jpg')} // Replace with your fallback image path
+                />
               </div>
-              <div className="song-card-actions-modern">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDownload(song.id, song.google_drive_file_id);
-                  }}
-                  className="download-button-modern"
-                >
-                  Download
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleShare(song.title, song.permalink || song.id);
-                  }}
-                  className="share-button-modern"
-                >
-                  Share
-                </button>
+              <div className="song-card-details">
+                <div className="song-card-content">
+                  <h2 className="song-card-title-modern">{song.title}</h2>
+                  <p className="song-card-composer-modern">{song.composer || 'Unknown Composer'}</p>
+                  <p className="song-card-downloads-modern">Downloaded {song.downloads || 0} times</p>
+                  <p className="song-timestamp-modern">
+                    Added on {new Date(song.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                  </p>
+                </div>
+                <div className="song-card-actions-modern">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDownload(song.id, song.google_drive_file_id);
+                    }}
+                    className="download-button-modern"
+                  >
+                    Download
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleShare(song.title, song.permalink || song.id);
+                    }}
+                    className="share-button-modern"
+                  >
+                    Share
+                  </button>
+                </div>
               </div>
             </div>
           ))}

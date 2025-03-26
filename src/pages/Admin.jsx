@@ -100,41 +100,37 @@ function Admin() {
 
       const fetchUsers = async () => {
         try {
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 10000);
-          const response = await fetch('/.netlify/functions/fetch-users', { signal: controller.signal });
-          clearTimeout(timeoutId);
-          if (!response.ok) throw new Error('Failed to fetch users');
-          const usersData = await response.json();
+          const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
+          if (authError) throw authError;
           const { data: profiles, error: profileError } = await supabase
             .from('profiles')
-            .select('id, full_name, email, is_admin, has_donated');
-          if (profileError) throw new Error('Failed to fetch profiles: ' + profileError.message);
-          
-          const mergedUsers = usersData.map(authUser => {
+            .select('id, full_name, email, has_donated');
+          if (profileError) throw profileError;
+
+          const mergedUsers = authUsers.users.map(authUser => {
             const profile = profiles.find(p => p.id === authUser.id) || {};
+            const isAdmin = authUser.role === 'admin' || authUser.user_metadata?.is_admin;
             return {
-              ...authUser,
-              full_name: profile.full_name || authUser.full_name || 'N/A',
+              id: authUser.id,
+              full_name: profile.full_name || authUser.user_metadata?.full_name || 'N/A',
               email: profile.email || authUser.email,
-              is_admin: !!profile.is_admin,
-              has_donated: profile.has_donated || false
+              is_admin: !!isAdmin,
+              has_donated: profile.has_donated ?? false
             };
           });
           setUsers(mergedUsers || []);
         } catch (err) {
-          setError('Failed to load users: ' + (err.name === 'AbortError' ? 'Request timed out' : err.message));
+          setError('Failed to load users: ' + err.message);
         }
       };
       fetchUsers();
 
-      // Real-time subscription for profiles updates
       const profileSubscription = supabase
         .channel('profiles')
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' }, (payload) => {
-          setUsers((prevUsers) =>
-            prevUsers.map((u) =>
-              u.id === payload.new.id ? { ...u, ...payload.new } : u
+          setUsers(prevUsers =>
+            prevUsers.map(u =>
+              u.id === payload.new.id ? { ...u, has_donated: payload.new.has_donated } : u
             )
           );
         })
@@ -509,30 +505,27 @@ function Admin() {
 
   const fetchUsers = async () => {
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
-      const response = await fetch('/.netlify/functions/fetch-users', { signal: controller.signal });
-      clearTimeout(timeoutId);
-      if (!response.ok) throw new Error('Failed to fetch users');
-      const usersData = await response.json();
+      const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
+      if (authError) throw authError;
       const { data: profiles, error: profileError } = await supabase
         .from('profiles')
-        .select('id, full_name, email, is_admin, has_donated');
-      if (profileError) throw new Error('Failed to fetch profiles: ' + profileError.message);
-      
-      const mergedUsers = usersData.map(authUser => {
+        .select('id, full_name, email, has_donated');
+      if (profileError) throw profileError;
+
+      const mergedUsers = authUsers.users.map(authUser => {
         const profile = profiles.find(p => p.id === authUser.id) || {};
+        const isAdmin = authUser.role === 'admin' || authUser.user_metadata?.is_admin;
         return {
-          ...authUser,
-          full_name: profile.full_name || authUser.full_name || 'N/A',
+          id: authUser.id,
+          full_name: profile.full_name || authUser.user_metadata?.full_name || 'N/A',
           email: profile.email || authUser.email,
-          is_admin: !!profile.is_admin,
-          has_donated: profile.has_donated || false
+          is_admin: !!isAdmin,
+          has_donated: profile.has_donated ?? false
         };
       });
       setUsers(mergedUsers || []);
     } catch (err) {
-      setError('Failed to load users: ' + (err.name === 'AbortError' ? 'Request timed out' : err.message));
+      setError('Failed to load users: ' + err.message);
     }
   };
 
@@ -551,17 +544,32 @@ function Admin() {
       }
       await fetchUsers();
     } catch (err) {
-      setError('Failed to update user status: ' + err.message);
+      setError('Failed to update admin status: ' + err.message);
     }
   };
 
   const toggleUserDonated = async (id, hasDonated) => {
     try {
-      const { error } = await supabase
+      const { data: existingProfile, error: fetchError } = await supabase
         .from('profiles')
-        .update({ has_donated: !hasDonated })
-        .eq('id', id);
-      if (error) throw error;
+        .select('id')
+        .eq('id', id)
+        .single();
+
+      if (fetchError && fetchError.code !== 'PGRST116') throw fetchError;
+
+      if (existingProfile) {
+        const { error } = await supabase
+          .from('profiles')
+          .update({ has_donated: !hasDonated })
+          .eq('id', id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('profiles')
+          .insert([{ id, has_donated: !hasDonated }]);
+        if (error) throw error;
+      }
       await fetchUsers();
     } catch (err) {
       setError('Failed to update donation status: ' + err.message);
@@ -575,15 +583,8 @@ function Admin() {
     }
     if (window.confirm('Are you sure you want to delete this user?')) {
       try {
-        const response = await fetch('/.netlify/functions/delete-user', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: id })
-        });
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to delete user');
-        }
+        const { error: authError } = await supabase.auth.admin.deleteUser(id);
+        if (authError) throw authError;
         const { error: profileError } = await supabase.from('profiles').delete().eq('id', id);
         if (profileError) console.warn('Profile delete warning: ' + profileError.message);
         await fetchUsers();
@@ -605,7 +606,7 @@ function Admin() {
   const deleteMessage = async (id) => {
     if (window.confirm('Are you sure you want to delete this message?')) {
       const { error } = await supabase.from('contact_messages').delete().eq('id', id);
-      if (error) setError('Failed to delete message: ' + error.message);
+      if (error) setError('Failed to delete message: ' + err.message);
       else setMessages(messages.filter(msg => msg.id !== id));
     }
   };

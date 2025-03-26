@@ -15,6 +15,11 @@ function ThankYou() {
 
   useEffect(() => {
     const handleDonation = async () => {
+      // Reset states to ensure only one message is displayed
+      setLoading(true);
+      setError(null);
+      setSuccess(null);
+
       if (!paymentSuccess) {
         setError('No donation detected. Redirecting to home...');
         setLoading(false);
@@ -48,21 +53,31 @@ function ThankYou() {
           return;
         }
 
-        const { error: updateError } = await supabase
+        // Check if has_donated is already true to avoid redundant updates
+        const { data: profileData, error: profileError } = await supabase
           .from('profiles')
-          .update({ has_donated: true, updated_at: new Date().toISOString() })
-          .eq('id', userId);
-        if (updateError) {
-          console.error('Update error:', updateError);
-          throw updateError;
+          .select('has_donated')
+          .eq('id', userId)
+          .single();
+        if (profileError) throw profileError;
+
+        if (!profileData.has_donated) {
+          const { error: updateError } = await supabase
+            .from('profiles')
+            .update({ has_donated: true, updated_at: new Date().toISOString() })
+            .eq('id', userId);
+          if (updateError) {
+            console.error('Update error:', updateError);
+            throw updateError;
+          }
         }
 
         setSuccess('Thank you for your donation! You now have unlimited downloads this month.');
         setLoading(false);
-        setTimeout(() => navigate('/library'), 2000);
+        setTimeout(() => navigate('/library'), 5000); // Increased to 5 seconds
       } catch (err) {
         console.error('Error in handleDonation:', err);
-        setError('Donation recorded, but failed to update profile: ' + err.message);
+        setError('Donation processing failed: ' + err.message);
         setLoading(false);
       }
     };

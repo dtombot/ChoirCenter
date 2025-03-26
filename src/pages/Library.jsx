@@ -464,16 +464,16 @@ function Library() {
               className={`song-card-modern ${index % 2 === 0 ? 'variant-1' : 'variant-2'}`}
               onClick={() => handleSongClick(song)}
             >
-              <div className="song-card-thumbnail">
+              <div className="song-card-thumbnail-left">
                 <img
                   src={`https://drive.google.com/thumbnail?id=${song.google_drive_file_id}&sz=w100`}
                   alt={`${song.title} thumbnail`}
                   loading="lazy"
-                  className="song-thumbnail-image"
+                  className="song-thumbnail-image-left"
                   onError={(e) => (e.target.src = '/path-to-fallback-image.jpg')} // Replace with your fallback image path
                 />
               </div>
-              <div className="song-card-details">
+              <div className="song-card-details-right">
                 <div className="song-card-content">
                   <h2 className="song-card-title-modern">{song.title}</h2>
                   <p className="song-card-composer-modern">{song.composer || 'Unknown Composer'}</p>

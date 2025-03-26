@@ -106,7 +106,6 @@ function Admin() {
           clearTimeout(timeoutId);
           if (!response.ok) throw new Error('Failed to fetch users');
           const usersData = await response.json();
-          // Fetch profile data including has_donated
           const { data: profiles, error: profileError } = await supabase
             .from('profiles')
             .select('id, full_name, email, is_admin, has_donated');
@@ -128,6 +127,18 @@ function Admin() {
         }
       };
       fetchUsers();
+
+      // Real-time subscription for profiles updates
+      const profileSubscription = supabase
+        .channel('profiles')
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' }, (payload) => {
+          setUsers((prevUsers) =>
+            prevUsers.map((u) =>
+              u.id === payload.new.id ? { ...u, ...payload.new } : u
+            )
+          );
+        })
+        .subscribe();
 
       const fetchAds = async () => {
         const { data, error } = await supabase.from('advertisements').select('*');
@@ -225,6 +236,7 @@ function Admin() {
 
       return () => {
         clearInterval(visitorInterval);
+        supabase.removeChannel(profileSubscription);
       };
     };
     fetchUser();
@@ -1231,6 +1243,9 @@ function Admin() {
                 onChange={(e) => setUserSearch(e.target.value)} 
                 className="admin-filter-input" 
               />
+              <button onClick={fetchUsers} className="admin-refresh-button">
+                Refresh Users
+              </button>
             </div>
             <div className="admin-table-container">
               <table className="admin-table">

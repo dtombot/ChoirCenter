@@ -11,7 +11,7 @@ function Donate() {
   const [searchParams] = useSearchParams();
   const [userId, setUserId] = useState(null);
 
-  const paymentSuccess = searchParams.get('trxref') && searchParams.get('reference');
+  const paymentSuccess = searchParams.get('reference'); // Simplified to check only reference
 
   useEffect(() => {
     const checkSession = async () => {

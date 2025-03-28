@@ -30,7 +30,7 @@
   status = 301
   force = true
 
-# Redirect for /song/ URLs with colon suffixes only
+# Redirect for /song/ URLs with colon suffixes
 [[redirects]]
   from = "/song/:base*:*:suffix"
   to = "/song/:base"
@@ -38,6 +38,17 @@
   force = true
   [redirects.functions]
     _lowercase = "base"
+
+# Redirect for /song/ URLs without colons, only if not already lowercase
+[[redirects]]
+  from = "/song/:id"
+  to = "/song/:id"
+  status = 301
+  force = false
+  # Only apply if the id contains uppercase letters
+  conditions = { "Path" = ["/song/[A-Z]*"] }
+  [redirects.functions]
+    _lowercase = "id"
 
 # Existing SPA redirect
 [[redirects]]

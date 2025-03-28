@@ -59,25 +59,6 @@ function Admin() {
   const [userSearch, setUserSearch] = useState('');
   const [analyticsSection, setAnalyticsSection] = useState('local');
   const navigate = useNavigate();
-
-  useEffect(() => {
-    if (editingSongId) {
-      setSongForm(prevSongForm => ({
-        ...prevSongForm,
-        title: prevSongForm.title,
-        composer: prevSongForm.composer,
-        google_drive_file_id: prevSongForm.google_drive_file_id,
-        github_file_url: prevSongForm.github_file_url,
-        permalink: prevSongForm.permalink,
-        is_public: prevSongForm.is_public,
-        source: prevSongForm.source,
-        audio_url: prevSongForm.audio_url,
-        description: prevSongForm.description,
-        category: prevSongForm.category,
-        tags: prevSongForm.tags
-      }));
-    }
-  }, [editingSongId]);
   
   useEffect(() => {
     const fetchUser = async () => {
@@ -683,7 +664,7 @@ const editSong = async (song) => {
         )}
         {activeTab === 'songs' && (
           <>
-            <form onSubmit={handleSongSubmit} className="admin-form-grid">
+            <form key={editingSongId || 'new'} onSubmit={handleSongSubmit} className="admin-form-grid">
               <input 
                 type="text" 
                 placeholder="Song Title" 

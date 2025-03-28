@@ -116,20 +116,6 @@ body {
 }
 
 /* Footer */
-.footer {
-  background: #2f4f2f;
-  color: #fff;
-  padding: 1rem;
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1rem;
-  text-align: center;
-}
-
-.footer-text {
-  font-size: 0.9rem;
-  font-weight: 400;
-}
 
 .footer-links {
   display: flex;
@@ -3382,4 +3368,219 @@ input[type="range"]:hover {
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+
+
+
+
+/* Modern Footer Styles */
+.footer {
+  background: linear-gradient(135deg, #1f2a1f, #3cb371);
+  color: #fff;
+  padding: 2rem 1rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.footer-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+  position: relative;
+  z-index: 1;
+}
+
+.footer-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.footer-logo-section {
+  align-items: flex-start;
+}
+
+.footer-logo {
+  height: 60px;
+  width: auto;
+  transition: transform 0.3s ease;
+}
+
+.footer-logo:hover {
+  transform: scale(1.1);
+}
+
+.footer-newsletter {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 300px;
+}
+
+.footer-input {
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  background: rgba(255, 255, 255, 0.9);
+  color: #333;
+  transition: box-shadow 0.3s ease;
+}
+
+.footer-input:focus {
+  box-shadow: 0 0 8px rgba(60, 179, 113, 0.5);
+  outline: none;
+}
+
+.footer-subscribe {
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #3cb371, #2f9e5e);
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s ease, transform 0.3s ease;
+}
+
+.footer-subscribe:hover {
+  background: linear-gradient(135deg, #2f9e5e, #3cb371);
+  transform: scale(1.05);
+}
+
+.footer-links {
+  gap: 0.5rem;
+}
+
+.footer-link {
+  color: #e0e0e0;
+  text-decoration: none;
+  font-size: 1rem;
+  transition: color 0.3s ease, transform 0.3s ease;
+  opacity: 0;
+  animation: fadeInUp 0.5s ease forwards;
+}
+
+.footer-link:nth-child(1) { animation-delay: 0.1s; }
+.footer-link:nth-child(2) { animation-delay: 0.2s; }
+.footer-link:nth-child(3) { animation-delay: 0.3s; }
+.footer-link:nth-child(4) { animation-delay: 0.4s; }
+
+.footer-link:hover {
+  color: #98fb98;
+  transform: translateY(-2px);
+}
+
+.footer-social {
+  flex-direction: row;
+  gap: 1rem;
+}
+
+.social-link {
+  display: inline-flex;
+  align-items: center;
+  transition: transform 0.3s ease;
+}
+
+.social-icon {
+  width: 30px;
+  height: 30px;
+  fill: #e0e0e0;
+  transition: fill 0.3s ease, transform 0.3s ease;
+}
+
+.social-link:hover .social-icon {
+  fill: #98fb98;
+  transform: scale(1.2);
+}
+
+.footer-note {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  fill: #98fb98;
+  opacity: 0.7;
+  animation: float 6s ease-in-out infinite;
+  z-index: 0;
+}
+
+.footer-note:nth-child(1) { animation-delay: 0s; }
+.footer-note:nth-child(2) { animation-delay: 2s; }
+.footer-note:nth-child(3) { animation-delay: 4s; }
+
+.footer-copyright {
+  text-align: center;
+  font-size: 0.85rem;
+  color: #e0e0e0;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  margin-top: 1.5rem;
+}
+
+/* Floating Animation for Notes */
+@keyframes float {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-20px); }
+  100% { transform: translateY(0); }
+}
+
+/* Responsive Footer Adjustments */
+@media (max-width: 768px) {
+  .footer-inner {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+
+  .footer-logo-section {
+    align-items: center;
+  }
+
+  .footer-newsletter {
+    max-width: 250px;
+    margin: 0 auto;
+  }
+
+  .footer-social {
+    justify-content: center;
+  }
+
+  .footer-note {
+    width: 30px;
+    height: 30px;
+  }
+}
+
+@media (max-width: 480px) {
+  .footer {
+    padding: 1.5rem 0.5rem;
+  }
+
+  .footer-logo {
+    height: 50px;
+  }
+
+  .footer-input, .footer-subscribe {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+  }
+
+  .footer-link {
+    font-size: 0.9rem;
+  }
+
+  .social-icon {
+    width: 25px;
+    height: 25px;
+  }
+
+  .footer-note {
+    width: 25px;
+    height: 25px;
+  }
 }

@@ -260,17 +260,8 @@ function App() {
 
   if (loading) {
     return (
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '100vh',
-        backgroundColor: '#e6f0e6',
-        color: '#2f4f2f',
-        fontSize: '1.5rem',
-        fontFamily: "'Inter', Arial, sans-serif"
-      }}>
-        Loading...
+      <div className="loading-container">
+        <div className="spinner"></div>
       </div>
     );
   }

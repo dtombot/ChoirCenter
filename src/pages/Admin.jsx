@@ -403,22 +403,7 @@ const editSong = async (song) => {
       .single();
     if (error) throw error;
     if (data) {
-      // Reset songForm to initial state first
-      setSongForm({
-        title: '',
-        composer: '',
-        google_drive_file_id: '',
-        github_file_url: '',
-        permalink: '',
-        is_public: true,
-        source: 'google_drive',
-        audio_url: '',
-        description: '',
-        category: '',
-        tags: ''
-      });
-      // Then set the new song data
-      setSongForm({
+      const newSongForm = {
         title: data.title || '',
         composer: data.composer || '',
         google_drive_file_id: data.google_drive_file_id || '',
@@ -430,9 +415,10 @@ const editSong = async (song) => {
         description: data.description || '',
         category: data.category || '',
         tags: data.tags ? data.tags.join(', ') : ''
-      });
+      };
+      setSongForm(newSongForm);
+      console.log('Updated songForm:', newSongForm); // Temporary debug log
       setEditingSongId(data.id);
-      // Scroll to the top of the page
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
       setError('No song data found for editing.');

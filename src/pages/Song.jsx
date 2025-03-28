@@ -19,6 +19,7 @@ const generateUUID = () => {
 
 function Song() {
   const { id } = useParams();
+  const cleanId = id.split(':')[0].toLowerCase(); // Clean suffix and lowercase
   const [song, setSong] = useState(null);
   const [relatedSongs, setRelatedSongs] = useState([]);
   const [error, setError] = useState(null);
@@ -131,10 +132,10 @@ function Song() {
       let query = supabase
         .from('songs')
         .select('id, title, composer, google_drive_file_id, downloads, is_public, permalink, audio_url, description, created_at');
-      if (/^\d+$/.test(id)) {
-        query = query.eq('id', parseInt(id, 10));
+      if (/^\d+$/.test(cleanId)) {
+        query = query.eq('id', parseInt(cleanId, 10));
       } else {
-        query = query.eq('permalink', id);
+        query = query.eq('permalink', cleanId);
       }
       const { data: songData, error: songError } = await query.single();
       if (songError) {
@@ -241,7 +242,7 @@ function Song() {
       clearInterval(interval);
       window.removeEventListener('resize', updateScale);
     };
-  }, [id]);
+  }, [cleanId]);
 
   useEffect(() => {
     const audio = audioRef.current;

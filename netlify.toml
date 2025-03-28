@@ -28,12 +28,10 @@
   status = 301
   force = true
 
-# Redirect to function for /song/ URLs, but only if cleaning is needed
 [[redirects]]
   from = "/song/*"
   to = "/.netlify/functions/clean-song-url"
-  status = 301
-  force = false  # Changed to false
+  status = 200  # Changed to 200 to proxy, not redirect
 
 [[redirects]]
   from = "/*"

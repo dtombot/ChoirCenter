@@ -30,9 +30,9 @@
   status = 301
   force = true
 
-# Redirect for /song/ URLs with suffixes (e.g., :1)
+# Redirect for /song/ URLs with colon suffixes only
 [[redirects]]
-  from = "/song/:base(*:*)"
+  from = "/song/:base*:*:suffix"
   to = "/song/:base"
   status = 301
   force = true

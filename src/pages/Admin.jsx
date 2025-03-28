@@ -53,23 +53,38 @@ function Admin() {
   const [editingPostId, setEditingPostId] = useState(null);
   const [editingAdId, setEditingAdId] = useState(null);
   const [error, setError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(null);
   const [songSearch, setSongSearch] = useState('');
   const [songFilter, setSongFilter] = useState('all');
   const [songCategoryFilter, setSongCategoryFilter] = useState('all');
   const [userSearch, setUserSearch] = useState('');
   const [analyticsSection, setAnalyticsSection] = useState('local');
+  const [visitorTimeFilter, setVisitorTimeFilter] = useState('all');
+  const [visitorPage, setVisitorPage] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [selectedSongs, setSelectedSongs] = useState([]);
   const navigate = useNavigate();
-  
+
+  const SONG_CATEGORIES = [
+    'Entrance', 'Kyrie', 'Gloria', 'Responsorial Psalm', 'Gospel Acclamation',
+    'Credo', 'Response to prayers', 'Preconsecration', 'Offertory', 'Sanctus',
+    'Agnus Dei', 'Communion', 'Dismissal', 'Lent', 'Pentecost', 'Easter',
+    'Advent', 'Christmas', 'Trinity', 'Marian', 'Classical'
+  ];
+
   useEffect(() => {
     const fetchUser = async () => {
+      setLoading(true);
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       if (sessionError || !sessionData.session) {
         navigate('/login');
+        setLoading(false);
         return;
       }
       const { data: userData, error: userError } = await supabase.auth.getUser();
       if (userError || !userData.user) {
         navigate('/login');
+        setLoading(false);
         return;
       }
       setUser(userData.user);
@@ -81,201 +96,241 @@ function Admin() {
         .single();
       if (adminError || !adminData) {
         navigate('/');
+        setLoading(false);
         return;
       }
 
-      const fetchSongs = async () => {
-        const { data, error } = await supabase.from('songs').select('*');
-        if (error) setError('Failed to load songs: ' + error.message);
-        else setSongs(data || []);
-      };
-      fetchSongs();
-
-      const fetchPosts = async () => {
-        const { data, error } = await supabase.from('blog_posts').select('*');
-        if (error) setError('Failed to load posts: ' + error.message);
-        else setPosts(data || []);
-      };
-      fetchPosts();
-
-      const fetchUsers = async () => {
-        try {
-          const response = await fetch('/.netlify/functions/fetch-users');
-          if (!response.ok) throw new Error('Failed to fetch users');
-          const data = await response.json();
-          setUsers(data || []);
-        } catch (err) {
-          setError('Failed to load users: ' + err.message);
-        }
-      };
-      fetchUsers();
-
-      const fetchAds = async () => {
-        const { data, error } = await supabase.from('advertisements').select('*');
-        if (error) setError('Failed to load ads: ' + error.message);
-        else setAds(data || []);
-      };
-      fetchAds();
-
-      const fetchMessages = async () => {
-        const { data, error } = await supabase
-          .from('contact_messages')
-          .select('*')
-          .order('created_at', { ascending: false });
-        if (error) setError('Failed to load messages: ' + error.message);
-        else setMessages(data || []);
-      };
-      fetchMessages();
-
-      const fetchAnalytics = async () => {
-        try {
-          const response = await fetch('/.netlify/functions/analytics');
-          if (!response.ok) throw new Error('Failed to fetch analytics data');
-          const data = await response.json();
-          if (data.error) throw new Error(data.error);
-          setAnalyticsData(data);
-        } catch (err) {
-          setError('Analytics fetch failed: ' + err.message);
-        }
-      };
-      fetchAnalytics();
-
-      const fetchVisitors = async () => {
-        try {
-          const { data, error } = await supabase
-            .from('visitors')
-            .select('visit_timestamp, page_url, ip_address')
-            .order('visit_timestamp', { ascending: false })
-            .limit(1000);
-          if (error) throw error;
-
-          const aggregated = {};
-          (data || []).forEach(visit => {
-            const key = `${visit.ip_address}-${visit.page_url}`;
-            if (!aggregated[key] || new Date(visit.visit_timestamp) > new Date(aggregated[key].visit_timestamp)) {
-              aggregated[key] = visit;
-            }
-          });
-          const uniqueVisits = Object.values(aggregated)
-            .sort((a, b) => new Date(b.visit_timestamp) - new Date(a.visit_timestamp))
-            .slice(0, 100);
-          setVisitorData(uniqueVisits);
-        } catch (err) {
-          setError('Failed to load visitor data: ' + err.message);
-        }
-      };
-      fetchVisitors();
+      await Promise.all([
+        fetchSongs(),
+        fetchPosts(),
+        fetchUsers(),
+        fetchAds(),
+        fetchMessages(),
+        fetchAnalytics(),
+        fetchVisitors(),
+        fetchTopSongs(),
+        fetchTopPosts(),
+        fetchSongOfTheWeek()
+      ]);
 
       const visitorInterval = setInterval(fetchVisitors, 300000);
-
-      const fetchTopSongs = async () => {
-        const { data, error } = await supabase
-          .from('songs')
-          .select('title, downloads')
-          .order('downloads', { ascending: false })
-          .limit(5);
-        if (error) setError('Failed to load top songs: ' + error.message);
-        else setTopSongs(data || []);
-      };
-      fetchTopSongs();
-
-      const fetchTopPosts = async () => {
-        const { data, error } = await supabase
-          .from('blog_posts')
-          .select('title, views')
-          .order('views', { ascending: false, nullsLast: true })
-          .limit(5);
-        if (error) console.warn('Top posts fetch warning: ' + error.message);
-        else setTopPosts(data || []);
-      };
-      fetchTopPosts();
-
-      const fetchSongOfTheWeek = async () => {
-        const { data, error } = await supabase
-          .from('song_of_the_week')
-          .select('title, composer, audio_url')
-          .single();
-        if (error) console.warn('Song of the week fetch warning: ' + error.message);
-        else {
-          setSongOfTheWeekTitle(data?.title || '');
-          setSongOfTheWeekComposer(data?.composer || '');
-          setSongOfTheWeekHtml(data?.audio_url || '');
-        }
-      };
-      fetchSongOfTheWeek();
-
+      setLoading(false);
       return () => clearInterval(visitorInterval);
     };
     fetchUser();
   }, [navigate]);
+
+  const fetchSongs = async () => {
+    setLoading(true);
+    const { data, error } = await supabase.from('songs').select('*');
+    if (error) setError('Failed to load songs: ' + error.message);
+    else setSongs(data || []);
+    setLoading(false);
+  };
+
+  const fetchPosts = async () => {
+    setLoading(true);
+    const { data, error } = await supabase.from('blog_posts').select('*');
+    if (error) setError('Failed to load posts: ' + error.message);
+    else setPosts(data || []);
+    setLoading(false);
+  };
+
+  const fetchUsers = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('/.netlify/functions/fetch-users');
+      if (!response.ok) throw new Error('Failed to fetch users');
+      const data = await response.json();
+      setUsers(data || []);
+    } catch (err) {
+      setError('Failed to load users: ' + err.message);
+    }
+    setLoading(false);
+  };
+
+  const fetchAds = async () => {
+    setLoading(true);
+    const { data, error } = await supabase.from('advertisements').select('*');
+    if (error) setError('Failed to load ads: ' + error.message);
+    else setAds(data || []);
+    setLoading(false);
+  };
+
+  const fetchMessages = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('contact_messages')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) setError('Failed to load messages: ' + error.message);
+    else setMessages(data || []);
+    setLoading(false);
+  };
+
+  const fetchAnalytics = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('/.netlify/functions/analytics');
+      if (!response.ok) throw new Error('Failed to fetch analytics data');
+      const data = await response.json();
+      if (data.error) throw new Error(data.error);
+      setAnalyticsData(data);
+    } catch (err) {
+      setError('Analytics fetch failed: ' + err.message);
+    }
+    setLoading(false);
+  };
+
+  const fetchVisitors = async () => {
+    setLoading(true);
+    try {
+      let query = supabase
+        .from('visitors')
+        .select('visit_timestamp, page_url, ip_address')
+        .order('visit_timestamp', { ascending: false });
+
+      if (visitorTimeFilter !== 'all') {
+        const now = new Date();
+        let startDate;
+        switch (visitorTimeFilter) {
+          case '24h': startDate = new Date(now - 24 * 60 * 60 * 1000); break;
+          case '7d': startDate = new Date(now - 7 * 24 * 60 * 60 * 1000); break;
+          case '30d': startDate = new Date(now - 30 * 24 * 60 * 60 * 1000); break;
+          default: break;
+        }
+        query = query.gte('visit_timestamp', startDate.toISOString());
+      }
+
+      const { data, error } = await query.range(visitorPage * 50, (visitorPage + 1) * 50 - 1);
+      if (error) throw error;
+
+      const aggregated = {};
+      (data || []).forEach(visit => {
+        const key = `${visit.ip_address}-${visit.page_url}`;
+        if (!aggregated[key] || new Date(visit.visit_timestamp) > new Date(aggregated[key].visit_timestamp)) {
+          aggregated[key] = visit;
+        }
+      });
+      const uniqueVisits = Object.values(aggregated)
+        .sort((a, b) => new Date(b.visit_timestamp) - new Date(a.visit_timestamp));
+      setVisitorData(uniqueVisits);
+    } catch (err) {
+      setError('Failed to load visitor data: ' + err.message);
+    }
+    setLoading(false);
+  };
+
+  const fetchTopSongs = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('songs')
+      .select('title, downloads')
+      .order('downloads', { ascending: false })
+      .limit(5);
+    if (error) setError('Failed to load top songs: ' + error.message);
+    else setTopSongs(data || []);
+    setLoading(false);
+  };
+
+  const fetchTopPosts = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('blog_posts')
+      .select('title, views')
+      .order('views', { ascending: false, nullsLast: true })
+      .limit(5);
+    if (error) console.warn('Top posts fetch warning: ' + error.message);
+    else setTopPosts(data || []);
+    setLoading(false);
+  };
+
+  const fetchSongOfTheWeek = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('song_of_the_week')
+      .select('title, composer, audio_url')
+      .single();
+    if (error) console.warn('Song of the week fetch warning: ' + error.message);
+    else {
+      setSongOfTheWeekTitle(data?.title || '');
+      setSongOfTheWeekComposer(data?.composer || '');
+      setSongOfTheWeekHtml(data?.audio_url || '');
+    }
+    setLoading(false);
+  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate('/login');
   };
 
-const handleSongSubmit = async (e) => {
-  e.preventDefault();
-  try {
-    const songData = {
-      title: songForm.title,
-      composer: songForm.composer,
-      google_drive_file_id: songForm.source === 'google_drive' ? songForm.google_drive_file_id : null,
-      github_file_url: songForm.source === 'github' ? songForm.github_file_url : null,
-      permalink: songForm.permalink || null,
-      is_public: songForm.is_public,
-      audio_url: songForm.audio_url || null,
-      description: songForm.description || null,
-      category: songForm.category || null,
-      tags: songForm.tags ? songForm.tags.split(',').map(tag => tag.trim()) : null
-    };
+  const handleSongSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const songData = {
+        title: songForm.title,
+        composer: songForm.composer,
+        google_drive_file_id: songForm.source === 'google_drive' ? songForm.google_drive_file_id : null,
+        github_file_url: songForm.source === 'github' ? songForm.github_file_url : null,
+        permalink: songForm.permalink || null,
+        is_public: songForm.is_public,
+        audio_url: songForm.audio_url || null,
+        description: songForm.description || null,
+        category: songForm.category || null,
+        tags: songForm.tags ? songForm.tags.split(',').map(tag => tag.trim()) : null
+      };
 
-    if (editingSongId) {
-      const { data: updatedSong, error } = await supabase
-        .from('songs')
-        .update(songData)
-        .eq('id', editingSongId)
-        .select()
-        .single();
-      if (error) throw error;
-      setSongs(songs.map(song => (song.id === editingSongId ? updatedSong : song)));
-      setEditingSongId(null);
-      setError('Song updated successfully!');
-    } else {
-      const { data: newSong, error } = await supabase
-        .from('songs')
-        .insert([{ ...songData, downloads: 0 }])
-        .select()
-        .single();
-      if (error) throw error;
-      setSongs([...songs, newSong]);
-      setError('Song added successfully!');
+      if (editingSongId) {
+        const { data: updatedSong, error } = await supabase
+          .from('songs')
+          .update(songData)
+          .eq('id', editingSongId)
+          .select()
+          .single();
+        if (error) throw error;
+        setSongs(songs.map(song => (song.id === editingSongId ? updatedSong : song)));
+        setEditingSongId(null);
+        setSuccessMessage('Song updated successfully!');
+      } else {
+        const { data: newSong, error } = await supabase
+          .from('songs')
+          .insert([{ ...songData, downloads: 0 }])
+          .select()
+          .single();
+        if (error) throw error;
+        setSongs([...songs, newSong]);
+        setSuccessMessage('Song added successfully!');
+      }
+
+      setSongForm({
+        title: '',
+        composer: '',
+        google_drive_file_id: '',
+        github_file_url: '',
+        permalink: '',
+        is_public: true,
+        source: 'google_drive',
+        audio_url: '',
+        description: '',
+        category: '',
+        tags: ''
+      });
+    } catch (err) {
+      setError('Failed to save song: ' + err.message);
     }
-
-    setSongForm({
-      title: '',
-      composer: '',
-      google_drive_file_id: '',
-      github_file_url: '',
-      permalink: '',
-      is_public: true,
-      source: 'google_drive',
-      audio_url: '',
-      description: '',
-      category: '',
-      tags: ''
-    });
-  } catch (err) {
-    setError('Failed to save song: ' + err.message);
-  }
-};
+    setLoading(false);
+  };
 
   const handlePostSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
     try {
       const generatedPermalink = postForm.permalink.trim() || postForm.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
       if (!postForm.title.trim()) {
         setError('Title is required');
+        setLoading(false);
         return;
       }
 
@@ -292,7 +347,7 @@ const handleSongSubmit = async (e) => {
         category: postForm.category || null,
         focus_keyword: postForm.focus_keyword || null,
         featured_image_url: postForm.featured_image_url || null,
-        views: 0
+        views: editingPostId ? undefined : 0
       };
 
       if (editingPostId) {
@@ -302,22 +357,25 @@ const handleSongSubmit = async (e) => {
           .eq('id', editingPostId);
         if (error) throw error;
         setEditingPostId(null);
+        setSuccessMessage('Post updated successfully!');
       } else {
         const { error } = await supabase
           .from('blog_posts')
           .insert([postData]);
         if (error) throw error;
+        setSuccessMessage('Post added successfully!');
       }
       setPostForm({ title: '', content: '', permalink: '', meta_description: '', tags: '', category: '', focus_keyword: '', featured_image_url: '' });
-      const { data } = await supabase.from('blog_posts').select('*');
-      setPosts(data || []);
+      await fetchPosts();
     } catch (err) {
       setError('Failed to save post: ' + err.message);
     }
+    setLoading(false);
   };
 
   const handleAdSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
     try {
       if (editingAdId) {
         const { error } = await supabase
@@ -331,6 +389,7 @@ const handleSongSubmit = async (e) => {
           .eq('id', editingAdId);
         if (error) throw error;
         setEditingAdId(null);
+        setSuccessMessage('Advertisement updated successfully!');
       } else {
         const { error } = await supabase
           .from('advertisements')
@@ -341,18 +400,19 @@ const handleSongSubmit = async (e) => {
             is_active: adForm.is_active 
           }]);
         if (error) throw error;
+        setSuccessMessage('Advertisement added successfully!');
       }
       setAdForm({ name: '', code: '', position: 'home_above_sotw', is_active: true });
-      const { data } = await supabase.from('advertisements').select('*');
-      setAds(data || []);
-      setError('Advertisement saved successfully!');
+      await fetchAds();
     } catch (err) {
       setError('Failed to save advertisement: ' + err.message);
     }
+    setLoading(false);
   };
 
   const handleSongOfTheWeekSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
     try {
       const cleanAudioUrl = (url) => {
         if (!url) return '';
@@ -388,45 +448,47 @@ const handleSongSubmit = async (e) => {
           .insert([songData]);
         if (error) throw error;
       }
-      setError('Song of the Week updated successfully!');
+      setSuccessMessage('Song of the Week updated successfully!');
     } catch (err) {
       setError('Failed to update Song of the Week: ' + err.message);
     }
+    setLoading(false);
   };
 
-const editSong = async (song) => {
-  try {
-    const { data, error } = await supabase
-      .from('songs')
-      .select('*')
-      .eq('id', song.id)
-      .single();
-    if (error) throw error;
-    if (data) {
-      const newSongForm = {
-        title: data.title || '',
-        composer: data.composer || '',
-        google_drive_file_id: data.google_drive_file_id || '',
-        github_file_url: data.github_file_url || '',
-        permalink: data.permalink || '',
-        is_public: data.is_public !== false,
-        source: data.google_drive_file_id ? 'google_drive' : 'github',
-        audio_url: data.audio_url || '',
-        description: data.description || '',
-        category: data.category || '',
-        tags: data.tags ? data.tags.join(', ') : ''
-      };
-      setSongForm(newSongForm);
-      console.log('Updated songForm:', newSongForm); // Temporary debug log
-      setEditingSongId(data.id);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } else {
-      setError('No song data found for editing.');
+  const editSong = async (song) => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('songs')
+        .select('*')
+        .eq('id', song.id)
+        .single();
+      if (error) throw error;
+      if (data) {
+        const newSongForm = {
+          title: data.title || '',
+          composer: data.composer || '',
+          google_drive_file_id: data.google_drive_file_id || '',
+          github_file_url: data.github_file_url || '',
+          permalink: data.permalink || '',
+          is_public: data.is_public !== false,
+          source: data.google_drive_file_id ? 'google_drive' : 'github',
+          audio_url: data.audio_url || '',
+          description: data.description || '',
+          category: data.category || '',
+          tags: data.tags ? data.tags.join(', ') : ''
+        };
+        setSongForm(newSongForm);
+        setEditingSongId(data.id);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        setError('No song data found for editing.');
+      }
+    } catch (err) {
+      setError('Failed to load song for editing: ' + err.message);
     }
-  } catch (err) {
-    setError('Failed to load song for editing: ' + err.message);
-  }
-};
+    setLoading(false);
+  };
 
   const editPost = (post) => {
     setPostForm({ 
@@ -440,6 +502,7 @@ const editSong = async (song) => {
       featured_image_url: post.featured_image_url || ''
     });
     setEditingPostId(post.id);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const editAd = (ad) => {
@@ -450,53 +513,68 @@ const editSong = async (song) => {
       is_active: ad.is_active 
     });
     setEditingAdId(ad.id);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const deleteSong = async (id) => {
     if (window.confirm('Are you sure you want to delete this song?')) {
+      setLoading(true);
       const { error } = await supabase.from('songs').delete().eq('id', id);
       if (error) setError('Failed to delete song: ' + error.message);
-      else setSongs(songs.filter(song => song.id !== id));
+      else {
+        setSongs(songs.filter(song => song.id !== id));
+        setSuccessMessage('Song deleted successfully!');
+      }
+      setLoading(false);
     }
   };
 
   const deletePost = async (id) => {
     if (window.confirm('Are you sure you want to delete this post?')) {
+      setLoading(true);
       const { error } = await supabase.from('blog_posts').delete().eq('id', id);
       if (error) setError('Failed to delete post: ' + error.message);
-      else setPosts(posts.filter(post => post.id !== id));
+      else {
+        setPosts(posts.filter(post => post.id !== id));
+        setSuccessMessage('Post deleted successfully!');
+      }
+      setLoading(false);
     }
   };
 
   const deleteAd = async (id) => {
     if (window.confirm('Are you sure you want to delete this advertisement?')) {
+      setLoading(true);
       const { error } = await supabase.from('advertisements').delete().eq('id', id);
       if (error) setError('Failed to delete ad: ' + error.message);
-      else setAds(ads.filter(ad => ad.id !== id));
+      else {
+        setAds(ads.filter(ad => ad.id !== id));
+        setSuccessMessage('Advertisement deleted successfully!');
+      }
+      setLoading(false);
     }
   };
 
   const toggleSongPublic = async (id, isPublic) => {
+    setLoading(true);
     const { error } = await supabase.from('songs').update({ is_public: !isPublic }).eq('id', id);
     if (error) setError('Failed to update song status: ' + error.message);
-    else setSongs(songs.map(song => song.id === id ? { ...song, is_public: !isPublic } : song));
+    else {
+      setSongs(songs.map(song => song.id === id ? { ...song, is_public: !isPublic } : song));
+      setSuccessMessage(`Song set to ${!isPublic ? 'public' : 'private'} successfully!`);
+    }
+    setLoading(false);
   };
 
   const toggleAdActive = async (id, isActive) => {
+    setLoading(true);
     const { error } = await supabase.from('advertisements').update({ is_active: !isActive }).eq('id', id);
     if (error) setError('Failed to update ad status: ' + error.message);
-    else setAds(ads.map(ad => ad.id === id ? { ...ad, is_active: !isActive } : ad));
-  };
-
-  const fetchUsers = async () => {
-    try {
-      const response = await fetch('/.netlify/functions/fetch-users');
-      if (!response.ok) throw new Error('Failed to fetch users');
-      const data = await response.json();
-      setUsers(data || []);
-    } catch (err) {
-      setError('Failed to load users: ' + err.message);
+    else {
+      setAds(ads.map(ad => ad.id === id ? { ...ad, is_active: !isActive } : ad));
+      setSuccessMessage(`Ad set to ${!isActive ? 'active' : 'inactive'} successfully!`);
     }
+    setLoading(false);
   };
 
   const toggleUserAdmin = async (id, isAdmin) => {
@@ -504,6 +582,7 @@ const editSong = async (song) => {
       setError('Cannot modify your own admin status.');
       return;
     }
+    setLoading(true);
     try {
       if (isAdmin) {
         const { error } = await supabase.from('admins').delete().eq('user_id', id);
@@ -513,12 +592,15 @@ const editSong = async (song) => {
         if (error) throw error;
       }
       await fetchUsers();
+      setSuccessMessage(`User ${isAdmin ? 'removed from' : 'added to'} admins successfully!`);
     } catch (err) {
       setError('Failed to update admin status: ' + err.message);
     }
+    setLoading(false);
   };
 
   const toggleUserDonated = async (id, hasDonated) => {
+    setLoading(true);
     try {
       const response = await fetch('/.netlify/functions/toggle-donated', {
         method: 'POST',
@@ -527,9 +609,11 @@ const editSong = async (song) => {
       });
       if (!response.ok) throw new Error('Failed to toggle donation status');
       await fetchUsers();
+      setSuccessMessage(`User donation status updated successfully!`);
     } catch (err) {
       setError('Failed to update donation status: ' + err.message);
     }
+    setLoading(false);
   };
 
   const deleteUser = async (id) => {
@@ -538,6 +622,7 @@ const editSong = async (song) => {
       return;
     }
     if (window.confirm('Are you sure you want to delete this user?')) {
+      setLoading(true);
       try {
         const response = await fetch('/.netlify/functions/delete-user', {
           method: 'POST',
@@ -546,27 +631,67 @@ const editSong = async (song) => {
         });
         if (!response.ok) throw new Error('Failed to delete user');
         await fetchUsers();
+        setSuccessMessage('User deleted successfully!');
       } catch (err) {
         setError('Failed to delete user: ' + err.message);
       }
+      setLoading(false);
     }
   };
 
   const toggleMessageRead = async (id, isRead) => {
+    setLoading(true);
     const { error } = await supabase
       .from('contact_messages')
       .update({ is_read: !isRead })
       .eq('id', id);
     if (error) setError('Failed to update message status: ' + error.message);
-    else setMessages(messages.map(msg => msg.id === id ? { ...msg, is_read: !isRead } : msg));
+    else {
+      setMessages(messages.map(msg => msg.id === id ? { ...msg, is_read: !isRead } : msg));
+      setSuccessMessage(`Message marked as ${!isRead ? 'read' : 'unread'} successfully!`);
+    }
+    setLoading(false);
   };
 
   const deleteMessage = async (id) => {
     if (window.confirm('Are you sure you want to delete this message?')) {
+      setLoading(true);
       const { error } = await supabase.from('contact_messages').delete().eq('id', id);
       if (error) setError('Failed to delete message: ' + err.message);
-      else setMessages(messages.filter(msg => msg.id !== id));
+      else {
+        setMessages(messages.filter(msg => msg.id !== id));
+        setSuccessMessage('Message deleted successfully!');
+      }
+      setLoading(false);
     }
+  };
+
+  const handleBulkDeleteSongs = async () => {
+    if (selectedSongs.length === 0) return;
+    if (window.confirm(`Are you sure you want to delete ${selectedSongs.length} song(s)?`)) {
+      setLoading(true);
+      const { error } = await supabase.from('songs').delete().in('id', selectedSongs);
+      if (error) setError('Failed to delete songs: ' + error.message);
+      else {
+        setSongs(songs.filter(song => !selectedSongs.includes(song.id)));
+        setSelectedSongs([]);
+        setSuccessMessage(`${selectedSongs.length} song(s) deleted successfully!`);
+      }
+      setLoading(false);
+    }
+  };
+
+  const handleBulkTogglePublic = async (makePublic) => {
+    if (selectedSongs.length === 0) return;
+    setLoading(true);
+    const { error } = await supabase.from('songs').update({ is_public: makePublic }).in('id', selectedSongs);
+    if (error) setError('Failed to update song statuses: ' + error.message);
+    else {
+      setSongs(songs.map(song => selectedSongs.includes(song.id) ? { ...song, is_public: makePublic } : song));
+      setSelectedSongs([]);
+      setSuccessMessage(`${selectedSongs.length} song(s) set to ${makePublic ? 'public' : 'private'} successfully!`);
+    }
+    setLoading(false);
   };
 
   const quillModules = {
@@ -621,6 +746,7 @@ const editSong = async (song) => {
 
   return (
     <div className="admin-container">
+      {loading && <div className="loading-overlay">Loading...</div>}
       <div className="admin-header">
         <h2 className="admin-title">Admin Dashboard</h2>
         <button onClick={handleLogout} className="logout-button">Logout</button>
@@ -640,6 +766,12 @@ const editSong = async (song) => {
           <div className="error-alert">
             <p>{error}</p>
             <button onClick={() => setError(null)}>Dismiss</button>
+          </div>
+        )}
+        {successMessage && (
+          <div className="success-alert">
+            <p>{successMessage}</p>
+            <button onClick={() => setSuccessMessage(null)}>Dismiss</button>
           </div>
         )}
         {activeTab === 'overview' && (
@@ -736,7 +868,7 @@ const editSong = async (song) => {
                   className="admin-quill-editor"
                   placeholder="Write the song description here..."
                   style={{ height: '200px' }}
-              />
+                />
               </div>
               <div className="admin-form-group">
                 <label htmlFor="category">Category</label>
@@ -747,27 +879,9 @@ const editSong = async (song) => {
                   className="admin-form-input"
                 >
                   <option value="">Select Category</option>
-                  <option value="Entrance">Entrance</option>
-                  <option value="Kyrie">Kyrie</option>
-                  <option value="Gloria">Gloria</option>
-                  <option value="Responsorial Psalm">Responsorial Psalm</option>
-                  <option value="Gospel Acclamation">Gospel Acclamation</option>
-                  <option value="Credo">Credo</option>
-                  <option value="Response to prayers">Response to Prayers</option>
-                  <option value="Preconsecration">Preconsecration</option>
-                  <option value="Offertory">Offertory</option>
-                  <option value="Sanctus">Sanctus</option>
-                  <option value="Agnus Dei">Agnus Dei</option>
-                  <option value="Communion">Communion</option>
-                  <option value="Dismissal">Dismissal</option>
-                  <option value="Lent">Lent</option>
-                  <option value="Pentecost">Pentecost</option>
-                  <option value="Easter">Easter</option>
-                  <option value="Advent">Advent</option>
-                  <option value="Christmas">Christmas</option>
-                  <option value="Trinity">Trinity</option>
-                  <option value="Marian">Marian</option>
-                  <option value="Classical">Classical</option>
+                  {SONG_CATEGORIES.map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
                 </select>
               </div>
               <input 
@@ -834,33 +948,54 @@ const editSong = async (song) => {
                 className="admin-filter-select"
               >
                 <option value="all">All Categories</option>
-                <option value="Entrance">Entrance</option>
-                <option value="Kyrie">Kyrie</option>
-                <option value="Gloria">Gloria</option>
-                <option value="Responsorial Psalm">Responsorial Psalm</option>
-                <option value="Gospel Acclamation">Gospel Acclamation</option>
-                <option value="Credo">Credo</option>
-                <option value="Response to prayers">Response to Prayers</option>
-                <option value="Preconsecration">Preconsecration</option>
-                <option value="Offertory">Offertory</option>
-                <option value="Sanctus">Sanctus</option>
-                <option value="Agnus Dei">Agnus Dei</option>
-                <option value="Communion">Communion</option>
-                <option value="Dismissal">Dismissal</option>
-                <option value="Lent">Lent</option>
-                <option value="Pentecost">Pentecost</option>
-                <option value="Easter">Easter</option>
-                <option value="Advent">Advent</option>
-                <option value="Christmas">Christmas</option>
-                <option value="Trinity">Trinity</option>
-                <option value="Marian">Marian</option>
-                <option value="Classical">Classical</option>
+                {SONG_CATEGORIES.map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
               </select>
+              <button 
+                onClick={() => {
+                  setSongSearch('');
+                  setSongFilter('all');
+                  setSongCategoryFilter('all');
+                  setSelectedSongs([]);
+                }} 
+                className="admin-refresh-button"
+              >
+                Clear Filters
+              </button>
+            </div>
+            <div className="admin-bulk-actions">
+              <button 
+                onClick={handleBulkDeleteSongs} 
+                className="admin-delete-button" 
+                disabled={selectedSongs.length === 0}
+              >
+                Delete Selected ({selectedSongs.length})
+              </button>
+              <button 
+                onClick={() => handleBulkTogglePublic(true)} 
+                className="admin-toggle-button" 
+                disabled={selectedSongs.length === 0}
+              >
+                Make Public
+              </button>
+              <button 
+                onClick={() => handleBulkTogglePublic(false)} 
+                className="admin-toggle-button" 
+                disabled={selectedSongs.length === 0}
+              >
+                Make Private
+              </button>
             </div>
             <div className="admin-table-container">
               <table className="admin-table">
                 <thead>
                   <tr>
+                    <th><input 
+                      type="checkbox" 
+                      onChange={(e) => setSelectedSongs(e.target.checked ? filteredSongs.map(s => s.id) : [])} 
+                      checked={selectedSongs.length === filteredSongs.length && filteredSongs.length > 0}
+                    /></th>
                     <th>Title</th>
                     <th>Composer</th>
                     <th>Category</th>
@@ -874,6 +1009,17 @@ const editSong = async (song) => {
                 <tbody>
                   {filteredSongs.map(song => (
                     <tr key={song.id}>
+                      <td>
+                        <input 
+                          type="checkbox" 
+                          checked={selectedSongs.includes(song.id)} 
+                          onChange={(e) => {
+                            setSelectedSongs(e.target.checked 
+                              ? [...selectedSongs, song.id] 
+                              : selectedSongs.filter(id => id !== song.id));
+                          }} 
+                        />
+                      </td>
                       <td>{song.title}</td>
                       <td>{song.composer}</td>
                       <td>{song.category || 'N/A'}</td>
@@ -891,6 +1037,7 @@ const editSong = async (song) => {
                       <td>
                         <button onClick={() => editSong(song)} className="admin-edit-button">Edit</button>
                         <button onClick={() => deleteSong(song.id)} className="admin-delete-button">Delete</button>
+                        <a href={song.permalink ? `/song/${song.permalink}` : song.google_drive_file_id ? `https://drive.google.com/file/d/${song.google_drive_file_id}` : song.github_file_url} target="_blank" rel="noopener noreferrer" className="admin-preview-button">Preview</a>
                       </td>
                     </tr>
                   ))}
@@ -996,9 +1143,16 @@ const editSong = async (song) => {
                 </div>
                 <div className="admin-form-actions">
                   <button type="submit" className="admin-form-submit">{editingPostId ? 'Update Post' : 'Add Post'}</button>
-                  {editingPostId && (
-                    <button type="button" className="admin-cancel-button" onClick={() => { setPostForm({ title: '', content: '', permalink: '', meta_description: '', tags: '', category: '', focus_keyword: '', featured_image_url: '' }); setEditingPostId(null); }}>Cancel</button>
-                  )}
+                  <button 
+                    type="button" 
+                    className="admin-cancel-button" 
+                    onClick={() => { 
+                      setPostForm({ title: '', content: '', permalink: '', meta_description: '', tags: '', category: '', focus_keyword: '', featured_image_url: '' }); 
+                      setEditingPostId(null); 
+                    }}
+                  >
+                    Cancel
+                  </button>
                 </div>
               </form>
             </div>
@@ -1025,6 +1179,7 @@ const editSong = async (song) => {
               <button className={`sub-tab-button ${analyticsSection === 'ga' ? 'active' : ''}`} onClick={() => setAnalyticsSection('ga')}>Google Analytics</button>
               <button className={`sub-tab-button ${analyticsSection === 'gsc' ? 'active' : ''}`} onClick={() => setAnalyticsSection('gsc')}>Search Console</button>
               <button className={`sub-tab-button ${analyticsSection === 'visitors' ? 'active' : ''}`} onClick={() => setAnalyticsSection('visitors')}>Visitors</button>
+              <button onClick={fetchAnalytics} className="admin-refresh-button">Refresh Analytics</button>
             </div>
             {analyticsSection === 'local' && (
               <div className="analytics-section local-data">
@@ -1167,7 +1322,22 @@ const editSong = async (song) => {
             )}
             {analyticsSection === 'visitors' && (
               <div className="analytics-section visitors-data">
-                <h3 className="analytics-section-title">Recent Visitors (Last 100 Unique Visits)</h3>
+                <h3 className="analytics-section-title">Recent Visitors</h3>
+                <div className="admin-filter-bar">
+                  <select 
+                    value={visitorTimeFilter} 
+                    onChange={(e) => { setVisitorTimeFilter(e.target.value); setVisitorPage(0); fetchVisitors(); }} 
+                    className="admin-filter-select"
+                  >
+                    <option value="all">All Time</option>
+                    <option value="24h">Last 24 Hours</option>
+                    <option value="7d">Last 7 Days</option>
+                    <option value="30d">Last 30 Days</option>
+                  </select>
+                  <button onClick={() => setVisitorPage(Math.max(0, visitorPage - 1))} disabled={visitorPage === 0} className="admin-toggle-button">Previous</button>
+                  <span>Page {visitorPage + 1}</span>
+                  <button onClick={() => { setVisitorPage(visitorPage + 1); fetchVisitors(); }} disabled={visitorData.length < 50} className="admin-toggle-button">Next</button>
+                </div>
                 <p>Total Unique Visits Displayed: {visitorData.length}</p>
                 {visitorData.length > 0 ? (
                   <div className="admin-table-container">
@@ -1299,6 +1469,13 @@ const editSong = async (song) => {
                   style={{ height: '200px' }}
                 />
               </div>
+              <div className="admin-form-group full-width">
+                <label>Preview</label>
+                <div 
+                  className="sotw-preview"
+                  dangerouslySetInnerHTML={{ __html: songOfTheWeekHtml.replace(/<[^>]+>/g, '').trim() ? `<audio controls src="${songOfTheWeekHtml.replace(/<[^>]+>/g, '').trim()}"></audio>` : songOfTheWeekHtml }} 
+                />
+              </div>
               <div className="admin-form-actions">
                 <button type="submit" className="admin-form-submit">Update Song of the Week</button>
               </div>
@@ -1362,9 +1539,16 @@ const editSong = async (song) => {
                 </div>
                 <div className="admin-form-actions">
                   <button type="submit" className="admin-form-submit">{editingAdId ? 'Update Ad' : 'Add Ad'}</button>
-                  {editingAdId && (
-                    <button type="button" className="admin-cancel-button" onClick={() => { setAdForm({ name: '', code: '', position: 'home_above_sotw', is_active: true }); setEditingAdId(null); }}>Cancel</button>
-                  )}
+                  <button 
+                    type="button" 
+                    className="admin-cancel-button" 
+                    onClick={() => { 
+                      setAdForm({ name: '', code: '', position: 'home_above_sotw', is_active: true }); 
+                      setEditingAdId(null); 
+                    }}
+                  >
+                    Cancel
+                  </button>
                 </div>
               </form>
             </div>

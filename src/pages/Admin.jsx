@@ -712,13 +712,18 @@ function Admin() {
                 onChange={(e) => setSongForm({ ...songForm, audio_url: e.target.value })} 
                 className="admin-form-input" 
               />
-              <textarea 
-                placeholder="Song Description" 
-                value={songForm.description} 
-                onChange={(e) => setSongForm({ ...songForm, description: e.target.value })} 
-                className="admin-form-input" 
-                rows="3"
+              <div className="admin-form-group full-width">
+                <label htmlFor="description">Song Description</label>
+                <ReactQuill
+                  value={songForm.description}
+                  onChange={(content) => setSongForm({ ...songForm, description: content })}
+                  modules={quillModules}
+                  formats={quillFormats}
+                  className="admin-quill-editor"
+                  placeholder="Write the song description here..."
+                  style={{ height: '200px' }}
               />
+              </div>
               <div className="admin-form-group">
                 <label htmlFor="category">Category</label>
                 <select

@@ -16,41 +16,25 @@
       media-src 'self' *.archive.org https://drive.google.com;
     """
 
-# Specific redirect for the mentioned URL
 [[redirects]]
   from = "/download/we-offer-you-our-gifts-by-emmanuel-atuanya/"
   to = "/song/We-offer-you-our-gifts-by-Emmanuel-Atuanya"
   status = 301
   force = true
 
-# General redirect for other /download/ to /song/ URLs
 [[redirects]]
   from = "/download/:slug/"
   to = "/song/:slug"
   status = 301
   force = true
 
-# Redirect for /song/ URLs with colon suffixes
+# Single redirect to a function for /song/ URLs
 [[redirects]]
-  from = "/song/:base*:*:suffix"
-  to = "/song/:base"
+  from = "/song/*"
+  to = "/.netlify/functions/clean-song-url"
   status = 301
   force = true
-  [redirects.functions]
-    _lowercase = "base"
 
-# Redirect for /song/ URLs without colons, only if not already lowercase
-[[redirects]]
-  from = "/song/:id"
-  to = "/song/:id"
-  status = 301
-  force = false
-  # Only apply if the id contains uppercase letters
-  conditions = { "Path" = ["/song/[A-Z]*"] }
-  [redirects.functions]
-    _lowercase = "id"
-
-# Existing SPA redirect
 [[redirects]]
   from = "/*"
   to = "/index.html"

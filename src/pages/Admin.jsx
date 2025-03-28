@@ -214,64 +214,61 @@ function Admin() {
     navigate('/login');
   };
 
-  const handleSongSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      if (editingSongId) {
-        const { error } = await supabase
-          .from('songs')
-          .update({ 
-            title: songForm.title, 
-            composer: songForm.composer, 
-            google_drive_file_id: songForm.source === 'google_drive' ? songForm.google_drive_file_id : null, 
-            github_file_url: songForm.source === 'github' ? songForm.github_file_url : null, 
-            permalink: songForm.permalink, 
-            is_public: songForm.is_public,
-            audio_url: songForm.audio_url || null,
-            description: songForm.description || null,
-            category: songForm.category || null,
-            tags: songForm.tags ? songForm.tags.split(',').map(tag => tag.trim()) : null
-          })
-          .eq('id', editingSongId);
-        if (error) throw error;
-        setEditingSongId(null);
-      } else {
-        const { error } = await supabase
-          .from('songs')
-          .insert([{ 
-            title: songForm.title, 
-            composer: songForm.composer, 
-            google_drive_file_id: songForm.source === 'google_drive' ? songForm.google_drive_file_id : null, 
-            github_file_url: songForm.source === 'github' ? songForm.github_file_url : null, 
-            permalink: songForm.permalink, 
-            is_public: songForm.is_public, 
-            downloads: 0,
-            audio_url: songForm.audio_url || null,
-            description: songForm.description || null,
-            category: songForm.category || null,
-            tags: songForm.tags ? songForm.tags.split(',').map(tag => tag.trim()) : null
-          }]);
-        if (error) throw error;
-      }
-      setSongForm({ 
-        title: '', 
-        composer: '', 
-        google_drive_file_id: '', 
-        github_file_url: '', 
-        permalink: '', 
-        is_public: true, 
-        source: 'google_drive',
-        audio_url: '',
-        description: '',
-        category: '',
-        tags: ''
-      });
-      const { data } = await supabase.from('songs').select('*');
-      setSongs(data || []);
-    } catch (err) {
-      setError('Failed to save song: ' + err.message);
+const handleSongSubmit = async (e) => {
+  e.preventDefault();
+  try {
+    const songData = {
+      title: songForm.title,
+      composer: songForm.composer,
+      google_drive_file_id: songForm.source === 'google_drive' ? songForm.google_drive_file_id : null,
+      github_file_url: songForm.source === 'github' ? songForm.github_file_url : null,
+      permalink: songForm.permalink || null,
+      is_public: songForm.is_public,
+      audio_url: songForm.audio_url || null,
+      description: songForm.description || null,
+      category: songForm.category || null,
+      tags: songForm.tags ? songForm.tags.split(',').map(tag => tag.trim()) : null
+    };
+
+    if (editingSongId) {
+      const { data: updatedSong, error } = await supabase
+        .from('songs')
+        .update(songData)
+        .eq('id', editingSongId)
+        .select()
+        .single();
+      if (error) throw error;
+      setSongs(songs.map(song => (song.id === editingSongId ? updatedSong : song)));
+      setEditingSongId(null);
+      setError('Song updated successfully!');
+    } else {
+      const { data: newSong, error } = await supabase
+        .from('songs')
+        .insert([{ ...songData, downloads: 0 }])
+        .select()
+        .single();
+      if (error) throw error;
+      setSongs([...songs, newSong]);
+      setError('Song added successfully!');
     }
-  };
+
+    setSongForm({
+      title: '',
+      composer: '',
+      google_drive_file_id: '',
+      github_file_url: '',
+      permalink: '',
+      is_public: true,
+      source: 'google_drive',
+      audio_url: '',
+      description: '',
+      category: '',
+      tags: ''
+    });
+  } catch (err) {
+    setError('Failed to save song: ' + err.message);
+  }
+};
 
   const handlePostSubmit = async (e) => {
     e.preventDefault();
@@ -397,22 +394,34 @@ function Admin() {
     }
   };
 
-  const editSong = (song) => {
-    setSongForm({ 
-      title: song.title, 
-      composer: song.composer, 
-      google_drive_file_id: song.google_drive_file_id || '', 
-      github_file_url: song.github_file_url || '', 
-      permalink: song.permalink, 
-      is_public: song.is_public,
-      source: song.google_drive_file_id ? 'google_drive' : 'github',
-      audio_url: song.audio_url || '',
-      description: song.description || '',
-      category: song.category || '',
-      tags: song.tags ? song.tags.join(', ') : ''
-    });
-    setEditingSongId(song.id);
-  };
+const editSong = async (song) => {
+  try {
+    const { data, error } = await supabase
+      .from('songs')
+      .select('*')
+      .eq('id', song.id)
+      .single();
+    if (error) throw error;
+    if (data) {
+      setSongForm({
+        title: data.title || '',
+        composer: data.composer || '',
+        google_drive_file_id: data.google_drive_file_id || '',
+        github_file_url: data.github_file_url || '',
+        permalink: data.permalink || '',
+        is_public: data.is_public !== false,
+        source: data.google_drive_file_id ? 'google_drive' : 'github',
+        audio_url: data.audio_url || '',
+        description: data.description || '',
+        category: data.category || '',
+        tags: data.tags ? data.tags.join(', ') : ''
+      });
+      setEditingSongId(data.id);
+    }
+  } catch (err) {
+    setError('Failed to load song for editing: ' + err.message);
+  }
+};
 
   const editPost = (post) => {
     setPostForm({ 

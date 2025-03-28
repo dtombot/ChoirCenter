@@ -61,6 +61,25 @@ function Admin() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    if (editingSongId) {
+      setSongForm(prevSongForm => ({
+        ...prevSongForm,
+        title: prevSongForm.title,
+        composer: prevSongForm.composer,
+        google_drive_file_id: prevSongForm.google_drive_file_id,
+        github_file_url: prevSongForm.github_file_url,
+        permalink: prevSongForm.permalink,
+        is_public: prevSongForm.is_public,
+        source: prevSongForm.source,
+        audio_url: prevSongForm.audio_url,
+        description: prevSongForm.description,
+        category: prevSongForm.category,
+        tags: prevSongForm.tags
+      }));
+    }
+  }, [editingSongId]);
+  
+  useEffect(() => {
     const fetchUser = async () => {
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       if (sessionError || !sessionData.session) {

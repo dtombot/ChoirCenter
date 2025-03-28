@@ -16,6 +16,21 @@
       media-src 'self' *.archive.org https://drive.google.com;
     """
 
+# Specific redirect for the mentioned URL
+[[redirects]]
+  from = "/download/we-offer-you-our-gifts-by-emmanuel-atuanya/"
+  to = "/song/We-offer-you-our-gifts-by-Emmanuel-Atuanya"
+  status = 301
+  force = true
+
+# General redirect for other /download/ to /song/ URLs (if slugs match except for case)
+[[redirects]]
+  from = "/download/:slug/"
+  to = "/song/:slug"
+  status = 301
+  force = true
+
+# Existing SPA redirect (keep this after specific redirects)
 [[redirects]]
   from = "/*"
   to = "/index.html"

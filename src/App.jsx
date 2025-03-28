@@ -120,10 +120,25 @@ function RouteEnhancer({ user, setLastTracked, lastTracked }) {
   return null;
 }
 
+// 404 Component
+function NotFound() {
+  return (
+    <div className="container" style={{ textAlign: 'center', padding: '4rem 1rem' }}>
+      <h1 className="hero-title" style={{ color: '#2f4f2f' }}>404 - Page Not Found</h1>
+      <p className="hero-text">
+        Oops! It looks like this page doesn’t exist. Let’s get you back on track.
+      </p>
+      <Link to="/" className="action-button">
+        Return to Home
+      </Link>
+    </div>
+  );
+}
+
 function App() {
   const [user, setUser] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [userName, setUserName] = useState(''); // Added state for user's full name
+  const [userName, setUserName] = useState('');
   const [loading, setLoading] = useState(true);
   const [recaptchaLoaded, setRecaptchaLoaded] = useState(false);
   const [lastTracked, setLastTracked] = useState({});
@@ -199,7 +214,7 @@ function App() {
           setUserName('');
         } else {
           setIsAdmin(profileData?.is_admin || false);
-          setUserName(profileData?.full_name || currentUser.email.split('@')[0]); // Fallback to email prefix
+          setUserName(profileData?.full_name || currentUser.email.split('@')[0]);
         }
       }
       setLoading(false);
@@ -317,6 +332,7 @@ function App() {
           <Route path="/search" element={<Search />} />
           <Route path="/donate" element={<Donate />} />
           <Route path="/thank-you" element={<ThankYou />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
         <RouteEnhancer user={user} setLastTracked={setLastTracked} lastTracked={lastTracked} />
         <footer className="footer">

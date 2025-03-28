@@ -347,12 +347,17 @@ function App() {
         <footer className="footer">
           <div className="footer-inner">
             <div className="footer-column footer-logo-section">
-              <img src="/logo.png" alt="Choir Center Logo" className="footer-logo" />
+              <div className="footer-logo-wrapper">
+                <img src="/logo.png" alt="Choir Center Logo" className="footer-logo" />
+                <p className="footer-about">
+                  Choir Center is your hub for choir music, offering a rich library of songs and resources to inspire and unite voices in harmony.
+                </p>
+              </div>
               <form className="footer-newsletter" onSubmit={handleNewsletterSubmit}>
                 <input
                   type="email"
                   name="email"
-                  placeholder="Stay in Tune..."
+                  placeholder="Join Choir Center Updates"
                   className="footer-input"
                   aria-label="Subscribe to newsletter"
                 />
@@ -364,6 +369,8 @@ function App() {
               <Link to="/contact" className="footer-link">Contact Us</Link>
               <Link to="/library" className="footer-link">Explore Library</Link>
               <Link to="/blog" className="footer-link">Blog Posts</Link>
+              <Link to="/privacy" className="footer-link">Privacy</Link>
+              <Link to="/terms" className="footer-link">Terms</Link>
             </div>
             <div className="footer-column footer-social">
               {socialLinks.map((link, index) => (
@@ -378,9 +385,11 @@ function App() {
                 </a>
               ))}
             </div>
-            <svg className="footer-note" style={{ left: '10%', animationDelay: '0s' }} xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="#98fb98"><path d="M9 21h3v-9H9v9zm3-18v9h3V3h-3zm-1 16h2v2h-2v-2z"/></svg>
-            <svg className="footer-note" style={{ left: '50%', animationDelay: '2s' }} xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="#98fb98"><path d="M9 21h3v-9H9v9zm3-18v9h3V3h-3zm-1 16h2v2h-2v-2z"/></svg>
-            <svg className="footer-note" style={{ left: '90%', animationDelay: '4s' }} xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="#98fb98"><path d="M9 21h3v-9H9v9zm3-18v9h3V3h-3zm-1 16h2v2h-2v-2z"/></svg>
+            {/* Musical Notes: Crotchet, Quaver, Minim, Semiquaver */}
+            <svg className="footer-note" style={{ left: '10%', animationDelay: '0s' }} xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="#98fb98"><path d="M10 2v16h4v-6h-4V2zm0 18h4v2h-4v-2z"/></svg> {/* Crotchet */}
+            <svg className="footer-note" style={{ left: '50%', animationDelay: '2s' }} xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="#98fb98"><path d="M10 2v16h4v-6h-4V2zm0 18h4v2h-4v-2zm4-18l4 4v-4h-4z"/></svg> {/* Quaver */}
+            <svg className="footer-note" style={{ left: '90%', animationDelay: '4s' }} xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="#98fb98"><path d="M10 2v16h4v-6h-4V2zm0 18h4v2h-4v-2z" fill="none" stroke="#98fb98" strokeWidth="2"/></svg> {/* Minim */}
+            <svg className="footer-note" style={{ left: '30%', animationDelay: '6s' }} xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="#98fb98"><path d="M10 2v16h4v-6h-4V2zm0 18h4v2h-4v-2zm4-18l4 4v-4h-4zm4 2l4 4v-4h-4z"/></svg> {/* Semiquaver */}
           </div>
           <div className="footer-copyright">
             © {new Date().getFullYear()} Choir Center, All Rights Reserved

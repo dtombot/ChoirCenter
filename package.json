@@ -20,7 +20,8 @@
     "react-helmet-async": "^2.0.4",
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^3.11.174",
-    "node-cache": "^5.1.2"
+    "node-cache": "^5.1.2",
+    "googleapis": "^137.1.0"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.2.1",

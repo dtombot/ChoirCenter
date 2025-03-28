@@ -29,11 +29,6 @@
   force = true
 
 [[redirects]]
-  from = "/song/*"
-  to = "/.netlify/functions/clean-song-url"
-  status = 200  # Changed to 200 to proxy, not redirect
-
-[[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
@@ -44,6 +39,8 @@
   status = 200
 
 [build]
+  command = "vite build"
+  publish = "dist"
   functions = "netlify/functions"
   [build.environment]
     NODE_VERSION = "18"

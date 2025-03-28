@@ -35,20 +35,20 @@ exports.handler = async (event, context) => {
   const deploymentDate = '2025-03-01'; // Replace with your last deployment date
 
   try {
-    // Fetch songs with Google Drive file IDs (assuming a column like 'drive_file_id')
+    // Fetch songs with google_drive_file_id and downloads
     const { data: songs, error: songError } = await supabase
       .from('songs')
-      .select('permalink, id, updated_at, drive_file_id') // Add your Google Drive ID column
+      .select('permalink, id, updated_at, google_drive_file_id, downloads, title')
       .eq('is_public', true);
     if (songError) throw songError;
 
     // Fetch blog posts
     const { data: posts, error: postError } = await supabase
       .from('blog_posts')
-      .select('permalink, id, updated_at');
+      .select('permalink, id, updated_at, title');
     if (postError) throw postError;
 
-    // Static pages with realistic lastmod and changefreq
+    // Static pages
     const staticPages = [
       { loc: `${baseUrl}/`, lastmod: currentDate, changefreq: 'daily', priority: '1.0' },
       { loc: `${baseUrl}/library`, lastmod: currentDate, changefreq: 'weekly', priority: '0.9' },
@@ -59,19 +59,23 @@ exports.handler = async (event, context) => {
       { loc: `${baseUrl}/terms`, lastmod: deploymentDate, changefreq: 'yearly', priority: '0.3' },
     ];
 
-    // Dynamic song URLs with Google Drive thumbnail images
+    // Dynamic song URLs with Google Drive thumbnails
     const songUrls = songs.map(song => {
+      const downloads = song.downloads || 0;
+      let priority = '0.7';
+      if (downloads > 100) priority = '0.8'; // Example threshold; adjust as needed
+      else if (downloads < 10) priority = '0.6';
       let xml = `<url>
         <loc>${baseUrl}/song/${song.permalink || song.id}</loc>
         <lastmod>${song.updated_at ? new Date(song.updated_at).toISOString().split('T')[0] : currentDate}</lastmod>
         <changefreq>${song.updated_at ? getChangefreq(song.updated_at) : 'weekly'}</changefreq>
-        <priority>0.7</priority>`;
-      if (song.drive_file_id) {
-        const thumbnailUrl = `https://drive.google.com/thumbnail?id=${song.drive_file_id}`;
+        <priority>${priority}</priority>`;
+      if (song.google_drive_file_id) {
+        const thumbnailUrl = `https://drive.google.com/thumbnail?id=${song.google_drive_file_id}`;
         xml += `
         <image:image xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
           <image:loc>${thumbnailUrl}</image:loc>
-          <image:title>${song.permalink || song.id} Sheet Music</image:title>
+          <image:title>${song.title} Sheet Music</image:title>
         </image:image>`;
       }
       xml += `</url>`;

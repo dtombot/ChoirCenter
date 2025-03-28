@@ -35,7 +35,6 @@ function RouteEnhancer({ user, setLastTracked, lastTracked }) {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Analytics tracking
     if (window.gtag) {
       window.gtag('event', 'page_view', {
         page_path: location.pathname,
@@ -43,7 +42,6 @@ function RouteEnhancer({ user, setLastTracked, lastTracked }) {
       });
     }
 
-    // Save scroll position and currentPage before leaving the page
     const saveScrollAndPage = () => {
       const scrollPosition = window.scrollY;
       const state = history.state || {};
@@ -52,7 +50,6 @@ function RouteEnhancer({ user, setLastTracked, lastTracked }) {
       sessionStorage.setItem(`currentPage-${location.pathname}`, currentPage.toString());
     };
 
-    // Restore scroll position and currentPage on navigation
     const restoreScrollAndPage = () => {
       const savedPosition = sessionStorage.getItem(`scrollPosition-${location.pathname}`);
       const savedPage = sessionStorage.getItem(`currentPage-${location.pathname}`);
@@ -61,10 +58,7 @@ function RouteEnhancer({ user, setLastTracked, lastTracked }) {
         const position = parseInt(savedPosition, 10);
         navigate(location.pathname, { state: { currentPage: page }, replace: true });
         requestAnimationFrame(() => {
-          window.scrollTo({
-            top: position,
-            behavior: 'auto'
-          });
+          window.scrollTo({ top: position, behavior: 'auto' });
         });
       } else {
         window.scrollTo(0, 0);
@@ -258,6 +252,30 @@ function App() {
     setUserName('');
   };
 
+  const socialLinks = [
+    { href: 'https://facebook.com', icon: <svg className="social-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.95c5.05-.5 9-4.76 9-9.95z"/></svg> },
+    { href: 'https://x.com', icon: <svg className="social-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg> },
+    { href: 'https://whatsapp.com', icon: <svg className="social-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.85.5 3.58 1.36 5.07L2 22l4.93-1.36C8.42 21.5 10.15 22 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm3.97 15.03c-.25.7-.76 1.27-1.45 1.6-.7.34-1.6.5-2.52.25-1.8-.5-3.3-2-3.8-3.8-.25-.9-.08-1.8.25-2.52.33-.7.9-1.2 1.6-1.45.15-.05.3-.08.45-.08s.3.03.45.08c.35.15.6.45.7.8.1.35.15.7.15 1.05 0 .35-.05.7-.15 1.05-.5 1.5.5 2.5 1.5 3s2-.5 1.5-1.5c-.15-.35-.2-.7-.15-1.05s.2-.7.55-.85c.15-.05.3-.08.45-.08s.3.03.45.08z"/></svg> },
+  ];
+
+  const handleNewsletterSubmit = async (e) => {
+    e.preventDefault();
+    const email = e.target.email.value;
+    if (!email) return;
+
+    try {
+      const { error } = await supabase
+        .from('newsletter_subscribers')
+        .insert([{ email, subscribed_at: new Date().toISOString() }]);
+      if (error) throw error;
+      alert('Thanks for subscribing!');
+      e.target.reset();
+    } catch (error) {
+      console.error('Newsletter signup error:', error.message);
+      alert('Failed to subscribe. Please try again.');
+    }
+  };
+
   if (loading) {
     return (
       <div className="loading-container">
@@ -327,29 +345,45 @@ function App() {
         </Routes>
         <RouteEnhancer user={user} setLastTracked={setLastTracked} lastTracked={lastTracked} />
         <footer className="footer">
-          <div className="footer-text">
-            <p>About Us: Choir Center is a platform for choristers to access music resources.</p>
+          <div className="footer-inner">
+            <div className="footer-column footer-logo-section">
+              <img src="/logo.png" alt="Choir Center Logo" className="footer-logo" />
+              <form className="footer-newsletter" onSubmit={handleNewsletterSubmit}>
+                <input
+                  type="email"
+                  name="email"
+                  placeholder="Stay in Tune..."
+                  className="footer-input"
+                  aria-label="Subscribe to newsletter"
+                />
+                <button type="submit" className="footer-subscribe">Subscribe</button>
+              </form>
+            </div>
+            <div className="footer-column footer-links">
+              <Link to="/about" className="footer-link">About Us</Link>
+              <Link to="/contact" className="footer-link">Contact Us</Link>
+              <Link to="/library" className="footer-link">Explore Library</Link>
+              <Link to="/blog" className="footer-link">Blog Posts</Link>
+            </div>
+            <div className="footer-column footer-social">
+              {socialLinks.map((link, index) => (
+                <a
+                  key={index}
+                  href={link.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="social-link"
+                >
+                  {link.icon}
+                </a>
+              ))}
+            </div>
+            <svg className="footer-note" style={{ left: '10%', animationDelay: '0s' }} xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="#98fb98"><path d="M9 21h3v-9H9v9zm3-18v9h3V3h-3zm-1 16h2v2h-2v-2z"/></svg>
+            <svg className="footer-note" style={{ left: '50%', animationDelay: '2s' }} xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="#98fb98"><path d="M9 21h3v-9H9v9zm3-18v9h3V3h-3zm-1 16h2v2h-2v-2z"/></svg>
+            <svg className="footer-note" style={{ left: '90%', animationDelay: '4s' }} xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="#98fb98"><path d="M9 21h3v-9H9v9zm3-18v9h3V3h-3zm-1 16h2v2h-2v-2z"/></svg>
           </div>
-          <div className="footer-links">
-            <Link to="/about" className="footer-link">About Us</Link>
-            <Link to="/contact" className="footer-link">Contact Us</Link>
-            <Link to="/library" className="footer-link">Explore Library</Link>
-            <Link to="/blog" className="footer-link">Blog Posts</Link>
-          </div>
-          <div className="footer-links">
-            <Link to="/privacy" className="footer-link">Privacy</Link>
-            <Link to="/terms" className="footer-link">Terms of Service</Link>
-          </div>
-          <div className="footer-social">
-            <a href="https://facebook.com" target="_blank" rel="noopener noreferrer">
-              <svg className="social-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.95c5.05-.5 9-4.76 9-9.95z"/></svg>
-            </a>
-            <a href="https://x.com" target="_blank" rel="noopener noreferrer">
-              <svg className="social-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-            </a>
-            <a href="https://whatsapp.com" target="_blank" rel="noopener noreferrer">
-              <svg className="social-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.85.5 3.58 1.36 5.07L2 22l4.93-1.36C8.42 21.5 10.15 22 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm3.97 15.03c-.25.7-.76 1.27-1.45 1.6-.7.34-1.6.5-2.52.25-1.8-.5-3.3-2-3.8-3.8-.25-.9-.08-1.8.25-2.52.33-.7.9-1.2 1.6-1.45.15-.05.3-.08.45-.08s.3.03.45.08c.35.15.6.45.7.8.1.35.15.7.15 1.05 0 .35-.05.7-.15 1.05-.5 1.5.5 2.5 1.5 3s2-.5 1.5-1.5c-.15-.35-.2-.7-.15-1.05s.2-.7.55-.85c.15-.05.3-.08.45-.08s.3.03.45.08z"/></svg>
-            </a>
+          <div className="footer-copyright">
+            © {new Date().getFullYear()} Choir Center, All Rights Reserved
           </div>
         </footer>
       </Router>

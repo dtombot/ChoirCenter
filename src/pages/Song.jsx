@@ -39,6 +39,7 @@ function Song() {
 
   const setSongMetaTags = (song) => {
     document.title = `${song.title} ${song.composer || 'Unknown Composer'} | Choir Center`;
+
     let metaDescription = document.querySelector('meta[name="description"]');
     if (!metaDescription) {
       metaDescription = document.createElement('meta');
@@ -46,6 +47,7 @@ function Song() {
       document.head.appendChild(metaDescription);
     }
     metaDescription.content = `Download and view the sheet music for ${song.title} ${song.composer || 'Unknown Composer'}.`;
+
     let ogTitle = document.querySelector('meta[property="og:title"]');
     if (!ogTitle) {
       ogTitle = document.createElement('meta');
@@ -53,6 +55,7 @@ function Song() {
       document.head.appendChild(ogTitle);
     }
     ogTitle.content = song.title;
+
     let ogDescription = document.querySelector('meta[property="og:description"]');
     if (!ogDescription) {
       ogDescription = document.createElement('meta');
@@ -60,6 +63,7 @@ function Song() {
       document.head.appendChild(ogDescription);
     }
     ogDescription.content = `Download and view the sheet music for ${song.title} ${song.composer || 'Unknown Composer'}.`;
+
     let ogUrl = document.querySelector('meta[property="og:url"]');
     if (!ogUrl) {
       ogUrl = document.createElement('meta');
@@ -67,13 +71,18 @@ function Song() {
       document.head.appendChild(ogUrl);
     }
     ogUrl.content = window.location.href;
+
     let ogImage = document.querySelector('meta[property="og:image"]');
     if (!ogImage) {
       ogImage = document.createElement('meta');
       ogImage.property = "og:image";
       document.head.appendChild(ogImage);
     }
-    ogImage.content = 'https://choircenter.com/path-to-default-image.jpg';
+    const thumbnailUrl = song.google_drive_file_id
+      ? `https://drive.google.com/thumbnail?id=${song.google_drive_file_id}`
+      : 'https://choircenter.com/path-to-default-image.jpg';
+    ogImage.content = thumbnailUrl;
+
     let twitterTitle = document.querySelector('meta[name="twitter:title"]');
     if (!twitterTitle) {
       twitterTitle = document.createElement('meta');
@@ -81,6 +90,7 @@ function Song() {
       document.head.appendChild(twitterTitle);
     }
     twitterTitle.content = song.title;
+
     let twitterDescription = document.querySelector('meta[name="twitter:description"]');
     if (!twitterDescription) {
       twitterDescription = document.createElement('meta');
@@ -88,13 +98,15 @@ function Song() {
       document.head.appendChild(twitterDescription);
     }
     twitterDescription.content = `Download and view the sheet music for ${song.title} ${song.composer || 'Unknown Composer'}.`;
+
     let twitterImage = document.querySelector('meta[name="twitter:image"]');
     if (!twitterImage) {
       twitterImage = document.createElement('meta');
       twitterImage.name = "twitter:image";
       document.head.appendChild(twitterImage);
     }
-    twitterImage.content = 'https://choircenter.com/path-to-default-image.jpg';
+    twitterImage.content = thumbnailUrl;
+
     let canonicalLink = document.querySelector('link[rel="canonical"]');
     if (!canonicalLink) {
       canonicalLink = document.createElement('link');

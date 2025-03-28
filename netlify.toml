@@ -23,14 +23,23 @@
   status = 301
   force = true
 
-# General redirect for other /download/ to /song/ URLs (if slugs match except for case)
+# General redirect for other /download/ to /song/ URLs
 [[redirects]]
   from = "/download/:slug/"
   to = "/song/:slug"
   status = 301
   force = true
 
-# New redirect to lowercase /song/ URLs
+# Redirect to lowercase /song/ URLs and strip :suffix
+[[redirects]]
+  from = "/song/:id(*:*)"
+  to = "/song/:id"
+  status = 301
+  force = true
+  [redirects.functions]
+    _lowercase = "id"
+
+# Existing lowercase redirect (kept for URLs without colon)
 [[redirects]]
   from = "/song/:id"
   to = "/song/:id"
@@ -40,7 +49,7 @@
   [redirects.functions]
     _lowercase = "id"
 
-# Existing SPA redirect (keep this after specific redirects)
+# Existing SPA redirect
 [[redirects]]
   from = "/*"
   to = "/index.html"

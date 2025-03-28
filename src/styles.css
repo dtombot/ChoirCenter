@@ -3522,25 +3522,14 @@ input[type="range"]:hover {
   position: absolute;
   width: 40px;
   height: 40px;
-  fill: #98fb98;
-  opacity: 0.7;
+  opacity: 0.8;
   animation: float 6s ease-in-out infinite;
   z-index: 0;
 }
 
-.footer-note:nth-child(1) { animation-delay: 0s; }
-.footer-note:nth-child(2) { animation-delay: 2s; }
-.footer-note:nth-child(3) { animation-delay: 4s; }
-.footer-note:nth-child(4) { animation-delay: 6s; }
-
-.footer-copyright {
-  text-align: center;
-  font-size: 0.85rem;
-  color: #e0e0e0;
-  padding-top: 1.5rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
-  margin-top: 1.5rem;
-}
+.footer-note:nth-child(1) { left: 10%; animation-delay: 0s; }
+.footer-note:nth-child(2) { left: 50%; animation-delay: 2s; }
+.footer-note:nth-child(3) { left: 90%; animation-delay: 4s; }
 
 /* Floating Animation for Notes */
 @keyframes float {

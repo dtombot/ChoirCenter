@@ -30,6 +30,16 @@
   status = 301
   force = true
 
+# New redirect to lowercase /song/ URLs
+[[redirects]]
+  from = "/song/:id"
+  to = "/song/:id"
+  status = 301
+  force = false
+  conditions = { "Path" = ["/song/*"] }
+  [redirects.functions]
+    _lowercase = "id"
+
 # Existing SPA redirect (keep this after specific redirects)
 [[redirects]]
   from = "/*"

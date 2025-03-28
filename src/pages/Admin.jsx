@@ -403,7 +403,7 @@ const editSong = async (song) => {
       .single();
     if (error) throw error;
     if (data) {
-      setSongForm({
+      const updatedSongForm = {
         title: data.title || '',
         composer: data.composer || '',
         google_drive_file_id: data.google_drive_file_id || '',
@@ -415,8 +415,11 @@ const editSong = async (song) => {
         description: data.description || '',
         category: data.category || '',
         tags: data.tags ? data.tags.join(', ') : ''
-      });
+      };
+      setSongForm(updatedSongForm); // Set the entire form state at once
       setEditingSongId(data.id);
+    } else {
+      setError('No song data found for editing.');
     }
   } catch (err) {
     setError('Failed to load song for editing: ' + err.message);

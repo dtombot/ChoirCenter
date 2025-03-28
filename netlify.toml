@@ -30,24 +30,16 @@
   status = 301
   force = true
 
-# Redirect to lowercase /song/ URLs and strip :suffix
+# Combined redirect for /song/ URLs: lowercase and strip suffixes
 [[redirects]]
   from = "/song/:id(*:*)"
-  to = "/song/:id"
+  to = "/song/:splat"
   status = 301
   force = true
   [redirects.functions]
-    _lowercase = "id"
-
-# Existing lowercase redirect (kept for URLs without colon)
-[[redirects]]
-  from = "/song/:id"
-  to = "/song/:id"
-  status = 301
-  force = false
-  conditions = { "Path" = ["/song/*"] }
-  [redirects.functions]
-    _lowercase = "id"
+    _lowercase = "splat"
+  [redirects.parameters]
+    splat = ":id"
 
 # Existing SPA redirect
 [[redirects]]

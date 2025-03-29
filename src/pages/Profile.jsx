@@ -72,7 +72,7 @@ function Profile({ user }) {
             <p className="profile-note-modern animate-slide-up" style={{ animationDelay: '0.4s' }}>
               Guests get 3 downloads per month, logged-in users get 6, and donors enjoy unlimited downloads each month. Limits reset on the 1st.{' '}
               <Link to="/donate" className="donate-button-modern">
-                Donate Now
+                Buy us a Meat Pie
               </Link>{' '}
               for unlimited access!
             </p>

@@ -3366,6 +3366,7 @@ input[type="range"]:hover {
   height: 100%;
   pointer-events: none;
   z-index: -1;
+  overflow: hidden;
 }
 
 .background-note {
@@ -3373,12 +3374,32 @@ input[type="range"]:hover {
   width: 40px;
   height: 40px;
   opacity: 0.6;
-  animation: float 6s ease-in-out infinite;
+  animation: rise 8s linear infinite;
 }
 
 .background-note:nth-child(1) { left: 10%; animation-delay: 0s; }
 .background-note:nth-child(2) { left: 50%; animation-delay: 2s; }
 .background-note:nth-child(3) { left: 90%; animation-delay: 4s; }
+
+/* Rise Animation for Background Notes */
+@keyframes rise {
+  0% {
+    bottom: -40px; /* Start below the viewport */
+    opacity: 0;
+    transform: translateY(0);
+  }
+  10% {
+    opacity: 0.6;
+  }
+  90% {
+    opacity: 0.6;
+  }
+  100% {
+    bottom: 100%; /* Move to top of viewport */
+    opacity: 0;
+    transform: translateY(-100vh); /* Ensure full height traversal */
+  }
+}
 
 /* Modern Footer Styles */
 .footer {
@@ -3537,7 +3558,7 @@ input[type="range"]:hover {
 .footer-note:nth-child(2) { left: 50%; animation-delay: 2s; }
 .footer-note:nth-child(3) { left: 90%; animation-delay: 4s; }
 
-/* Floating Animation for Notes */
+/* Floating Animation for Footer Notes */
 @keyframes float {
   0% { transform: translateY(0); }
   50% { transform: translateY(-20px); }

@@ -91,23 +91,6 @@ body {
 }
 
 /* Background Notes */
-.background-notes {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  overflow: hidden;
-  z-index: -1;
-}
-
-.note {
-  width: 24px;
-  height: 24px;
-  position: absolute;
-  animation: float 10s infinite;
-}
 
 @keyframes float {
   0% { transform: translateY(100vh); opacity: 0; }
@@ -3374,6 +3357,29 @@ input[type="range"]:hover {
 
 
 
+/* Background Notes Styles */
+.background-notes {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.background-note {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  opacity: 0.6;
+  animation: float 6s ease-in-out infinite;
+}
+
+.background-note:nth-child(1) { left: 10%; animation-delay: 0s; }
+.background-note:nth-child(2) { left: 50%; animation-delay: 2s; }
+.background-note:nth-child(3) { left: 90%; animation-delay: 4s; }
+
 /* Modern Footer Styles */
 .footer {
   background: linear-gradient(135deg, #1f2a1f, #3cb371);
@@ -3538,7 +3544,7 @@ input[type="range"]:hover {
   100% { transform: translateY(0); }
 }
 
-/* Responsive Footer Adjustments */
+/* Responsive Adjustments */
 @media (max-width: 768px) {
   .footer-inner {
     grid-template-columns: 1fr;
@@ -3568,7 +3574,7 @@ input[type="range"]:hover {
     justify-content: center;
   }
 
-  .footer-note {
+  .footer-note, .background-note {
     width: 30px;
     height: 30px;
   }
@@ -3601,7 +3607,7 @@ input[type="range"]:hover {
     height: 25px;
   }
 
-  .footer-note {
+  .footer-note, .background-note {
     width: 25px;
     height: 25px;
   }

@@ -3775,3 +3775,166 @@ input[type="range"]:hover {
   background: linear-gradient(135deg, #2f9e5e, #3cb371);
   transform: scale(1.05);
 }
+
+
+
+
+
+/* Profile Page Modern Styles */
+.profile-page-modern {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  padding: 2rem;
+}
+
+.profile-card-modern {
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+  width: 100%;
+  max-width: 600px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.profile-card-modern:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+}
+
+.profile-title-modern {
+  font-size: 2.5rem;
+  color: #2f4f2f;
+  text-align: center;
+  margin-bottom: 2rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.profile-details-modern {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.profile-item-modern {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: #f9f9f9;
+  border-radius: 10px;
+  transition: background 0.3s ease;
+}
+
+.profile-item-modern:hover {
+  background: #e8f0e8;
+}
+
+.profile-label-modern {
+  font-weight: 600;
+  color: #555;
+  font-size: 1.1rem;
+}
+
+.profile-value-modern {
+  color: #333;
+  font-size: 1.1rem;
+}
+
+.profile-note-modern {
+  font-size: 0.95rem;
+  color: #666;
+  line-height: 1.6;
+  text-align: center;
+  margin-top: 1rem;
+}
+
+.donate-button-modern {
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(90deg, #32CD32 0%, #006400 100%);
+  color: #fff;
+  text-decoration: none;
+  border-radius: 25px;
+  font-weight: 600;
+  transition: transform 0.2s ease, background 0.3s ease;
+}
+
+.donate-button-modern:hover {
+  transform: scale(1.05);
+  background: linear-gradient(90deg, #006400 0%, #32CD32 100%);
+}
+
+.logout-button-modern {
+  display: block;
+  width: 100%;
+  padding: 1rem;
+  background: #ff4444;
+  color: #fff;
+  border: none;
+  border-radius: 25px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-top: 2rem;
+  cursor: pointer;
+  transition: background 0.3s ease, transform 0.2s ease;
+}
+
+.logout-button-modern:hover {
+  background: #cc0000;
+  transform: scale(1.03);
+}
+
+/* Loading Spinner */
+.loading-container-modern {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+.spinner-modern {
+  width: 50px;
+  height: 50px;
+  border: 5px solid #e0e0e0;
+  border-top: 5px solid #32CD32;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* Animations */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.8s ease-out;
+}
+
+@keyframes fadeIn {
+  0% { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.6s ease-out forwards;
+}
+
+@keyframes slideUp {
+  0% { opacity: 0; transform: translateY(30px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.animate-scale {
+  transition: transform 0.2s ease;
+}
+
+.animate-scale:hover {
+  transform: scale(1.03);
+}

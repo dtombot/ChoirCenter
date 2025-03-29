@@ -7,12 +7,29 @@ function getDateDaysAgo(days) {
 }
 
 exports.handler = async (event, context) => {
-  console.log('Function invoked:', new Date().toISOString());
-  try {
-    if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET || !process.env.SITE_URL || !process.env.GA_PROPERTY_ID) {
-      throw new Error('Missing required environment variables');
-    }
+  console.log('Analytics function invoked:', new Date().toISOString());
 
+  // Validate environment variables
+  const requiredEnvVars = [
+    'GOOGLE_CLIENT_ID',
+    'GOOGLE_CLIENT_SECRET',
+    'SITE_URL',
+    'GA_PROPERTY_ID',
+    'GOOGLE_ACCESS_TOKEN',
+    'GOOGLE_REFRESH_TOKEN',
+  ];
+  const missingVars = requiredEnvVars.filter((varName) => !process.env[varName]);
+  if (missingVars.length > 0) {
+    console.error('Missing environment variables:', missingVars.join(', '));
+    return {
+      statusCode: 500,
+      body: JSON.stringify({
+        error: `Missing environment variables: ${missingVars.join(', ')}`,
+      }),
+    };
+  }
+
+  try {
     const oauth2Client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_SECRET,
@@ -25,21 +42,28 @@ exports.handler = async (event, context) => {
       refresh_token: process.env.GOOGLE_REFRESH_TOKEN,
     });
 
+    // Refresh token if needed
     console.log('Refreshing token...');
-    const { credentials } = await oauth2Client.refreshAccessToken();
-    oauth2Client.setCredentials(credentials);
-    console.log('Token refreshed:', credentials.access_token.substring(0, 10) + '...');
+    try {
+      const { credentials } = await oauth2Client.refreshAccessToken();
+      oauth2Client.setCredentials(credentials);
+      console.log('Token refreshed successfully');
+    } catch (refreshError) {
+      console.error('Token refresh failed:', refreshError.message);
+      throw new Error('Authentication refresh failed: ' + refreshError.message);
+    }
 
     const analytics = google.analyticsdata({ version: 'v1beta', auth: oauth2Client });
     const searchconsole = google.webmasters({ version: 'v3', auth: oauth2Client });
 
-    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    const today = new Date().toISOString().split('T')[0];
     const thirtyDaysAgo = getDateDaysAgo(30);
 
-    let gaResponse;
+    // Fetch Google Analytics data
+    let gaData = { rows: [], error: null };
     try {
       console.log('Fetching GA data...');
-      gaResponse = await analytics.properties.runReport({
+      const gaResponse = await analytics.properties.runReport({
         property: `properties/${process.env.GA_PROPERTY_ID}`,
         requestBody: {
           dateRanges: [{ startDate: thirtyDaysAgo, endDate: today }],
@@ -54,16 +78,18 @@ exports.handler = async (event, context) => {
           ],
         },
       });
-      console.log('GA data fetched:', gaResponse.data.rows ? 'Rows present' : 'No rows');
+      gaData = gaResponse.data;
+      console.log('GA data fetched:', gaData.rows ? 'Rows present' : 'No rows');
     } catch (gaError) {
-      console.error('Google Analytics Error:', gaError.message, gaError.stack);
-      gaResponse = { data: { rows: [], error: gaError.message } };
+      console.error('GA fetch error:', gaError.message);
+      gaData.error = 'Google Analytics fetch failed: ' + gaError.message;
     }
 
-    let gscResponse;
+    // Fetch Search Console data
+    let gscData = { rows: [], error: null };
     try {
       console.log('Fetching GSC data...');
-      gscResponse = await searchconsole.searchanalytics.query({
+      const gscResponse = await searchconsole.searchanalytics.query({
         siteUrl: process.env.SITE_URL,
         requestBody: {
           startDate: thirtyDaysAgo,
@@ -72,25 +98,28 @@ exports.handler = async (event, context) => {
           rowLimit: 5,
         },
       });
-      console.log('GSC data fetched:', gscResponse.data.rows ? 'Rows present' : 'No rows');
+      gscData = gscResponse.data;
+      console.log('GSC data fetched:', gscData.rows ? 'Rows present' : 'No rows');
     } catch (gscError) {
-      console.error('Google Search Console Error:', gscError.message, gscError.stack);
-      gscResponse = { data: { rows: [], error: gscError.message } };
+      console.error('GSC fetch error:', gscError.message);
+      gscData.error = 'Search Console fetch failed: ' + gscError.message;
     }
 
-    console.log('Returning response...');
+    console.log('Returning analytics data...');
     return {
       statusCode: 200,
       body: JSON.stringify({
-        ga: gaResponse.data,
-        gsc: gscResponse.data,
+        ga: gaData,
+        gsc: gscData,
       }),
     };
   } catch (error) {
-    console.error('Function Error:', error.message, error.stack);
+    console.error('Function execution error:', error.message, error.stack);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: 'Server error: ' + error.message }),
+      body: JSON.stringify({
+        error: 'Analytics processing failed: ' + error.message,
+      }),
     };
   }
 };

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../supabase';
 import { useNavigate, Link } from 'react-router-dom';
-import '../styles.css'; // Ensure this includes the new styles below
+import '../styles.css'; // Ensure this includes the styles from the previous response
 
 function Profile({ user }) {
   const [profile, setProfile] = useState(null);
@@ -31,6 +31,10 @@ function Profile({ user }) {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate('/login');
+  };
+
+  const handleLibraryNavigation = () => {
+    navigate('/library');
   };
 
   if (loading) {
@@ -79,9 +83,14 @@ function Profile({ user }) {
             </p>
           )}
         </div>
-        <button onClick={handleLogout} className="logout-button-modern animate-scale">
-          Logout
-        </button>
+        <div className="profile-buttons-modern">
+          <button onClick={handleLibraryNavigation} className="library-button-modern animate-scale">
+            Go to Library
+          </button>
+          <button onClick={handleLogout} className="logout-button-modern animate-scale">
+            Logout
+          </button>
+        </div>
       </div>
     </div>
   );

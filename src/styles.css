@@ -3938,3 +3938,35 @@ input[type="range"]:hover {
 .animate-scale:hover {
   transform: scale(1.03);
 }
+
+
+
+
+
+/* Profile Buttons Container */
+.profile-buttons-modern {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+/* Library Button */
+.library-button-modern {
+  display: block;
+  width: 100%;
+  padding: 1rem;
+  background: linear-gradient(90deg, #90EE90 0%, #32CD32 100%);
+  color: #fff;
+  border: none;
+  border-radius: 25px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s ease, transform 0.2s ease;
+}
+
+.library-button-modern:hover {
+  background: linear-gradient(90deg, #32CD32 0%, #90EE90 100%);
+  transform: scale(1.03);
+}

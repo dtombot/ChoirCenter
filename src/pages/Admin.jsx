@@ -63,6 +63,7 @@ function Admin() {
   const [visitorPage, setVisitorPage] = useState(0);
   const [loading, setLoading] = useState(false);
   const [selectedSongs, setSelectedSongs] = useState([]);
+  const [selectedMessage, setSelectedMessage] = useState(null);
   const navigate = useNavigate();
 
   const SONG_CATEGORIES = [
@@ -1623,21 +1624,30 @@ function Admin() {
                   </thead>
                   <tbody>
                     {messages.map((msg) => (
-                      <tr key={msg.id}>
+                      <tr
+                        key={msg.id}
+                        onClick={() => setSelectedMessage(msg)}
+                        style={{ cursor: 'pointer' }}
+                      >
                         <td>{msg.name}</td>
                         <td>{msg.email}</td>
                         <td style={{ maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{msg.message}</td>
                         <td>{toGMTPlus1(msg.created_at).toLocaleString()}</td>
                         <td>
                           <button
-                            onClick={() => toggleMessageRead(msg.id, msg.is_read)}
+                            onClick={(e) => { e.stopPropagation(); toggleMessageRead(msg.id, msg.is_read); }}
                             className={`admin-toggle-button ${msg.is_read ? 'active' : ''}`}
                           >
                             {msg.is_read ? 'Yes' : 'No'}
                           </button>
                         </td>
                         <td>
-                          <button onClick={() => deleteMessage(msg.id)} className="admin-delete-button">Delete</button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); deleteMessage(msg.id); }}
+                            className="admin-delete-button"
+                          >
+                            Delete
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -1646,6 +1656,61 @@ function Admin() {
               </div>
             ) : (
               <p>No messages available.</p>
+            )}
+            {selectedMessage && (
+              <div
+                style={{
+                  position: 'fixed',
+                  top: '0',
+                  left: '0',
+                  width: '100%',
+                  height: '100%',
+                  backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  zIndex: 1000,
+                }}
+              >
+                <div
+                  style={{
+                    backgroundColor: 'white',
+                    padding: '20px',
+                    borderRadius: '8px',
+                    width: '500px',
+                    maxHeight: '80%',
+                    overflowY: 'auto',
+                    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
+                  }}
+                >
+                  <h3>Message Details</h3>
+                  <p><strong>Name:</strong> {selectedMessage.name}</p>
+                  <p><strong>Email:</strong> {selectedMessage.email}</p>
+                  <p><strong>Message:</strong></p>
+                  <p style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{selectedMessage.message}</p>
+                  <p><strong>Received At (GMT+1):</strong> {toGMTPlus1(selectedMessage.created_at).toLocaleString()}</p>
+                  <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
+                    <button
+                      onClick={() => toggleMessageRead(selectedMessage.id, selectedMessage.is_read)}
+                      className={`admin-toggle-button ${selectedMessage.is_read ? 'active' : ''}`}
+                    >
+                      Mark as {selectedMessage.is_read ? 'Unread' : 'Read'}
+                    </button>
+                    <button
+                      onClick={() => deleteMessage(selectedMessage.id)}
+                      className="admin-delete-button"
+                    >
+                      Delete
+                    </button>
+                    <button
+                      onClick={() => setSelectedMessage(null)}
+                      className="admin-cancel-button"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              </div>
             )}
           </div>
         )}

@@ -122,7 +122,10 @@ function Admin() {
 
   const fetchSongs = async () => {
     setLoading(true);
-    const { data, error } = await supabase.from('songs').select('*');
+    const { data, error } = await supabase
+      .from('songs')
+      .select('*')
+      .limit(2000); // Set a high limit to fetch all rows
     if (error) setError('Failed to load songs: ' + error.message);
     else setSongs(data || []);
     setLoading(false);

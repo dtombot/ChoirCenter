@@ -3639,3 +3639,139 @@ input[type="range"]:hover {
     height: 25px;
   }
 }
+
+
+
+
+
+/* Make nav-user-name clickable */
+.nav-user-link {
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.nav-user-name {
+  margin-right: 15px;
+  padding: 0.5rem 1rem;
+  color: #2f4f2f;
+  font-weight: 600;
+  font-size: 1rem;
+  background: linear-gradient(135deg, rgba(152, 251, 152, 0.3), rgba(126, 217, 87, 0.2));
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  animation: fadeInBounce 0.8s ease-out forwards;
+  cursor: pointer; /* Indicate clickability */
+}
+
+.nav-user-name:hover {
+  background: linear-gradient(135deg, rgba(152, 251, 152, 0.5), rgba(126, 217, 87, 0.4));
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(152, 251, 152, 0.4);
+}
+
+/* Profile Page Styles */
+.profile-container {
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+
+.profile-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+}
+
+.profile-card:hover {
+  transform: translateY(-5px);
+}
+
+.profile-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #2f4f2f;
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.profile-info {
+  margin-bottom: 2rem;
+}
+
+.profile-info p {
+  font-size: 1.1rem;
+  color: #333;
+  margin: 0.5rem 0;
+}
+
+.profile-info strong {
+  color: #2f4f2f;
+}
+
+.donation-thanks,
+.donation-prompt {
+  padding: 1.5rem;
+  background: #f9fafb;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.donation-thanks h3,
+.donation-prompt h3 {
+  font-size: 1.5rem;
+  color: #3cb371;
+  margin-bottom: 1rem;
+}
+
+.donation-thanks p,
+.donation-prompt p {
+  font-size: 1rem;
+  color: #666;
+  line-height: 1.6;
+}
+
+.benefits-list {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0;
+  text-align: left;
+  display: inline-block;
+}
+
+.benefits-list li {
+  font-size: 1rem;
+  color: #333;
+  margin: 0.5rem 0;
+  position: relative;
+  padding-left: 1.5rem;
+}
+
+.benefits-list li:before {
+  content: '✔';
+  color: #3cb371;
+  position: absolute;
+  left: 0;
+}
+
+.donate-button {
+  display: inline-block;
+  padding: 0.75rem 2rem;
+  background: linear-gradient(135deg, #3cb371, #2f9e5e);
+  color: #fff;
+  text-decoration: none;
+  border-radius: 25px;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: background 0.3s ease, transform 0.3s ease;
+}
+
+.donate-button:hover {
+  background: linear-gradient(135deg, #2f9e5e, #3cb371);
+  transform: scale(1.05);
+}

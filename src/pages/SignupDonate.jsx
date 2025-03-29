@@ -7,10 +7,7 @@ function SignupDonate({ recaptchaLoaded }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
-  const [choirName, setChoirName] = useState('');
-  const [churchName, setChurchName] = useState('');
-  const [country, setCountry] = useState('');
-  const [state, setState] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -19,7 +16,7 @@ function SignupDonate({ recaptchaLoaded }) {
   const [searchParams] = useSearchParams();
   const recaptchaRef = useRef(null);
 
-  const paymentSuccess = searchParams.get('reference'); // Simplified to check only reference
+  const paymentSuccess = searchParams.get('reference');
 
   useEffect(() => {
     const renderRecaptcha = () => {
@@ -121,10 +118,7 @@ function SignupDonate({ recaptchaLoaded }) {
           id: newUserId,
           email: data.user.email,
           full_name: fullName,
-          choir_name: choirName || null,
-          church_name: churchName || null,
-          country: country || null,
-          state: state || null,
+          phone_number: phoneNumber || null,
           is_admin: false,
           has_donated: false,
         });
@@ -134,10 +128,7 @@ function SignupDonate({ recaptchaLoaded }) {
       setEmail('');
       setPassword('');
       setFullName('');
-      setChoirName('');
-      setChurchName('');
-      setCountry('');
-      setState('');
+      setPhoneNumber('');
 
       setTimeout(() => {
         window.location.href = `https://paystack.com/pay/choircenterdonation?callback_url=https://choircenter.com/thank-you?user_id=${newUserId}`;
@@ -224,45 +215,12 @@ function SignupDonate({ recaptchaLoaded }) {
               />
             </div>
             <div className="form-group">
-              <label htmlFor="choirName">Choir Name (Optional)</label>
+              <label htmlFor="phoneNumber">Phone Number (Optional)</label>
               <input
-                type="text"
-                id="choirName"
-                value={choirName}
-                onChange={(e) => setChoirName(e.target.value)}
-                className="auth-input"
-                disabled={loading}
-              />
-            </div>
-            <div className="form-group">
-              <label htmlFor="churchName">Church Name (Optional)</label>
-              <input
-                type="text"
-                id="churchName"
-                value={churchName}
-                onChange={(e) => setChurchName(e.target.value)}
-                className="auth-input"
-                disabled={loading}
-              />
-            </div>
-            <div className="form-group">
-              <label htmlFor="country">Country (Optional)</label>
-              <input
-                type="text"
-                id="country"
-                value={country}
-                onChange={(e) => setCountry(e.target.value)}
-                className="auth-input"
-                disabled={loading}
-              />
-            </div>
-            <div className="form-group">
-              <label htmlFor="state">State/Region (Optional)</label>
-              <input
-                type="text"
-                id="state"
-                value={state}
-                onChange={(e) => setState(e.target.value)}
+                type="tel"
+                id="phoneNumber"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
                 className="auth-input"
                 disabled={loading}
               />

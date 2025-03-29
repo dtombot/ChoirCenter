@@ -7,10 +7,7 @@ function Signup({ recaptchaLoaded }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
-  const [choirName, setChoirName] = useState('');
-  const [churchName, setChurchName] = useState('');
-  const [country, setCountry] = useState('');
-  const [state, setState] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -45,7 +42,7 @@ function Signup({ recaptchaLoaded }) {
           }
         } else {
           console.log('reCAPTCHA render not available yet on Signup, retrying...');
-          setTimeout(attemptRender, 100); // Retry every 100ms
+          setTimeout(attemptRender, 100);
         }
       };
 
@@ -123,10 +120,7 @@ function Signup({ recaptchaLoaded }) {
             id: data.user.id,
             email: data.user.email,
             full_name: fullName,
-            choir_name: choirName || null,
-            church_name: churchName || null,
-            country: country || null,
-            state: state || null,
+            phone_number: phoneNumber || null,
             is_admin: false,
           });
         if (profileError) throw profileError;
@@ -186,42 +180,12 @@ function Signup({ recaptchaLoaded }) {
               />
             </div>
             <div className="form-group">
-              <label>Choir Name (Optional)</label>
+              <label>Phone Number (Optional)</label>
               <input
-                type="text"
+                type="tel"
                 className="auth-input"
-                value={choirName}
-                onChange={(e) => setChoirName(e.target.value)}
-                disabled={loading}
-              />
-            </div>
-            <div className="form-group">
-              <label>Church Name (Optional)</label>
-              <input
-                type="text"
-                className="auth-input"
-                value={churchName}
-                onChange={(e) => setChurchName(e.target.value)}
-                disabled={loading}
-              />
-            </div>
-            <div className="form-group">
-              <label>Country (Optional)</label>
-              <input
-                type="text"
-                className="auth-input"
-                value={country}
-                onChange={(e) => setCountry(e.target.value)}
-                disabled={loading}
-              />
-            </div>
-            <div className="form-group">
-              <label>State/Region (Optional)</label>
-              <input
-                type="text"
-                className="auth-input"
-                value={state}
-                onChange={(e) => setState(e.target.value)}
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
                 disabled={loading}
               />
             </div>

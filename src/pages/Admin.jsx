@@ -122,12 +122,28 @@ function Admin() {
 
   const fetchSongs = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from('songs')
-      .select('*')
-      .limit(2000); // Set a high limit to fetch all rows
-    if (error) setError('Failed to load songs: ' + error.message);
-    else setSongs(data || []);
+    let allSongs = [];
+    let offset = 0;
+    const limit = 1000; // Batch size
+
+    try {
+      while (true) {
+        const { data, error } = await supabase
+          .from('songs')
+          .select('*')
+          .range(offset, offset + limit - 1); // Fetch in chunks
+        if (error) throw error;
+        if (!data || data.length === 0) break; // No more data to fetch
+        allSongs = allSongs.concat(data);
+        offset += limit;
+        console.log(`Fetched ${data.length} songs, total so far: ${allSongs.length}`);
+      }
+      setSongs(allSongs);
+      console.log('Total songs loaded:', allSongs.length);
+    } catch (err) {
+      setError('Failed to load songs: ' + err.message);
+      console.error('Fetch songs error:', err);
+    }
     setLoading(false);
   };
 

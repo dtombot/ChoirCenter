@@ -556,7 +556,7 @@ function Song() {
         ) : (
           <div className="song-card-modern">
             {/* Song Info Container */}
-            <div className="song-info-container" style={{ marginBottom: '1.5rem' }}>
+            <div className="song-info-container" style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
               <h1 className="song-title-modern">{song.title}</h1>
               <p className="song-composer-modern">{song.composer || 'Unknown Composer'}</p>
               <p className="song-downloads-modern">Downloaded {song.downloads || 0} times</p>
@@ -627,13 +627,14 @@ function Song() {
             )}
 
             {/* PDF Preview Container */}
-            <div className="pdf-preview-container" style={{ marginBottom: '1.5rem' }}>
+            <div className="pdf-preview-container" style={{ marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               {thumbnailUrl && !thumbnailError ? (
                 <img
                   src={thumbnailUrl}
                   alt={`Preview of ${song.title}`}
                   className="song-preview-image"
                   onError={() => setThumbnailError(true)}
+                  style={{ display: 'block', margin: '0 auto' }}
                 />
               ) : (
                 <Document
@@ -642,10 +643,10 @@ function Song() {
                   onLoadError={(err) => setError('Failed to load PDF preview: ' + err.message)}
                   loading={<PdfLoadingProgress />}
                 >
-                  <Page pageNumber={1} scale={scale} />
+                  <Page pageNumber={1} scale={scale} style={{ display: 'block', margin: '0 auto' }} />
                 </Document>
               )}
-              <p className="preview-note-modern">
+              <p className="preview-note-modern" style={{ textAlign: 'center' }}>
                 Previewing page 1{numPages && thumbnailError ? ` of ${numPages}` : ''}. Click the Download button to view the full song.
               </p>
             </div>
@@ -675,7 +676,7 @@ function Song() {
                       <Link
                         to={`/song/${relatedSong.permalink || relatedSong.id}`}
                         className="song-link"
-                        style={{ color: '#007bff', textDecoration: 'none', fontWeight: '500' }}
+                        style={{ color: '#2f4f2f', textDecoration: 'none', fontWeight: '500' }}
                       >
                         {relatedSong.title} {relatedSong.composer || 'Unknown Composer'}
                       </Link>

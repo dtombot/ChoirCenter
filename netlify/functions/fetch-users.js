@@ -16,23 +16,37 @@ exports.handler = async (event, context) => {
   const supabase = createClient(supabaseUrl, supabaseKey);
 
   try {
+    // Fetch all users from auth.users
     const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
     if (authError) throw authError;
 
+    // Fetch profiles including full_name
     const { data: profiles, error: profileError } = await supabase
       .from('profiles')
-      .select('id, email, is_admin, has_donated'); // Ensure has_donated is included
+      .select('id, full_name, email, has_donated'); // Added full_name, removed is_admin (handled separately)
 
     if (profileError) throw profileError;
 
+    // Fetch admin status from admins table
+    const { data: admins, error: adminError } = await supabase
+      .from('admins')
+      .select('user_id');
+    if (adminError) throw adminError;
+
+    const adminIds = new Set(admins.map(a => a.user_id));
+
+    // Map profiles to a lookup object for efficiency
+    const profileMap = new Map(profiles.map(p => [p.id, p]));
+
+    // Combine auth users with profile and admin data
     const users = authUsers.users.map(user => {
-      const profile = profiles.find(p => p.id === user.id) || {};
+      const profile = profileMap.get(user.id) || {};
       return {
         id: user.id,
         email: profile.email || user.email,
-        full_name: profile.full_name || user.user_metadata?.full_name || 'N/A', // Add full_name if available
-        is_admin: profile.is_admin || user.role === 'admin' || user.user_metadata?.is_admin || false,
-        has_donated: profile.has_donated ?? false, // Use profile.has_donated, default to false if null
+        full_name: profile.full_name || 'N/A', // Use full_name from profiles
+        is_admin: adminIds.has(user.id), // Use admins table instead of profiles
+        has_donated: profile.has_donated ?? false, // Default to false if null
       };
     });
 

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { supabase } from '../supabase';
 import { useNavigate } from 'react-router-dom';
 import ReactQuill from 'react-quill';
@@ -66,13 +67,9 @@ function Admin() {
   const [selectedMessage, setSelectedMessage] = useState(null);
   const navigate = useNavigate();
 
-  const SONG_CATEGORIES = [
-    'Entrance', 'Kyrie', 'Gloria', 'Responsorial Psalm', 'Gospel Acclamation',
-    'Credo', 'Response to prayers', 'Preconsecration', 'Offertory', 'Sanctus',
-    'Agnus Dei', 'Communion', 'Dismissal', 'Lent', 'Pentecost', 'Easter',
-    'Advent', 'Christmas', 'Trinity', 'Marian', 'Classical'
-  ];
+  const location = useLocation();
 
+  // Initial fetch and auth check
   useEffect(() => {
     const fetchUser = async () => {
       setLoading(true);
@@ -101,15 +98,6 @@ function Admin() {
         return;
       }
 
-      // Parse URL query parameters
-      const urlParams = new URLSearchParams(window.location.search);
-      const tab = urlParams.get('tab');
-      const editSongId = urlParams.get('editSongId');
-
-      if (tab) {
-        setActiveTab(tab);
-      }
-
       await Promise.all([
         fetchSongs(),
         fetchPosts(),
@@ -123,10 +111,28 @@ function Admin() {
         fetchSongOfTheWeek()
       ]);
 
-      // If editSongId is present, fetch and populate the song
-      if (editSongId) {
-        const songId = parseInt(editSongId, 10);
-        if (!isNaN(songId)) {
+      const visitorInterval = setInterval(fetchVisitors, 300000);
+      setLoading(false);
+      return () => clearInterval(visitorInterval);
+    };
+    fetchUser();
+  }, [navigate]);
+
+  // Handle URL changes for tab and song editing
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    const tab = urlParams.get('tab');
+    const editSongId = urlParams.get('editSongId');
+
+    if (tab) {
+      setActiveTab(tab);
+    }
+
+    if (editSongId) {
+      const songId = parseInt(editSongId, 10);
+      if (!isNaN(songId)) {
+        const loadSongForEdit = async () => {
+          setLoading(true);
           try {
             const { data, error } = await supabase
               .from('songs')
@@ -150,21 +156,25 @@ function Admin() {
               };
               setSongForm(newSongForm);
               setEditingSongId(songId);
-              setActiveTab('songs'); // Ensure the songs tab is active
+              setActiveTab('songs'); // Ensure songs tab is active
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }
           } catch (err) {
             setError('Failed to load song for editing: ' + err.message);
           }
-        }
+          setLoading(false);
+        };
+        loadSongForEdit();
       }
+    }
+  }, [location]);  
 
-      const visitorInterval = setInterval(fetchVisitors, 300000);
-      setLoading(false);
-      return () => clearInterval(visitorInterval);
-    };
-    fetchUser();
-  }, [navigate]);
+  const SONG_CATEGORIES = [
+    'Entrance', 'Kyrie', 'Gloria', 'Responsorial Psalm', 'Gospel Acclamation',
+    'Credo', 'Response to prayers', 'Preconsecration', 'Offertory', 'Sanctus',
+    'Agnus Dei', 'Communion', 'Dismissal', 'Lent', 'Pentecost', 'Easter',
+    'Advent', 'Christmas', 'Trinity', 'Marian', 'Classical'
+  ];
 
   const fetchSongs = async () => {
     setLoading(true);

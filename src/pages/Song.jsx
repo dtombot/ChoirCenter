@@ -37,7 +37,6 @@ function Song() {
   const [showAudioPrompt, setShowAudioPrompt] = useState(false);
   const audioRef = useRef(null);
   
-  // Safeguard useNavigate to prevent crashes
   let navigate;
   try {
     navigate = useNavigate();
@@ -555,7 +554,6 @@ function Song() {
           </>
         ) : (
           <div className="song-card-modern">
-            {/* Song Info Container */}
             <div className="song-info-container" style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
               <h1 className="song-title-modern">{song.title}</h1>
               <p className="song-composer-modern">{song.composer || 'Unknown Composer'}</p>
@@ -563,7 +561,6 @@ function Song() {
               <p className="song-timestamp-modern">Added on {new Date(song.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
             </div>
 
-            {/* Audio Preview Container */}
             {song.audio_url && (
               <div className="audio-preview-container" style={{ marginBottom: '1.5rem' }}>
                 <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '0.5rem' }}>
@@ -626,7 +623,6 @@ function Song() {
               </div>
             )}
 
-            {/* PDF Preview Container */}
             <div className="pdf-preview-container" style={{ marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               {thumbnailUrl && !thumbnailError ? (
                 <img
@@ -651,22 +647,20 @@ function Song() {
               </p>
             </div>
 
-            {/* Actions Container */}
             <div className="song-actions-container song-actions-modern" style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', justifyContent: 'center' }}>
               <button onClick={handleDownload} className="download-button-modern">Download</button>
               <button onClick={handleShare} className="share-button-modern">Share</button>
               <Link to="/library" className="back-button-modern">Back to Library</Link>
               {isAdmin && (
-                <Link
-                  to={`/admin?tab=songs&editSongId=${song.id}`}
+                <button
+                  onClick={() => navigate(`/admin?tab=songs&editSongId=${song.id}`)}
                   className="download-button-modern"
                 >
                   Edit Song
-                </Link>
+                </button>
               )}
             </div>
 
-            {/* Explore More Songs Container */}
             {relatedSongs.length > 0 && (
               <div className="explore-songs-container" style={{ marginTop: '2rem', background: '#f9fafb', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)' }}>
                 <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem', textAlign: 'center', color: '#2f4f2f' }}>Explore More Songs</h2>
@@ -689,7 +683,6 @@ function Song() {
               </div>
             )}
 
-            {/* Modals */}
             {downloadPrompt && (
               <div className="modal-overlay">
                 <div className="modal-content download-modal">

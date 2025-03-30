@@ -101,6 +101,15 @@ function Admin() {
         return;
       }
 
+      // Parse URL query parameters
+      const urlParams = new URLSearchParams(window.location.search);
+      const tab = urlParams.get('tab');
+      const editSongId = urlParams.get('editSongId');
+
+      if (tab) {
+        setActiveTab(tab);
+      }
+
       await Promise.all([
         fetchSongs(),
         fetchPosts(),
@@ -113,6 +122,42 @@ function Admin() {
         fetchTopPosts(),
         fetchSongOfTheWeek()
       ]);
+
+      // If editSongId is present, fetch and populate the song
+      if (editSongId) {
+        const songId = parseInt(editSongId, 10);
+        if (!isNaN(songId)) {
+          try {
+            const { data, error } = await supabase
+              .from('songs')
+              .select('*')
+              .eq('id', songId)
+              .single();
+            if (error) throw error;
+            if (data) {
+              const newSongForm = {
+                title: data.title || '',
+                composer: data.composer || '',
+                google_drive_file_id: data.google_drive_file_id || '',
+                github_file_url: data.github_file_url || '',
+                permalink: data.permalink || '',
+                is_public: data.is_public !== false,
+                source: data.google_drive_file_id ? 'google_drive' : 'github',
+                audio_url: data.audio_url || '',
+                description: data.description || '',
+                category: data.category || '',
+                tags: data.tags ? data.tags.join(', ') : ''
+              };
+              setSongForm(newSongForm);
+              setEditingSongId(songId);
+              setActiveTab('songs'); // Ensure the songs tab is active
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+          } catch (err) {
+            setError('Failed to load song for editing: ' + err.message);
+          }
+        }
+      }
 
       const visitorInterval = setInterval(fetchVisitors, 300000);
       setLoading(false);

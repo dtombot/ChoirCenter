@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../supabase';
 import { useNavigate, Link } from 'react-router-dom';
-import '../styles.css'; // Ensure this includes the styles from the previous response
+import '../styles.css';
 
 function Profile({ user }) {
   const [profile, setProfile] = useState(null);

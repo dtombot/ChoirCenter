@@ -100,7 +100,7 @@ function Login({ recaptchaLoaded }) {
       if (error) throw error;
 
       if (data.session) {
-        navigate('/');
+        navigate('/profile'); // Updated to redirect to profile
       }
     } catch (err) {
       setError(err.message);

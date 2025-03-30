@@ -124,10 +124,17 @@ function Signup({ recaptchaLoaded }) {
             is_admin: false,
           });
         if (profileError) throw profileError;
-      }
 
-      setSuccess(true);
-      setTimeout(() => navigate('/login'), 2000);
+        // Check if the user is auto-logged in
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError || !sessionData.session) {
+          setSuccess(true);
+          setTimeout(() => navigate('/login'), 2000); // Redirect to login if no session
+        } else {
+          setSuccess(true);
+          setTimeout(() => navigate('/profile'), 2000); // Redirect to profile if logged in
+        }
+      }
     } catch (err) {
       console.error('Signup error:', err.message);
       setError(err.message);
@@ -143,7 +150,9 @@ function Signup({ recaptchaLoaded }) {
         <h2 className="auth-title">Sign Up</h2>
         <p className="auth-subtitle">Join Choir Center today!</p>
         {success ? (
-          <p className="success-message">Signup successful! Check your email for confirmation. Redirecting to login...</p>
+          <p className="success-message">
+            Signup successful! Check your email for confirmation. Redirecting...
+          </p>
         ) : (
           <form onSubmit={handleSignup} className="auth-form">
             <div className="form-group">

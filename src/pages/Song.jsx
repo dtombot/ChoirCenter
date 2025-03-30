@@ -19,7 +19,7 @@ const generateUUID = () => {
 
 function Song() {
   const { id } = useParams();
-  const cleanId = id.split(':')[0].toLowerCase(); // Clean suffix and lowercase
+  const cleanId = id.split(':')[0].toLowerCase();
   const [song, setSong] = useState(null);
   const [relatedSongs, setRelatedSongs] = useState([]);
   const [error, setError] = useState(null);
@@ -38,9 +38,9 @@ function Song() {
   const audioRef = useRef(null);
   const navigate = useNavigate();
 
+  // Keep all existing functions (setSongMetaTags, useEffect, etc.) unchanged
   const setSongMetaTags = (song) => {
     document.title = `${song.title} ${song.composer || 'Unknown Composer'} | Choir Center`;
-
     let metaDescription = document.querySelector('meta[name="description"]');
     if (!metaDescription) {
       metaDescription = document.createElement('meta');
@@ -48,7 +48,6 @@ function Song() {
       document.head.appendChild(metaDescription);
     }
     metaDescription.content = `Download and view the sheet music for ${song.title} ${song.composer || 'Unknown Composer'}.`;
-
     let ogTitle = document.querySelector('meta[property="og:title"]');
     if (!ogTitle) {
       ogTitle = document.createElement('meta');
@@ -56,7 +55,6 @@ function Song() {
       document.head.appendChild(ogTitle);
     }
     ogTitle.content = song.title;
-
     let ogDescription = document.querySelector('meta[property="og:description"]');
     if (!ogDescription) {
       ogDescription = document.createElement('meta');
@@ -64,7 +62,6 @@ function Song() {
       document.head.appendChild(ogDescription);
     }
     ogDescription.content = `Download and view the sheet music for ${song.title} ${song.composer || 'Unknown Composer'}.`;
-
     let ogUrl = document.querySelector('meta[property="og:url"]');
     if (!ogUrl) {
       ogUrl = document.createElement('meta');
@@ -72,7 +69,6 @@ function Song() {
       document.head.appendChild(ogUrl);
     }
     ogUrl.content = window.location.href;
-
     let ogImage = document.querySelector('meta[property="og:image"]');
     if (!ogImage) {
       ogImage = document.createElement('meta');
@@ -83,7 +79,6 @@ function Song() {
       ? `https://drive.google.com/thumbnail?id=${song.google_drive_file_id}`
       : 'https://choircenter.com/path-to-default-image.jpg';
     ogImage.content = thumbnailUrl;
-
     let twitterTitle = document.querySelector('meta[name="twitter:title"]');
     if (!twitterTitle) {
       twitterTitle = document.createElement('meta');
@@ -91,7 +86,6 @@ function Song() {
       document.head.appendChild(twitterTitle);
     }
     twitterTitle.content = song.title;
-
     let twitterDescription = document.querySelector('meta[name="twitter:description"]');
     if (!twitterDescription) {
       twitterDescription = document.createElement('meta');
@@ -99,7 +93,6 @@ function Song() {
       document.head.appendChild(twitterDescription);
     }
     twitterDescription.content = `Download and view the sheet music for ${song.title} ${song.composer || 'Unknown Composer'}.`;
-
     let twitterImage = document.querySelector('meta[name="twitter:image"]');
     if (!twitterImage) {
       twitterImage = document.createElement('meta');
@@ -107,7 +100,6 @@ function Song() {
       document.head.appendChild(twitterImage);
     }
     twitterImage.content = thumbnailUrl;
-
     let canonicalLink = document.querySelector('link[rel="canonical"]');
     if (!canonicalLink) {
       canonicalLink = document.createElement('link');
@@ -127,7 +119,6 @@ function Song() {
         });
       }, 200);
     }
-
     const fetchSongAndRelated = async () => {
       let query = supabase
         .from('songs')
@@ -164,7 +155,6 @@ function Song() {
         setSong(songData);
         setSongMetaTags(songData);
         setPdfProgress(100);
-
         const { data: relatedData, error: relatedError } = await supabase
           .from('songs')
           .select('id, title, composer, permalink, created_at')
@@ -179,7 +169,6 @@ function Song() {
           setRelatedSongs(relatedData);
         }
       }
-
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       if (sessionError) {
         console.error('Session fetch error:', sessionError.message);
@@ -190,13 +179,11 @@ function Song() {
       }
       const authStatus = !!sessionData?.session;
       setIsAuthenticated(authStatus);
-
       if (!authStatus) {
         setHasDonated(false);
         setIsAdmin(false);
         return;
       }
-
       const { data: userData, error: userError } = await supabase.auth.getUser();
       if (userError) {
         console.error('User fetch error:', userError.message);
@@ -215,7 +202,6 @@ function Song() {
       } else {
         setHasDonated(profileData?.has_donated || false);
       }
-
       const { data: adminData, error: adminError } = await supabase
         .from('admins')
         .select('user_id')
@@ -224,7 +210,6 @@ function Song() {
       setIsAdmin(!!adminData && !adminError);
     };
     fetchSongAndRelated();
-
     const updateScale = () => {
       const width = window.innerWidth;
       if (width <= 480) {
@@ -237,7 +222,6 @@ function Song() {
     };
     updateScale();
     window.addEventListener('resize', updateScale);
-
     return () => {
       clearInterval(interval);
       window.removeEventListener('resize', updateScale);
@@ -295,7 +279,6 @@ function Song() {
         throw sessionError;
       }
       console.log('Authenticated:', isAuthenticated);
-
       const now = new Date();
       const year = now.getFullYear();
       const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -305,17 +288,14 @@ function Song() {
       const storedReset = localStorage.getItem(lastResetKey);
       const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
       const monthName = now.toLocaleString('default', { month: 'long' });
-
       if (!storedReset || storedReset !== currentMonthStart) {
         localStorage.setItem(downloadKey, '0');
         localStorage.setItem(lastResetKey, currentMonthStart);
       }
-
       let downloadCount = parseInt(localStorage.getItem(downloadKey) || '0', 10);
       const maxDownloads = isAuthenticated ? 6 : 3;
       const clientIdKey = 'client_id';
       let clientId = localStorage.getItem(clientIdKey);
-
       if (!isAuthenticated) {
         if (!clientId) {
           clientId = generateUUID();
@@ -358,11 +338,9 @@ function Song() {
           console.log('Synced server download count for user:', downloadCount);
         }
       }
-
       console.log('Download count before check:', downloadCount);
       const downloadsUsed = downloadCount;
       const downloadsRemaining = maxDownloads - downloadsUsed;
-
       if (!isAuthenticated && downloadCount >= 3) {
         setDownloadPrompt({
           message: `Download Limit Reached for ${monthName}! This resets on the 1st of every month. You’re allowed 3 downloads per month, have used ${downloadsUsed}, and have ${downloadsRemaining} remaining. Want to keep downloading? Buy us a Meat Pie ☕ to gain unlimited access to Choir Center!`,
@@ -397,11 +375,9 @@ function Song() {
           return;
         }
       }
-
       downloadCount += 1;
       localStorage.setItem(downloadKey, downloadCount.toString());
       console.log('Download count after:', downloadCount);
-
       if (!isAuthenticated && clientId) {
         const { error: upsertError } = await supabase
           .from('download_limits')
@@ -433,11 +409,9 @@ function Song() {
           console.log('Updated server download count for authenticated user:', downloadCount);
         }
       }
-
       const numericSongId = parseInt(song.id, 10);
       if (isNaN(numericSongId)) throw new Error('Invalid song ID');
       console.log('Parsed song ID:', numericSongId);
-
       const url = `https://drive.google.com/uc?export=download&id=${song.google_drive_file_id}`;
       const link = document.createElement('a');
       link.href = url;
@@ -446,7 +420,6 @@ function Song() {
       link.click();
       document.body.removeChild(link);
       console.log('File download triggered');
-
       const { data: songData, error: fetchError } = await supabase
         .from('songs')
         .select('id, downloads')
@@ -458,7 +431,6 @@ function Song() {
       }
       const currentDownloads = songData.downloads || 0;
       console.log('Downloads before update:', currentDownloads);
-
       const { data: newDownloads, error: updateError } = await supabase
         .rpc('update_song_downloads', { p_song_id: numericSongId });
       if (updateError) {
@@ -466,7 +438,6 @@ function Song() {
         throw updateError;
       }
       console.log('New downloads value from RPC:', newDownloads);
-
       const { data: updatedSong, error: postUpdateFetchError } = await supabase
         .from('songs')
         .select('id, title, composer, google_drive_file_id, downloads, is_public, permalink, audio_url, description, created_at')
@@ -577,13 +548,17 @@ function Song() {
           </>
         ) : (
           <div className="song-card-modern">
-            <h1 className="song-title-modern">{song.title}</h1>
-            <p className="song-composer-modern">{song.composer || 'Unknown Composer'}</p>
-            <p className="song-downloads-modern">Downloaded {song.downloads || 0} times</p>
-            <p className="song-timestamp-modern">Added on {new Date(song.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
+            {/* Song Info Container */}
+            <div className="song-info-container" style={{ marginBottom: '1.5rem' }}>
+              <h1 className="song-title-modern">{song.title}</h1>
+              <p className="song-composer-modern">{song.composer || 'Unknown Composer'}</p>
+              <p className="song-downloads-modern">Downloaded {song.downloads || 0} times</p>
+              <p className="song-timestamp-modern">Added on {new Date(song.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
+            </div>
 
+            {/* Audio Preview Container */}
             {song.audio_url && (
-              <div className="song-preview-modern">
+              <div className="audio-preview-container" style={{ marginBottom: '1.5rem' }}>
                 <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '0.5rem' }}>
                   Listen to an audio preview and {song.title} mp3 download
                 </p>
@@ -644,7 +619,8 @@ function Song() {
               </div>
             )}
 
-            <div className="song-preview-modern">
+            {/* PDF Preview Container */}
+            <div className="pdf-preview-container" style={{ marginBottom: '1.5rem' }}>
               {thumbnailUrl && !thumbnailError ? (
                 <img
                   src={thumbnailUrl}
@@ -667,7 +643,8 @@ function Song() {
               </p>
             </div>
 
-            <div className="song-actions-modern">
+            {/* Actions Container */}
+            <div className="song-actions-container song-actions-modern" style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', justifyContent: 'center' }}>
               <button onClick={handleDownload} className="download-button-modern">Download</button>
               <button onClick={handleShare} className="share-button-modern">Share</button>
               <Link to="/library" className="back-button-modern">Back to Library</Link>
@@ -681,20 +658,21 @@ function Song() {
               )}
             </div>
 
+            {/* Explore More Songs Container */}
             {relatedSongs.length > 0 && (
-              <div className="related-songs" style={{ marginTop: '2rem' }}>
-                <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Explore More Songs</h2>
-                <ul style={{ listStyle: 'none', padding: 0 }}>
+              <div className="explore-songs-container" style={{ marginTop: '2rem', background: '#f9fafb', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)' }}>
+                <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem', textAlign: 'center', color: '#2f4f2f' }}>Explore More Songs</h2>
+                <ul style={{ listStyle: 'none', padding: 0, display: 'grid', gap: '1rem' }}>
                   {relatedSongs.map((relatedSong) => (
-                    <li key={relatedSong.id} style={{ marginBottom: '0.5rem' }}>
+                    <li key={relatedSong.id} style={{ background: '#fff', padding: '1rem', borderRadius: '8px', transition: 'transform 0.3s ease' }} className="animate-scale">
                       <Link
                         to={`/song/${relatedSong.permalink || relatedSong.id}`}
                         className="song-link"
-                        style={{ color: '#007bff', textDecoration: 'none' }}
+                        style={{ color: '#007bff', textDecoration: 'none', fontWeight: '500' }}
                       >
                         {relatedSong.title} {relatedSong.composer || 'Unknown Composer'}
                       </Link>
-                      <span style={{ fontSize: '0.8rem', color: '#666', marginLeft: '0.5rem' }}>
+                      <span style={{ fontSize: '0.8rem', color: '#666', display: 'block', marginTop: '0.25rem' }}>
                         (Added on {new Date(relatedSong.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })})
                       </span>
                     </li>
@@ -703,6 +681,7 @@ function Song() {
               </div>
             )}
 
+            {/* Modals (unchanged) */}
             {downloadPrompt && (
               <div className="modal-overlay">
                 <div className="modal-content download-modal">

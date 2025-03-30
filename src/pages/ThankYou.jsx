@@ -70,10 +70,10 @@ function ThankYou() {
         setMessage({
           heading: 'Thank You for Your Generous Donation!',
           subheading: 'Your support ensures Choir Center remains a vibrant resource for choristers everywhere.',
-          details: 'You now have unlimited downloads this month. Enjoy exploring our library!',
+          details: 'You now have unlimited downloads this month. Check your profile for details!',
         });
         setLoading(false);
-        setTimeout(() => navigate('/library'), 15000); // 15 seconds
+        setTimeout(() => navigate('/profile'), 15000); // Redirect to profile after 15 seconds
       } catch (err) {
         console.error('Error in handleDonation:', err);
         setLoading(false);
@@ -84,8 +84,8 @@ function ThankYou() {
     handleDonation();
   }, [paymentSuccess, userIdFromUrl, navigate]);
 
-  const goToLibrary = () => {
-    navigate('/library');
+  const goToProfile = () => {
+    navigate('/profile');
   };
 
   return (
@@ -105,14 +105,14 @@ function ThankYou() {
               {message.details}
             </p>
             <button
-              onClick={goToLibrary}
+              onClick={goToProfile}
               className="auth-button"
               style={{ padding: '0.75rem 2rem', fontSize: '1.1rem' }}
             >
-              Explore the Library Now
+              View Your Profile Now
             </button>
             <p style={{ fontSize: '0.9rem', color: '#888', marginTop: '1rem' }}>
-              Redirecting in 15 seconds...
+              Redirecting to your profile in 15 seconds...
             </p>
           </>
         ) : null}

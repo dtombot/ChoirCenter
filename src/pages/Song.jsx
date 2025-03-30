@@ -36,9 +36,16 @@ function Song() {
   const [thumbnailError, setThumbnailError] = useState(false);
   const [showAudioPrompt, setShowAudioPrompt] = useState(false);
   const audioRef = useRef(null);
-  const navigate = useNavigate();
+  
+  // Safeguard useNavigate to prevent crashes
+  let navigate;
+  try {
+    navigate = useNavigate();
+  } catch (err) {
+    console.error('useNavigate failed:', err);
+    navigate = (path) => console.log('Navigation blocked:', path);
+  }
 
-  // Keep all existing functions (setSongMetaTags, useEffect, etc.) unchanged
   const setSongMetaTags = (song) => {
     document.title = `${song.title} ${song.composer || 'Unknown Composer'} | Choir Center`;
     let metaDescription = document.querySelector('meta[name="description"]');
@@ -681,7 +688,7 @@ function Song() {
               </div>
             )}
 
-            {/* Modals (unchanged) */}
+            {/* Modals */}
             {downloadPrompt && (
               <div className="modal-overlay">
                 <div className="modal-content download-modal">

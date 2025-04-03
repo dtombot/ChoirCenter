@@ -24,6 +24,26 @@ const useDebounce = (value, delay) => {
   return debouncedValue;
 };
 
+// Counter animation hook
+const useCounter = (end, duration = 2000) => {
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    let start = 0;
+    const increment = end / (duration / 16); // 60 FPS
+    const step = () => {
+      start += increment;
+      if (start >= end) {
+        setCount(end);
+      } else {
+        setCount(Math.floor(start));
+        requestAnimationFrame(step);
+      }
+    };
+    requestAnimationFrame(step);
+  }, [end, duration]);
+  return count;
+};
+
 function Home() {
   const [songs, setSongs] = useState([]);
   const [filteredSongs, setFilteredSongs] = useState([]);
@@ -77,7 +97,7 @@ function Home() {
       } else {
         console.log('Fetched songs:', JSON.stringify(songData, null, 2));
         setSongs(songData || []);
-        setFilteredSongs(songData.slice(0, 4) || []); // Reduced to 4
+        setFilteredSongs(songData.slice(0, 4) || []);
         setSiteStats((prev) => ({
           ...prev,
           totalSongs: songData.length,
@@ -96,7 +116,7 @@ function Home() {
       } else {
         console.log('Fetched posts:', JSON.stringify(postData, null, 2));
         setPosts(postData || []);
-        setFilteredPosts(postData.slice(0, 4) || []); // Reduced to 4
+        setFilteredPosts(postData.slice(0, 4) || []);
       }
 
       // Fetch Song of the Week
@@ -141,7 +161,7 @@ function Home() {
         setRecentDownloads(downloadData || []);
       }
 
-      // Fetch total visits (assumes a 'visitor_logs' table; adjust if different)
+      // Fetch total visits
       const { count: visitCount, error: visitError } = await supabase
         .from('visitor_logs')
         .select('*', { count: 'exact', head: true });
@@ -210,8 +230,8 @@ function Home() {
 
     if (!trimmedQuery) {
       console.log('Resetting to initial 4 items');
-      setFilteredSongs(songs.slice(0, 4)); // Reduced to 4
-      setFilteredPosts(posts.slice(0, 4)); // Reduced to 4
+      setFilteredSongs(songs.slice(0, 4));
+      setFilteredPosts(posts.slice(0, 4));
       setSuggestions([]);
       setSelectedSuggestionIndex(-1);
       setError(null);
@@ -225,8 +245,8 @@ function Home() {
       );
       console.log('Filtered songs:', JSON.stringify(songMatches, null, 2));
       console.log('Filtered posts:', JSON.stringify(postMatches, null, 2));
-      setFilteredSongs(songMatches.slice(0, 4)); // Reduced to 4
-      setFilteredPosts(postMatches.slice(0, 4)); // Reduced to 4
+      setFilteredSongs(songMatches.slice(0, 4));
+      setFilteredPosts(postMatches.slice(0, 4));
       const allSuggestions = [
         ...songMatches.map(song => ({ type: 'song', title: song.title, id: song.id, permalink: song.permalink })),
         ...postMatches.map(post => ({ type: 'post', title: post.title, id: post.id, permalink: post.permalink }))
@@ -560,6 +580,11 @@ function Home() {
     return `${days} day${days === 1 ? '' : 's'} ago`;
   };
 
+  // Counter values for animation
+  const songsCount = useCounter(siteStats.totalSongs, 2000);
+  const downloadsCount = useCounter(siteStats.totalDownloads, 2000);
+  const visitsCount = useCounter(siteStats.totalVisits, 2000);
+
   return (
     <>
       <Helmet>
@@ -678,40 +703,6 @@ function Home() {
           )}
         </section>
         {error && <p className="error-message">{error}</p>}
-        <section className="recent-downloads">
-          <h2 className="section-title animate-text">Recent Downloads</h2>
-          <div className="downloads-container">
-            {recentDownloads.length > 0 ? (
-              recentDownloads.map((download) => (
-                <div key={download.id} className="download-item">
-                  <span>
-                    <strong>{download.title}</strong> by {download.composer || 'Unknown Composer'} was downloaded{' '}
-                    {calculateTimeAgo(download.updated_at || download.created_at)}
-                  </span>
-                </div>
-              ))
-            ) : (
-              <p>No recent downloads available.</p>
-            )}
-          </div>
-        </section>
-        <section className="site-stats">
-          <h2 className="section-title animate-text">Site Statistics</h2>
-          <div className="stats-container">
-            <div className="stat-item">
-              <span className="stat-number">{siteStats.totalSongs}</span>
-              <p>Total Songs</p>
-            </div>
-            <div className="stat-item">
-              <span className="stat-number">{siteStats.totalDownloads}</span>
-              <p>Total Downloads</p>
-            </div>
-            <div className="stat-item">
-              <span className="stat-number">{siteStats.totalVisits}</span>
-              <p>Total Visits</p>
-            </div>
-          </div>
-        </section>
         <section className="latest-additions">
           <h2 className="section-title animate-text">Latest Choir Songs</h2>
           <div className="song-grid">
@@ -780,6 +771,152 @@ function Home() {
           </div>
         </section>
         <hr className="section-separator" />
+        {/* New Site Statistics Section */}
+        <section style={{
+          padding: '2rem 1rem',
+          maxWidth: '1200px',
+          margin: '0 auto',
+          textAlign: 'center',
+          background: '#f4f6f8',
+        }}>
+          <h2 style={{
+            fontSize: '2rem',
+            marginBottom: '1.5rem',
+            color: '#2f4f2f',
+            fontWeight: 'bold',
+          }}>Site Statistics</h2>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            gap: '2rem',
+            flexWrap: 'wrap',
+          }}>
+            <div style={{
+              width: '150px',
+              height: '150px',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              alignItems: 'center',
+              background: '#ffffff',
+              borderRadius: '50%',
+              boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+              border: '4px solid #3cb371',
+              transition: 'transform 0.3s ease',
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}>
+              <span style={{
+                fontSize: '2rem',
+                fontWeight: 'bold',
+                color: '#ffd700',
+              }}>{songsCount}+</span>
+              <p style={{
+                fontSize: '1rem',
+                color: '#2f4f2f',
+                marginTop: '0.5rem',
+              }}>Total Songs</p>
+            </div>
+            <div style={{
+              width: '150px',
+              height: '150px',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              alignItems: 'center',
+              background: '#ffffff',
+              borderRadius: '50%',
+              boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+              border: '4px solid #3cb371',
+              transition: 'transform 0.3s ease',
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}>
+              <span style={{
+                fontSize: '2rem',
+                fontWeight: 'bold',
+                color: '#ffd700',
+              }}>{downloadsCount}+</span>
+              <p style={{
+                fontSize: '1rem',
+                color: '#2f4f2f',
+                marginTop: '0.5rem',
+              }}>Total Downloads</p>
+            </div>
+            <div style={{
+              width: '150px',
+              height: '150px',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              alignItems: 'center',
+              background: '#ffffff',
+              borderRadius: '50%',
+              boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+              border: '4px solid #3cb371',
+              transition: 'transform 0.3s ease',
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}>
+              <span style={{
+                fontSize: '2rem',
+                fontWeight: 'bold',
+                color: '#ffd700',
+              }}>{visitsCount}+</span>
+              <p style={{
+                fontSize: '1rem',
+                color: '#2f4f2f',
+                marginTop: '0.5rem',
+              }}>Total Visits</p>
+            </div>
+          </div>
+        </section>
+        {/* New Recent Downloads Section */}
+        <section style={{
+          padding: '2rem 1rem',
+          maxWidth: '1200px',
+          margin: '0 auto',
+          textAlign: 'center',
+          background: '#f4f6f8',
+        }}>
+          <h2 style={{
+            fontSize: '2rem',
+            marginBottom: '1.5rem',
+            color: '#2f4f2f',
+            fontWeight: 'bold',
+          }}>Recent Downloads</h2>
+          <div style={{
+            backgroundColor: '#2f4f2f',
+            color: '#ffffff',
+            padding: '1.5rem',
+            borderRadius: '8px',
+            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+            maxWidth: '600px',
+            margin: '0 auto',
+          }}>
+            {recentDownloads.length > 0 ? (
+              recentDownloads.map((download, index) => (
+                <div
+                  key={download.id}
+                  style={{
+                    margin: '0.75rem 0',
+                    fontSize: '1rem',
+                    lineHeight: '1.5',
+                    opacity: 0,
+                    animation: `fadeIn 0.5s ease forwards ${index * 0.2}s`,
+                  }}
+                >
+                  <span>
+                    <strong style={{ color: '#ffd700' }}>{download.title}</strong> by {download.composer || 'Unknown Composer'} was downloaded{' '}
+                    {calculateTimeAgo(download.updated_at || download.created_at)}
+                  </span>
+                </div>
+              ))
+            ) : (
+              <p style={{ color: '#98fb98' }}>No recent downloads available.</p>
+            )}
+          </div>
+        </section>
         <section className="faq-section">
           <h2 className="section-title animate-text">Choir FAQs</h2>
           <div className="faq-grid">
@@ -851,6 +988,14 @@ function Home() {
           </div>
         </div>
       )}
+      <style>
+        {`
+          @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+        `}
+      </style>
     </>
   );
 }

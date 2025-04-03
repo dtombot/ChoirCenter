@@ -42,7 +42,13 @@ function Home() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [expandedFaq, setExpandedFaq] = useState(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false); // Added state
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [recentDownloads, setRecentDownloads] = useState([]);
+  const [siteStats, setSiteStats] = useState({
+    totalSongs: 0,
+    totalDownloads: 0,
+    totalVisits: 0,
+  });
   const audioRef = useRef(null);
   const searchInputRef = useRef(null);
   const navigate = useNavigate();
@@ -59,9 +65,10 @@ function Home() {
         return cleaned.match(/\.(mp3|wav|ogg)$/) ? cleaned : null;
       };
 
+      // Fetch songs
       const { data: songData, error: songError } = await supabase
         .from('songs')
-        .select('id, title, composer, google_drive_file_id, permalink, is_public, downloads, created_at')
+        .select('id, title, composer, google_drive_file_id, permalink, is_public, downloads, created_at, updated_at')
         .eq('is_public', true)
         .order('created_at', { ascending: false });
       if (songError) {
@@ -70,9 +77,15 @@ function Home() {
       } else {
         console.log('Fetched songs:', JSON.stringify(songData, null, 2));
         setSongs(songData || []);
-        setFilteredSongs(songData.slice(0, 6) || []);
+        setFilteredSongs(songData.slice(0, 4) || []); // Reduced to 4
+        setSiteStats((prev) => ({
+          ...prev,
+          totalSongs: songData.length,
+          totalDownloads: songData.reduce((sum, song) => sum + (song.downloads || 0), 0),
+        }));
       }
 
+      // Fetch posts
       const { data: postData, error: postError } = await supabase
         .from('blog_posts')
         .select('id, title, permalink')
@@ -83,9 +96,10 @@ function Home() {
       } else {
         console.log('Fetched posts:', JSON.stringify(postData, null, 2));
         setPosts(postData || []);
-        setFilteredPosts(postData.slice(0, 6) || []);
+        setFilteredPosts(postData.slice(0, 4) || []); // Reduced to 4
       }
 
+      // Fetch Song of the Week
       const { data: songOfTheWeekData, error: sotwError } = await supabase
         .from('song_of_the_week')
         .select('audio_url, title, composer')
@@ -111,6 +125,30 @@ function Home() {
         setIsAuthenticated(false);
       } else {
         setIsAuthenticated(!!sessionData?.session);
+      }
+
+      // Fetch recent downloads
+      const { data: downloadData, error: downloadError } = await supabase
+        .from('songs')
+        .select('id, title, composer, downloads, created_at, updated_at')
+        .eq('is_public', true)
+        .order('updated_at', { ascending: false })
+        .limit(5);
+      if (downloadError) {
+        console.error('Recent downloads fetch error:', downloadError.message);
+        setError('Failed to load recent downloads: ' + downloadError.message);
+      } else {
+        setRecentDownloads(downloadData || []);
+      }
+
+      // Fetch total visits (assumes a 'visitor_logs' table; adjust if different)
+      const { count: visitCount, error: visitError } = await supabase
+        .from('visitor_logs')
+        .select('*', { count: 'exact', head: true });
+      if (visitError) {
+        console.error('Visit count fetch error:', visitError.message);
+      } else {
+        setSiteStats((prev) => ({ ...prev, totalVisits: visitCount || 0 }));
       }
     };
     fetchData();
@@ -171,9 +209,9 @@ function Home() {
     console.log('Filtering with query:', trimmedQuery);
 
     if (!trimmedQuery) {
-      console.log('Resetting to initial 6 items');
-      setFilteredSongs(songs.slice(0, 6));
-      setFilteredPosts(posts.slice(0, 6));
+      console.log('Resetting to initial 4 items');
+      setFilteredSongs(songs.slice(0, 4)); // Reduced to 4
+      setFilteredPosts(posts.slice(0, 4)); // Reduced to 4
       setSuggestions([]);
       setSelectedSuggestionIndex(-1);
       setError(null);
@@ -187,8 +225,8 @@ function Home() {
       );
       console.log('Filtered songs:', JSON.stringify(songMatches, null, 2));
       console.log('Filtered posts:', JSON.stringify(postMatches, null, 2));
-      setFilteredSongs(songMatches.slice(0, 6));
-      setFilteredPosts(postMatches.slice(0, 6));
+      setFilteredSongs(songMatches.slice(0, 4)); // Reduced to 4
+      setFilteredPosts(postMatches.slice(0, 4)); // Reduced to 4
       const allSuggestions = [
         ...songMatches.map(song => ({ type: 'song', title: song.title, id: song.id, permalink: song.permalink })),
         ...postMatches.map(post => ({ type: 'post', title: post.title, id: post.id, permalink: post.permalink }))
@@ -466,20 +504,9 @@ function Home() {
       }
       console.log('New downloads value from RPC:', newDownloads);
 
-      const { data: updatedSong, error: postUpdateFetchError } = await supabase
-        .from('songs')
-        .select('id, title, composer, google_drive_file_id, downloads, is_public, permalink, created_at')
-        .eq('id', numericSongId)
-        .single();
-      if (postUpdateFetchError) {
-        console.error('Post-update fetch error:', postUpdateFetchError.message);
-        throw postUpdateFetchError;
-      }
-      console.log('Fetched song after update:', JSON.stringify(updatedSong, null, 2));
-
       const { data: updatedSongs, error: refetchError } = await supabase
         .from('songs')
-        .select('id, title, composer, google_drive_file_id, permalink, is_public, downloads, created_at')
+        .select('id, title, composer, google_drive_file_id, permalink, is_public, downloads, created_at, updated_at')
         .eq('is_public', true)
         .order('created_at', { ascending: false });
       if (refetchError) {
@@ -488,6 +515,11 @@ function Home() {
       }
       console.log('Refetched songs:', JSON.stringify(updatedSongs, null, 2));
       setSongs(updatedSongs || []);
+      setRecentDownloads(updatedSongs.sort((a, b) => new Date(b.updated_at || b.created_at) - new Date(a.updated_at || a.created_at)).slice(0, 5));
+      setSiteStats((prev) => ({
+        ...prev,
+        totalDownloads: updatedSongs.reduce((sum, song) => sum + (song.downloads || 0), 0),
+      }));
 
       filterContent(searchQuery);
     } catch (err) {
@@ -514,6 +546,18 @@ function Home() {
 
   const toggleFaq = (index) => {
     setExpandedFaq(expandedFaq === index ? null : index);
+  };
+
+  const calculateTimeAgo = (timestamp) => {
+    const now = new Date();
+    const updated = new Date(timestamp);
+    const diffMs = now - updated;
+    const minutes = Math.floor(diffMs / (1000 * 60));
+    if (minutes < 60) return `${minutes} minute${minutes === 1 ? '' : 's'} ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`;
+    const days = Math.floor(hours / 24);
+    return `${days} day${days === 1 ? '' : 's'} ago`;
   };
 
   return (
@@ -634,6 +678,40 @@ function Home() {
           )}
         </section>
         {error && <p className="error-message">{error}</p>}
+        <section className="recent-downloads">
+          <h2 className="section-title animate-text">Recent Downloads</h2>
+          <div className="downloads-container">
+            {recentDownloads.length > 0 ? (
+              recentDownloads.map((download) => (
+                <div key={download.id} className="download-item">
+                  <span>
+                    <strong>{download.title}</strong> by {download.composer || 'Unknown Composer'} was downloaded{' '}
+                    {calculateTimeAgo(download.updated_at || download.created_at)}
+                  </span>
+                </div>
+              ))
+            ) : (
+              <p>No recent downloads available.</p>
+            )}
+          </div>
+        </section>
+        <section className="site-stats">
+          <h2 className="section-title animate-text">Site Statistics</h2>
+          <div className="stats-container">
+            <div className="stat-item">
+              <span className="stat-number">{siteStats.totalSongs}</span>
+              <p>Total Songs</p>
+            </div>
+            <div className="stat-item">
+              <span className="stat-number">{siteStats.totalDownloads}</span>
+              <p>Total Downloads</p>
+            </div>
+            <div className="stat-item">
+              <span className="stat-number">{siteStats.totalVisits}</span>
+              <p>Total Visits</p>
+            </div>
+          </div>
+        </section>
         <section className="latest-additions">
           <h2 className="section-title animate-text">Latest Choir Songs</h2>
           <div className="song-grid">
@@ -721,10 +799,6 @@ function Home() {
               {
                 question: "Which vocal tips can improve my singing?",
                 answer: "Practice breathing, warm up daily, hydrate, and focus on posture for a clearer, stronger voice."
-              },
-              {
-                question: "How can I find choirs near me?",
-                answer: "Search online, check local churches, or join Choir Center to connect with nearby groups easily!"
               },
               {
                 question: "Where can I find choir songs in solfa notation?",

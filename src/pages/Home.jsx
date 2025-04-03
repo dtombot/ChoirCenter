@@ -68,6 +68,8 @@ function Home() {
     totalSongs: 0,
     totalDownloads: 0,
     totalVisits: 0,
+    totalUsers: 0, // Added for stats
+    totalPosts: 0, // Added for stats
   });
   const audioRef = useRef(null);
   const searchInputRef = useRef(null);
@@ -85,92 +87,89 @@ function Home() {
         return cleaned.match(/\.(mp3|wav|ogg)$/) ? cleaned : null;
       };
 
-      // Fetch songs
-      const { data: songData, error: songError } = await supabase
-        .from('songs')
-        .select('id, title, composer, google_drive_file_id, permalink, is_public, downloads, created_at, updated_at')
-        .eq('is_public', true)
-        .order('created_at', { ascending: false });
-      if (songError) {
-        console.error('Initial song fetch error:', songError.message);
-        setError('Failed to load songs: ' + songError.message);
-      } else {
-        console.log('Fetched songs:', JSON.stringify(songData, null, 2));
-        setSongs(songData || []);
-        setFilteredSongs(songData.slice(0, 4) || []);
-        setSiteStats((prev) => ({
-          ...prev,
-          totalSongs: songData.length,
-          totalDownloads: songData.reduce((sum, song) => sum + (song.downloads || 0), 0),
-        }));
-      }
+      try {
+        const [
+          songResponse,
+          postResponse,
+          sotwResponse,
+          sessionResponse,
+          downloadResponse,
+          visitResponse,
+          userResponse,
+        ] = await Promise.all([
+          supabase
+            .from('songs')
+            .select('id, title, composer, google_drive_file_id, permalink, is_public, downloads, created_at, updated_at')
+            .eq('is_public', true)
+            .order('created_at', { ascending: false }),
+          supabase
+            .from('blog_posts')
+            .select('id, title, permalink')
+            .order('created_at', { ascending: false }),
+          supabase
+            .from('song_of_the_week')
+            .select('audio_url, title, composer')
+            .limit(1),
+          supabase.auth.getSession(),
+          supabase
+            .from('songs')
+            .select('id, title, composer, downloads, created_at, updated_at, permalink')
+            .eq('is_public', true)
+            .order('updated_at', { ascending: false })
+            .limit(5),
+          supabase
+            .from('visitor_logs')
+            .select('*', { count: 'exact', head: true }),
+          supabase.rpc('get_user_count'),
+        ]);
 
-      // Fetch posts
-      const { data: postData, error: postError } = await supabase
-        .from('blog_posts')
-        .select('id, title, permalink')
-        .order('created_at', { ascending: false });
-      if (postError) {
-        console.error('Post fetch error:', postError.message);
-        setError('Failed to load posts: ' + postError.message);
-      } else {
-        console.log('Fetched posts:', JSON.stringify(postData, null, 2));
-        setPosts(postData || []);
-        setFilteredPosts(postData.slice(0, 4) || []);
-      }
+        // Songs
+        if (songResponse.error) throw songResponse.error;
+        console.log('Fetched songs:', JSON.stringify(songResponse.data, null, 2));
+        setSongs(songResponse.data || []);
+        setFilteredSongs(songResponse.data.slice(0, 4) || []);
 
-      // Fetch Song of the Week
-      const { data: songOfTheWeekData, error: sotwError } = await supabase
-        .from('song_of_the_week')
-        .select('audio_url, title, composer')
-        .limit(1);
-      if (sotwError) {
-        console.error('Song of the Week fetch error:', sotwError.message);
-        setError('Failed to load Song of the Week: ' + sotwError.message);
-      } else {
-        console.log('Song of the Week data:', JSON.stringify(songOfTheWeekData, null, 2));
-        const audioUrl = songOfTheWeekData && songOfTheWeekData.length > 0 ? cleanAudioUrl(songOfTheWeekData[0].audio_url) : null;
-        const title = songOfTheWeekData && songOfTheWeekData.length > 0 ? songOfTheWeekData[0].title : 'Unknown Title';
-        const composer = songOfTheWeekData && songOfTheWeekData.length > 0 ? songOfTheWeekData[0].composer || 'Unknown Composer' : 'Unknown Composer';
+        // Posts
+        if (postResponse.error) throw postResponse.error;
+        console.log('Fetched posts:', JSON.stringify(postResponse.data, null, 2));
+        setPosts(postResponse.data || []);
+        setFilteredPosts(postResponse.data.slice(0, 4) || []);
+
+        // Song of the Week
+        if (sotwResponse.error) throw sotwResponse.error;
+        console.log('Song of the Week data:', JSON.stringify(sotwResponse.data, null, 2));
+        const audioUrl = sotwResponse.data?.[0] ? cleanAudioUrl(sotwResponse.data[0].audio_url) : null;
+        const title = sotwResponse.data?.[0]?.title || 'Unknown Title';
+        const composer = sotwResponse.data?.[0]?.composer || 'Unknown Composer';
         console.log('Cleaned Song of the Week audio URL:', audioUrl, 'Title:', title, 'Composer:', composer);
         setSongOfTheWeek(audioUrl);
         setSongTitle(title);
         setSongComposer(composer);
-      }
 
-      // Check authentication status
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError) {
-        console.error('Session fetch error:', sessionError.message);
-        setIsAuthenticated(false);
-      } else {
-        setIsAuthenticated(!!sessionData?.session);
-      }
+        // Authentication
+        if (sessionResponse.error) throw sessionResponse.error;
+        setIsAuthenticated(!!sessionResponse.data?.session);
 
-      // Fetch recent downloads
-      const { data: downloadData, error: downloadError } = await supabase
-        .from('songs')
-        .select('id, title, composer, downloads, created_at, updated_at')
-        .eq('is_public', true)
-        .order('updated_at', { ascending: false })
-        .limit(5);
-      if (downloadError) {
-        console.error('Recent downloads fetch error:', downloadError.message);
-        setError('Failed to load recent downloads: ' + downloadError.message);
-      } else {
-        setRecentDownloads(downloadData || []);
-      }
+        // Recent Downloads
+        if (downloadResponse.error) throw downloadResponse.error;
+        setRecentDownloads(downloadResponse.data || []);
 
-      // Fetch total visits
-      const { count: visitCount, error: visitError } = await supabase
-        .from('visitor_logs')
-        .select('*', { count: 'exact', head: true });
-      if (visitError) {
-        console.error('Visit count fetch error:', visitError.message);
-      } else {
-        setSiteStats((prev) => ({ ...prev, totalVisits: visitCount || 0 }));
+        // Site Stats
+        if (visitResponse.error) throw visitResponse.error;
+        if (userResponse.error) throw userResponse.error;
+        setSiteStats({
+          totalSongs: songResponse.data.length,
+          totalDownloads: songResponse.data.reduce((sum, song) => sum + (song.downloads || 0), 0),
+          totalVisits: visitResponse.count || 0,
+          totalUsers: userResponse.data || 0,
+          totalPosts: postResponse.data.length,
+        });
+      } catch (err) {
+        console.error('Fetch error:', err.message);
+        setError('Failed to load data: ' + err.message);
       }
     };
+
     fetchData();
 
     const slideInterval = setInterval(() => {
@@ -584,6 +583,8 @@ function Home() {
   const songsCount = useCounter(siteStats.totalSongs, 2000);
   const downloadsCount = useCounter(siteStats.totalDownloads, 2000);
   const visitsCount = useCounter(siteStats.totalVisits, 2000);
+  const usersCount = useCounter(siteStats.totalUsers, 2000);
+  const postsCount = useCounter(siteStats.totalPosts, 2000);
 
   return (
     <>
@@ -750,7 +751,7 @@ function Home() {
         <hr className="section-separator" />
         <section className="blog-list-container">
           <h2 className="section-title animate-text">Latest Choir Insights</h2>
-          <div className="blog-list">
+          <div className="blog-list-centered">
             {filteredPosts.length > 0 ? (
               filteredPosts.map((post, index) => (
                 <article
@@ -771,7 +772,7 @@ function Home() {
           </div>
         </section>
         <hr className="section-separator" />
-        {/* New Site Statistics Section */}
+        {/* Updated Site Statistics Section */}
         <section style={{
           padding: '2rem 1rem',
           maxWidth: '1200px',
@@ -810,7 +811,7 @@ function Home() {
                 fontSize: '2rem',
                 fontWeight: 'bold',
                 color: '#ffd700',
-              }}>{songsCount}+</span>
+              }}>{songsCount}</span>
               <p style={{
                 fontSize: '1rem',
                 color: '#2f4f2f',
@@ -836,7 +837,7 @@ function Home() {
                 fontSize: '2rem',
                 fontWeight: 'bold',
                 color: '#ffd700',
-              }}>{downloadsCount}+</span>
+              }}>{downloadsCount}</span>
               <p style={{
                 fontSize: '1rem',
                 color: '#2f4f2f',
@@ -862,16 +863,68 @@ function Home() {
                 fontSize: '2rem',
                 fontWeight: 'bold',
                 color: '#ffd700',
-              }}>{visitsCount}+</span>
+              }}>{visitsCount}</span>
               <p style={{
                 fontSize: '1rem',
                 color: '#2f4f2f',
                 marginTop: '0.5rem',
               }}>Total Visits</p>
             </div>
+            <div style={{
+              width: '150px',
+              height: '150px',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              alignItems: 'center',
+              background: '#ffffff',
+              borderRadius: '50%',
+              boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+              border: '4px solid #3cb371',
+              transition: 'transform 0.3s ease',
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}>
+              <span style={{
+                fontSize: '2rem',
+                fontWeight: 'bold',
+                color: '#ffd700',
+              }}>{usersCount}</span>
+              <p style={{
+                fontSize: '1rem',
+                color: '#2f4f2f',
+                marginTop: '0.5rem',
+              }}>Total Users</p>
+            </div>
+            <div style={{
+              width: '150px',
+              height: '150px',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              alignItems: 'center',
+              background: '#ffffff',
+              borderRadius: '50%',
+              boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+              border: '4px solid #3cb371',
+              transition: 'transform 0.3s ease',
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}>
+              <span style={{
+                fontSize: '2rem',
+                fontWeight: 'bold',
+                color: '#ffd700',
+              }}>{postsCount}</span>
+              <p style={{
+                fontSize: '1rem',
+                color: '#2f4f2f',
+                marginTop: '0.5rem',
+              }}>Total Posts</p>
+            </div>
           </div>
         </section>
-        {/* New Recent Downloads Section */}
+        {/* Updated Recent Downloads Section */}
         <section style={{
           padding: '2rem 1rem',
           maxWidth: '1200px',
@@ -907,7 +960,15 @@ function Home() {
                   }}
                 >
                   <span>
-                    <strong style={{ color: '#ffd700' }}>{download.title}</strong> by {download.composer || 'Unknown Composer'} was downloaded{' '}
+                    <Link
+                      to={`/song/${download.permalink || download.id}`}
+                      style={{ color: '#ffd700', textDecoration: 'none', fontWeight: 'bold' }}
+                      onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
+                      onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
+                    >
+                      {download.title}
+                    </Link>{' '}
+                    {download.composer || 'Unknown Composer'} was downloaded{' '}
                     {calculateTimeAgo(download.updated_at || download.created_at)}
                   </span>
                 </div>
